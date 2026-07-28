@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "ai-dev": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--read-only",
+        "--tmpfs",
+        "/tmp:rw,exec,nosuid,size=512m",
+        "--shm-size",
+        "1g",
+        "--network",
+        "none",
+        "--security-opt",
+        "no-new-privileges:true",
+        "--cap-drop",
+        "ALL",
+        "--mount",
+        "type=volume,source=ai-dev-system-data,target=/data",
+        "ai-dev-system:local"
+      ]
+    }
+  }
+}

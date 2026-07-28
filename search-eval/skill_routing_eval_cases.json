@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "description": "Golden bilingual intent-routing cases for the local AI Dev skill library. Passing proves deterministic selection quality, not real-world task success.",
+  "cases": [
+    {
+      "id": "ru-frontend-bug",
+      "task": "Исправь баг адаптивной формы на мобильном экране",
+      "project_types": ["frontend"],
+      "stack": ["React"],
+      "expected_all": ["bugfix-investigator", "beta-frontend-maintainer", "frontend-quality-gate"],
+      "must_not": ["backend-api-engineer", "data-pipeline-engineer"]
+    },
+    {
+      "id": "en-frontend-beta-review",
+      "task": "Review a risky UI change in the beta dashboard before release",
+      "project_types": ["frontend"],
+      "expected_all": ["code-reviewer", "beta-frontend-maintainer", "frontend-quality-gate"],
+      "must_not": ["landing-conversion-reviewer"]
+    },
+    {
+      "id": "ru-frontend-polish",
+      "task": "Улучши дизайн интерфейса и доведи визуальное качество до премиального уровня",
+      "project_types": ["frontend"],
+      "expected_all": ["frontend-product-builder", "frontend-polisher", "frontend-quality-gate"],
+      "must_not": ["landing-conversion-reviewer"]
+    },
+    {
+      "id": "en-accessibility",
+      "task": "Fix WCAG accessibility, keyboard navigation, and screen reader labels",
+      "project_types": ["frontend"],
+      "expected_all": ["bugfix-investigator", "beta-frontend-maintainer", "frontend-quality-gate"],
+      "must_not": ["backend-api-engineer"]
+    },
+    {
+      "id": "ru-landing-conversion",
+      "task": "Проверь лендинг и улучши конверсию hero, CTA и формы",
+      "expected_all": ["code-reviewer", "landing-conversion-reviewer", "frontend-quality-gate"],
+      "must_not": ["backend-api-engineer"]
+    },
+    {
+      "id": "en-landing-build",
+      "task": "Build a conversion-focused landing page with a clear CTA",
+      "expected_all": ["frontend-product-builder", "landing-conversion-reviewer", "frontend-quality-gate"]
+    },
+    {
+      "id": "en-frontend-product-design-first",
+      "task": "Build a product interface from approved visual directions and prevent AI slop",
+      "project_types": ["frontend"],
+      "expected_all": ["frontend-product-builder", "beta-frontend-maintainer", "frontend-quality-gate"],
+      "must_not": ["feature-builder", "frontend-polisher"]
+    },
+    {
+      "id": "ru-frontend-product-natural-create",
+      "task": "\u0421\u043e\u0437\u0434\u0430\u0439 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0435\u043d\u043d\u044b\u0439 \u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441 \u0431\u0435\u0437 \u0418\u0418 \u0441\u043b\u043e\u043f\u0430 \u043f\u043e \u0443\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u043d\u044b\u043c \u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441\u0430\u043c",
+      "project_types": ["frontend"],
+      "expected_all": ["frontend-product-builder", "beta-frontend-maintainer", "frontend-quality-gate"],
+      "must_not": ["feature-builder", "code-reviewer"]
+    },
+    {
+      "id": "ru-generate-web-references",
+      "task": "\u0420\u0435\u0444\u0435\u0440\u0435\u043d\u0441\u043e\u0432 \u043d\u0435\u0442, \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0439 \u0442\u0440\u0438 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0435\u043d\u043d\u044b\u0445 \u0432\u0438\u0437\u0443\u0430\u043b\u044c\u043d\u044b\u0445 \u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f \u0434\u043b\u044f \u0441\u0430\u0439\u0442\u0430",
+      "project_types": ["frontend"],
+      "expected_all": ["frontend-product-builder", "imagegen-frontend-web", "frontend-quality-gate"],
+      "must_not": ["beta-frontend-maintainer", "feature-builder"]
+    },
+    {
+      "id": "en-generate-mobile-references",
+      "task": "Generate visual references for a mobile iOS interface with no external reference",
+      "project_types": ["mobile", "frontend"],
+      "expected_all": ["frontend-product-builder", "imagegen-frontend-mobile", "frontend-quality-gate"],
+      "must_not": ["beta-frontend-maintainer", "feature-builder"]
+    },
+    {
+      "id": "ru-api-bug",
+      "task": "Исправь ошибку backend API endpoint и добавь регрессионный тест",
+      "project_types": ["backend", "api"],
+      "expected_all": ["bugfix-investigator", "backend-api-engineer", "api-contract-reviewer"],
+      "must_not": ["beta-frontend-maintainer"]
+    },
+    {
+      "id": "en-api-contract-review",
+      "task": "Review the OpenAPI endpoint contract for a breaking response change",
+      "project_types": ["api"],
+      "expected_all": ["code-reviewer", "backend-api-engineer", "api-contract-reviewer"]
+    },
+    {
+      "id": "ru-webhook-feature",
+      "task": "Добавь webhook endpoint и сохрани обратную совместимость API",
+      "expected_all": ["feature-builder", "backend-api-engineer", "api-contract-reviewer"]
+    },
+    {
+      "id": "ru-db-migration",
+      "task": "Добавь миграцию схемы базы данных и безопасный backfill",
+      "project_types": ["backend"],
+      "expected_all": ["feature-builder", "database-migration-guardian"],
+      "must_not": ["data-pipeline-engineer"]
+    },
+    {
+      "id": "en-db-review",
+      "task": "Review an Alembic migration and index change before deployment",
+      "expected_all": ["code-reviewer", "database-migration-guardian"],
+      "must_not": ["data-pipeline-engineer"]
+    },
+    {
+      "id": "ru-security-audit",
+      "task": "Проверь безопасность авторизации и найди уязвимости",
+      "expected_all": ["code-reviewer", "application-security-reviewer", "secrets-dependencies-auditor"]
+    },
+    {
+      "id": "en-secrets-dependencies",
+      "task": "Audit leaked API keys and vulnerable npm dependencies",
+      "expected_all": ["code-reviewer", "secrets-dependencies-auditor"],
+      "must_not": ["data-pipeline-engineer"]
+    },
+    {
+      "id": "ru-llm-rag",
+      "task": "Добавь RAG, эмбеддинги и векторный поиск для LLM",
+      "expected_all": ["feature-builder", "llm-integration-engineer"],
+      "must_not": ["data-pipeline-engineer"]
+    },
+    {
+      "id": "en-llm-review",
+      "task": "Review prompt injection risks in an LLM tool-calling workflow",
+      "expected_all": ["code-reviewer", "llm-integration-engineer"],
+      "must_not": ["beta-frontend-maintainer"]
+    },
+    {
+      "id": "ru-data-pipeline",
+      "task": "Почини пайплайн данных ETL и проверку качества данных",
+      "expected_all": ["bugfix-investigator", "data-pipeline-engineer"],
+      "must_not": ["database-migration-guardian"]
+    },
+    {
+      "id": "en-container-review",
+      "task": "Review Docker Compose container health checks and deployment safety",
+      "expected_all": ["code-reviewer", "container-deployment-reviewer", "devops-release-engineer"]
+    },
+    {
+      "id": "ru-release",
+      "task": "Подготовь релиз, CI/CD и безопасный откат",
+      "expected_all": ["feature-builder", "devops-release-engineer"]
+    },
+    {
+      "id": "en-repository-onboarding",
+      "task": "Onboard this repository and create AGENTS.md with project context",
+      "expected_all": ["repo-onboarding"],
+      "expected_any": ["code-reviewer"]
+    },
+    {
+      "id": "ru-format-project",
+      "task": "Оформи проект для ИИ и подготовь репозиторий",
+      "expected_all": ["repo-onboarding"],
+      "expected_any": ["code-reviewer"]
+    },
+    {
+      "id": "ru-project-memory",
+      "task": "Обнови память проекта, project map и заметку в Obsidian",
+      "expected_all": ["knowledge-curator"],
+      "must_not": ["repo-onboarding"]
+    },
+    {
+      "id": "ru-task-lifecycle",
+      "task": "Начни инженерную задачу, зафиксируй критерии приемки, checkpoint и verification evidence",
+      "expected_all": ["ai-dev-orchestrator", "code-reviewer"],
+      "must_not": ["repo-onboarding"]
+    },
+    {
+      "id": "en-generic-feature",
+      "task": "Implement a small user-facing feature with tests",
+      "expected_all": ["feature-builder", "code-reviewer"],
+      "must_not": ["bugfix-investigator"]
+    },
+    {
+      "id": "ru-generic-review",
+      "task": "Сделай ревью изменений и найди регрессии",
+      "expected_all": ["code-reviewer"]
+    }
+  ]
+}

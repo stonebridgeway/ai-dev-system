@@ -1,0 +1,4 @@
+interface:
+  display_name: "LLM Integration Engineer"
+  short_description: "Build reliable evaluated LLM integrations"
+  default_prompt: "Use $llm-integration-engineer to implement this LLM feature with structured outputs, evaluation, cost, safety, and fallback controls."

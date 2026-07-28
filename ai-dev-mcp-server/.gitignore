@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.env
+config/runtime.local.json
+config/*.local.json

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Secrets Dependencies Auditor"
+  short_description: "Audit secrets and software supply chain"
+  default_prompt: "Use $secrets-dependencies-auditor to inspect this repository for secret exposure and dependency risks without leaking credentials."

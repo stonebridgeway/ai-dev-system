@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+  "commit": "1307d97a72e6c1cda572cb65471ae5ce82995218",
+  "version": "2.11.0",
+  "license": "MIT",
+  "imported_at": "2026-07-26",
+  "included": [
+    "data",
+    "scripts",
+    "references",
+    "UPSTREAM-SKILL.md",
+    "LICENSE"
+  ],
+  "excluded_sibling_skills": [
+    "banner-design",
+    "brand",
+    "design",
+    "design-system",
+    "slides",
+    "ui-styling"
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Dev Orchestrator"
+  short_description: "Run scoped coding tasks through MCP context and evidence gates"
+  default_prompt: "Use the AI Dev MCP lifecycle to start, implement, verify, and complete this task with bounded context."

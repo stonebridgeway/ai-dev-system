@@ -1,0 +1,6 @@
+services:
+  ai-dev-mcp:
+    volumes:
+      - type: bind
+        source: ${AI_DEV_PROJECT_PATH:?Set AI_DEV_PROJECT_PATH to a local project or projects directory}
+        target: /workspace

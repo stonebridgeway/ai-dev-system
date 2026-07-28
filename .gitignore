@@ -1,0 +1,17 @@
+**/node_modules/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+search-index/*.sqlite
+search-index/*.sqlite-*
+search-index/*.lock
+search-index/.dense-query-*.json
+frontend-qa/fixtures/**/.ai-dev/frontend-qa/
+frontend-qa/fixtures/**/.ai-dev/frontend-qa-baselines/
+frontend-qa/artifacts/
+embeddings/models/
+.docker/
+docker/.env
+docker/compose.local.yaml
+*.log

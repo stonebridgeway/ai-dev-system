@@ -1,0 +1,3 @@
+interface:
+  display_name: "Frontend Quality Gate"
+  short_description: "Verify UI changes before release or handoff"

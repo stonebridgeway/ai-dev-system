@@ -1,0 +1,24 @@
+services:
+  ai-dev-mcp:
+    image: ${AI_DEV_IMAGE:-ai-dev-system:local}
+    build:
+      context: ../.docker/build-context
+      args:
+        VERSION: ${AI_DEV_VERSION:-dev}
+    stdin_open: true
+    read_only: true
+    init: true
+    network_mode: none
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    shm_size: 1gb
+    tmpfs:
+      - /tmp:rw,exec,nosuid,size=512m
+    volumes:
+      - ai-dev-data:/data
+
+volumes:
+  ai-dev-data:
+    name: ${AI_DEV_DATA_VOLUME:-ai-dev-system-data}

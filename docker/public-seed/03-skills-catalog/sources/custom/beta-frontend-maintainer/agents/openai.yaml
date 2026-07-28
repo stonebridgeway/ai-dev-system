@@ -1,0 +1,3 @@
+interface:
+  display_name: "Beta Frontend Maintainer"
+  short_description: "Maintain beta frontends with minimal safe diffs"

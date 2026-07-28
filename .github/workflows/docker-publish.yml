@@ -1,0 +1,142 @@
+name: Docker
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ai-dev-mcp-server/package-lock.json
+
+      - name: Install MCP dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Test distribution privacy policy
+        working-directory: ai-dev-mcp-server
+        run: npm test -- src/core/public-distribution.test.mjs
+
+      - name: Prepare allowlisted Docker context
+        working-directory: ai-dev-mcp-server
+        run: npm run docker:prepare
+
+      - name: Audit Docker context
+        working-directory: ai-dev-mcp-server
+        run: npm run docker:audit
+
+      - name: Build validation image
+        run: docker build --tag ai-dev-system:ci .docker/build-context
+
+      - name: Negotiate MCP over Docker stdio
+        working-directory: ai-dev-mcp-server
+        run: npm run docker:smoke -- --image ai-dev-system:ci
+
+  unix-launcher:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ai-dev-mcp-server/package-lock.json
+
+      - name: Install MCP dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Test fast-start launcher contract
+        working-directory: ai-dev-mcp-server
+        run: npm run unix:launcher-smoke
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs:
+      - validate
+      - unix-launcher
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Prepare allowlisted Docker context
+        working-directory: ai-dev-mcp-server
+        run: node scripts/prepare-docker-context.mjs
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v7
+        with:
+          context: .docker/build-context
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true

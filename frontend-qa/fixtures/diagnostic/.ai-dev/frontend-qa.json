@@ -1,0 +1,9 @@
+{
+  "dev_command": "pnpm run dev -- --port 43191",
+  "routes": ["/"],
+  "viewports": [
+    { "name": "mobile", "width": 390, "height": 844 }
+  ],
+  "check_accessibility_axe": true,
+  "check_visual_regression": false
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Application Security Reviewer"
+  short_description: "Review application changes for security risks"
+  default_prompt: "Use $application-security-reviewer to threat-model and review this application change with evidence-based findings."

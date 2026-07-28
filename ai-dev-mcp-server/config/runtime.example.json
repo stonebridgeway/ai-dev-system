@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "mode": "local-first",
+  "vault_root": "${AI_DEV_VAULT_ROOT}",
+  "node_executable": "${AI_DEV_NODE}",
+  "transport": {
+    "type": "stdio",
+    "remote_enabled": false
+  },
+  "state": {
+    "root": "${USERPROFILE}/.codex/state/ai-dev-system",
+    "cache": "${USERPROFILE}/.codex/cache/ai-dev-system",
+    "artifacts": "${USERPROFILE}/.codex/artifacts"
+  },
+  "remote_foundation": {
+    "status": "disabled",
+    "bind": "127.0.0.1",
+    "tls": {
+      "mode": "required-before-enable"
+    },
+    "authentication": {
+      "mode": "bearer",
+      "token_env": "AI_DEV_MCP_BEARER_TOKEN"
+    },
+    "allowed_clients": [],
+    "rate_limit_per_minute": 60,
+    "trust_proxy": false
+  }
+}

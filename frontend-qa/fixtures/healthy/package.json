@@ -1,0 +1,8 @@
+{
+  "name": "frontend-qa-healthy-fixture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node fixture-server.mjs --port 4181"
+  }
+}

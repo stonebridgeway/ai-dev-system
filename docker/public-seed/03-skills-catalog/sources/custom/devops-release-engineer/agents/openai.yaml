@@ -1,0 +1,4 @@
+interface:
+  display_name: "DevOps Release Engineer"
+  short_description: "Build reliable CI CD and release workflows"
+  default_prompt: "Use $devops-release-engineer to implement or review this CI, deployment, release, or rollback workflow."

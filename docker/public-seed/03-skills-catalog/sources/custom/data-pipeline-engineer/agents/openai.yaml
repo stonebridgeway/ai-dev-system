@@ -1,0 +1,4 @@
+interface:
+  display_name: "Data Pipeline Engineer"
+  short_description: "Build reliable data pipelines and contracts"
+  default_prompt: "Use $data-pipeline-engineer to design or implement this data pipeline with contracts, lineage, quality, and recovery checks."

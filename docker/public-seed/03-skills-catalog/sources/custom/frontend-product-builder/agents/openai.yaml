@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Product Builder"
+  short_description: "Design-first frontend workflow with strict visual QA"
+  default_prompt: "Use $frontend-product-builder to build this interface through visual approval, implementation, and independent product review."

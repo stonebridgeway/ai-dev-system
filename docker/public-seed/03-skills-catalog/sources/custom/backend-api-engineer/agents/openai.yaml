@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend API Engineer"
+  short_description: "Build safe backend services and APIs"
+  default_prompt: "Use $backend-api-engineer to implement this backend or API change with contract, data, failure, and verification checks."

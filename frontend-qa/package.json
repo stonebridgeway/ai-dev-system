@@ -1,0 +1,17 @@
+{
+  "name": "ai-dev-frontend-qa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:chromium": "playwright install chromium",
+    "test": "node --test",
+    "check": "node --check frontend_qa_runner.mjs && node --test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "pixelmatch": "7.2.0",
+    "playwright": "1.61.1",
+    "pngjs": "7.0.0"
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Database Migration Guardian"
+  short_description: "Plan and verify safe database migrations"
+  default_prompt: "Use $database-migration-guardian to review or implement this schema migration with rollback and data-safety evidence."

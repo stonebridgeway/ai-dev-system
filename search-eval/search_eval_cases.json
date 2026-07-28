@@ -1,0 +1,560 @@
+{
+  "schema_version": 3,
+  "description": "Bilingual golden search cases with rank, negative-result, and duplicate constraints for context agents must reliably find during development.",
+  "cases": [
+    {
+      "id": "project-bootstrap-context",
+      "query": "AGENTS quality gate project map prepare repository",
+      "preset": "code",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "repo-onboarding", "path": "sources/custom/repo-onboarding/SKILL.md" },
+        { "title": "Project Bootstrap", "path": "05-project-templates/Project Bootstrap.md" },
+        { "path": "05-project-templates/AGENTS.template.md" },
+        { "title": "AI Dev Control Center" }
+      ]
+    },
+    {
+      "id": "format-project-for-ai-command",
+      "query": "format project for AI Project Brief agent files recommended skills",
+      "preset": "docs",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "Auto Commands", "path": "06-prompts/Auto Commands.md" },
+        { "title": "AI Dev Control Center", "path": "01-system/AI Dev Control Center.md" }
+      ]
+    },
+    {
+      "id": "refresh-project-memory-command",
+      "query": "refresh project memory project brief project map search index",
+      "preset": "docs",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "AI Dev Control Center", "path": "01-system/AI Dev Control Center.md" },
+        { "title": "Auto Commands", "path": "06-prompts/Auto Commands.md" },
+        { "title": "MCP Server Plan", "path": "09-mcp/MCP Server Plan.md" }
+      ]
+    },
+    {
+      "id": "semantic-embeddings-backend",
+      "query": "semantic search embeddings backend bge m3 dense hybrid",
+      "preset": "docs",
+      "limit": 8,
+      "top_k": 5,
+      "expected": [
+        {
+          "any": [
+            { "title": "Embeddings Backend", "path": "09-mcp/Embeddings Backend.md" },
+            { "title": "Semantic Search", "path": "09-mcp/Semantic Search.md" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frontend-design-skills",
+      "query": "frontend design premium website UI UX polish visual quality",
+      "preset": "frontend",
+      "limit": 10,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "Frontend Polisher", "path": "04-agent-workflows/Frontend Polisher.md" },
+        { "title": "frontend-polisher" },
+        { "title": "taste-skill" },
+        { "title": "redesign-existing-projects" },
+        { "title": "high-end-visual-design" },
+        { "title": "image-to-code-skill" },
+        { "path": "08-integrations/Taste Skill.md" }
+      ],
+      "must_not": [
+        { "title": { "contains": "backend" }, "scope": "skills" },
+        { "title": { "contains": "database" }, "scope": "skills" }
+      ]
+    },
+    {
+      "id": "frontend-reference-factory",
+      "query": "no visual reference generate interface concepts imagegen manifest inspect PNG approved baseline coverage",
+      "preset": "frontend",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "Reference Factory", "path": "09-mcp/Reference Factory.md" },
+        { "title": "frontend-product-builder" },
+        { "title": "Frontend Product Quality v2" }
+      ]
+    },
+    {
+      "id": "ru-frontend-reference-factory",
+      "language": "ru",
+      "query": "\u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0439 \u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441\u044b \u0434\u043b\u044f \u043f\u0440\u043e\u0435\u043a\u0442\u0430 \u0442\u0440\u0438 \u0432\u0438\u0437\u0443\u0430\u043b\u044c\u043d\u044b\u0445 \u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f imagegen \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 png \u0431\u0435\u0439\u0437\u043b\u0430\u0439\u043d\u044b",
+      "preset": "frontend",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "Reference Factory", "path": "09-mcp/Reference Factory.md" },
+        { "title": "frontend-product-builder" },
+        { "title": "Frontend Product Quality v2" }
+      ]
+    },
+    {
+      "id": "quality-gate-context",
+      "query": "quality gate tests verification commands run checks",
+      "preset": "quality",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "Quality Gate", "path": "07-quality-gates/Quality Gate.md" },
+        { "title": "Quality Gate Runner", "path": "09-mcp/Quality Gate Runner.md" },
+        { "source": "project-quality-gate" }
+      ]
+    },
+    {
+      "id": "bugfix-workflow-skill",
+      "query": "find bug regression failing test stack trace debug investigation",
+      "preset": "debug",
+      "limit": 10,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "bugfix-investigator" },
+        { "path": "04-agent-workflows/Bugfix Investigator.md" }
+      ],
+      "must_not": [
+        { "title": "landing-conversion-reviewer" }
+      ]
+    },
+    {
+      "id": "code-review-workflow-skill",
+      "query": "code review risks regressions missing tests findings severity",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "code-reviewer" },
+        { "path": "04-agent-workflows/Code Reviewer.md" }
+      ],
+      "must_not": [
+        { "title": "imagegen-frontend-web" }
+      ]
+    },
+    {
+      "id": "skill-cards-routing-layer",
+      "query": "read_skill_card skill cards routing passports recommend_skills",
+      "preset": "skills",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "Skill Cards", "path": "03-skills-catalog/Skill Cards.md" },
+        { "path": "03-skills-catalog/registries/SKILL_CARDS.md" },
+        { "path": "03-skills-catalog/cards/custom/feature-builder.md" }
+      ]
+    },
+    {
+      "id": "beta-frontend-maintainer-skill",
+      "query": "beta frontend maintenance support responsive bug existing component minimal safe diff",
+      "preset": "frontend",
+      "limit": 10,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "beta-frontend-maintainer" },
+        { "path": "03-skills-catalog/sources/custom/beta-frontend-maintainer/SKILL.md" },
+        { "path": "03-skills-catalog/cards/custom/beta-frontend-maintainer.md" }
+      ]
+    },
+    {
+      "id": "frontend-quality-gate-skill",
+      "query": "frontend quality gate browser QA accessibility responsive handoff pass warn block",
+      "preset": "quality",
+      "limit": 10,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "frontend-quality-gate" },
+        { "path": "03-skills-catalog/sources/custom/frontend-quality-gate/SKILL.md" },
+        { "path": "03-skills-catalog/cards/custom/frontend-quality-gate.md" }
+      ]
+    },
+    {
+      "id": "landing-conversion-reviewer-skill",
+      "query": "landing conversion CTA trust proof hero pricing CRO mobile SEO",
+      "preset": "frontend",
+      "limit": 10,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "landing-conversion-reviewer" },
+        { "path": "03-skills-catalog/sources/custom/landing-conversion-reviewer/SKILL.md" },
+        { "path": "03-skills-catalog/cards/custom/landing-conversion-reviewer.md" }
+      ]
+    },
+    {
+      "id": "frontend-qa-runner-tool",
+      "query": "frontend qa runner playwright screenshots console overflow responsive accessibility",
+      "preset": "quality",
+      "limit": 10,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "Frontend QA Runner", "path": "09-mcp/Frontend QA Runner.md" },
+        { "title": "AI Dev Control Center", "path": "01-system/AI Dev Control Center.md" },
+        { "title": "MCP Server Plan", "path": "09-mcp/MCP Server Plan.md" }
+      ]
+    },
+    {
+      "id": "search-presets-control-center",
+      "query": "preset_search list_search_presets explain_search search presets",
+      "preset": "docs",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "AI Dev Control Center" },
+        { "title": "MCP Server Plan" },
+        { "path": "09-mcp/ai-dev-mcp-server/README.md" }
+      ]
+    },
+    {
+      "id": "search-index-freshness",
+      "query": "search index status stale self healing changed deleted documents preserve dense vectors",
+      "preset": "docs",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "Search Index", "path": "09-mcp/Search Index.md" },
+        { "path": "09-mcp/ai-dev-mcp-server/README.md" },
+        { "title": "MCP Server Plan", "path": "09-mcp/MCP Server Plan.md" }
+      ]
+    },
+    {
+      "id": "russian-project-memory",
+      "query": "обнови память проекта карта проекта краткий контекст для агента",
+      "preset": "docs",
+      "limit": 8,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "AI Dev Control Center", "path": "01-system/AI Dev Control Center.md" },
+        { "title": "Auto Commands", "path": "06-prompts/Auto Commands.md" },
+        { "title": "MCP Server Plan", "path": "09-mcp/MCP Server Plan.md" }
+      ]
+    },
+    {
+      "id": "skill-taxonomy-map",
+      "query": "skill taxonomy domains groups browse_skill_group group-first routing related skills",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "Skill Taxonomy", "path": "03-skills-catalog/Skill Taxonomy.md" },
+        { "title": "Skills Map", "path": "03-skills-catalog/groups/Skills Map.md" },
+        { "title": "Skill Routing", "path": "03-skills-catalog/Skill Routing.md" }
+      ]
+    },
+    {
+      "id": "integration-developer-tools-group",
+      "query": "integration developer tools github gitlab sentry deployment subgroup",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "Developer Tools", "path": "03-skills-catalog/groups/integrations-automation/developer-tools.md" },
+        { "title": "Integrations & Automation", "path": "03-skills-catalog/groups/integrations-automation.md" },
+        { "title": "Skill Taxonomy", "path": "03-skills-catalog/Skill Taxonomy.md" }
+      ]
+    },
+    {
+      "id": "skill-schema-v2-quality",
+      "query": "Skill Schema v2 maturity trust quality score validate skill library duplicate policy",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "Skill Schema v2", "path": "03-skills-catalog/Skill Schema v2.md" },
+        { "title": "Skill Quality Dashboard", "path": "03-skills-catalog/Skill Quality Dashboard.md" },
+        { "path": "09-mcp/ai-dev-mcp-server/README.md" }
+      ]
+    },
+    {
+      "id": "backend-api-database-skills",
+      "query": "backend API contract database migration rollback compatibility idempotency",
+      "preset": "skills",
+      "limit": 12,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "backend-api-engineer" },
+        { "title": "api-contract-reviewer" },
+        { "title": "database-migration-guardian" }
+      ]
+    },
+    {
+      "id": "application-security-secrets-skills",
+      "query": "application security threat authorization secrets dependencies credentials audit",
+      "preset": "skills",
+      "limit": 12,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "application-security-reviewer" },
+        { "title": "secrets-dependencies-auditor" }
+      ]
+    },
+    {
+      "id": "ru-bugfix-investigation",
+      "language": "ru",
+      "query": "найди причину ошибки воспроизведи баг добавь регрессионный тест",
+      "preset": "debug",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "bugfix-investigator" },
+        { "path": "04-agent-workflows/Bugfix Investigator.md" }
+      ]
+    },
+    {
+      "id": "ru-code-review",
+      "language": "ru",
+      "query": "сделай ревью изменений найди риски регрессии и пропущенные тесты",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "code-reviewer" },
+        { "path": "04-agent-workflows/Code Reviewer.md" }
+      ]
+    },
+    {
+      "id": "ru-beta-frontend",
+      "language": "ru",
+      "query": "почини адаптивный баг существующего фронтенда минимальным безопасным изменением",
+      "preset": "frontend",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "beta-frontend-maintainer" }
+      ]
+    },
+    {
+      "id": "ru-frontend-quality",
+      "language": "ru",
+      "query": "проверь фронтенд перед сдачей мобильный экран консоль переполнение доступность",
+      "preset": "quality",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "frontend-quality-gate" },
+        { "title": "Frontend QA Runner" }
+      ]
+    },
+    {
+      "id": "ru-landing-conversion",
+      "language": "ru",
+      "query": "оцени лендинг конверсию первый экран призыв к действию доверие и тарифы",
+      "preset": "frontend",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "landing-conversion-reviewer" }
+      ]
+    },
+    {
+      "id": "ru-backend-api",
+      "language": "ru",
+      "query": "реализуй бекенд эндпоинт обработку ошибок идемпотентность и наблюдаемость",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "backend-api-engineer" }
+      ]
+    },
+    {
+      "id": "ru-api-contract",
+      "language": "ru",
+      "query": "проверь контракт апи схему запроса ответа ошибки и обратную совместимость",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "api-contract-reviewer" }
+      ]
+    },
+    {
+      "id": "ru-database-migration",
+      "language": "ru",
+      "query": "подготовь миграцию схемы базы данных безопасный откат блокировки и бэкфил",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 5,
+      "expected_any": [
+        { "title": "database-migration-guardian" }
+      ],
+      "must_not": [
+        { "title": "data-pipeline-engineer" }
+      ],
+      "negative_top_k": 3
+    },
+    {
+      "id": "ru-application-security",
+      "language": "ru",
+      "query": "проведи проверку безопасности авторизации модели угроз xss csrf и прав доступа",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "application-security-reviewer" }
+      ]
+    },
+    {
+      "id": "ru-secrets-dependencies",
+      "language": "ru",
+      "query": "проверь утечку секретов учетные данные зависимости lockfile и цепочку поставок",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "secrets-dependencies-auditor" }
+      ]
+    },
+    {
+      "id": "ru-devops-release",
+      "language": "ru",
+      "query": "проверь релиз деплой ci cd план отката и воспроизводимость сборки",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "devops-release-engineer" }
+      ]
+    },
+    {
+      "id": "ru-container-review",
+      "language": "ru",
+      "query": "проверь докер образ compose контейнер healthcheck непривилегированного пользователя",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "container-deployment-reviewer" }
+      ]
+    },
+    {
+      "id": "ru-data-pipeline",
+      "language": "ru",
+      "query": "спроектируй пайплайн данных импорт качество lineage повторный запуск и восстановление",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "data-pipeline-engineer" }
+      ]
+    },
+    {
+      "id": "ru-llm-integration",
+      "language": "ru",
+      "query": "добавь llm интеграцию промпт структурированный ответ эмбеддинги оценку стоимости и fallback",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "llm-integration-engineer" }
+      ]
+    },
+    {
+      "id": "ru-project-onboarding",
+      "language": "ru",
+      "query": "оформи проект для ии создай agents карту проекта quality gate и краткий handoff",
+      "preset": "code",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "repo-onboarding" },
+        { "title": "Project Bootstrap" },
+        { "title": "AI Dev Control Center" }
+      ]
+    },
+    {
+      "id": "ru-task-lifecycle",
+      "language": "ru",
+      "query": "начни инженерную задачу критерии приемки checkpoint проверка evidence завершение",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "ai-dev-orchestrator" },
+        { "title": "AI Dev MCP vNext Architecture" }
+      ]
+    },
+    {
+      "id": "ru-semantic-search",
+      "language": "ru",
+      "query": "поиск по смыслу гибридный индекс эмбеддинги bge m3 плотные векторы",
+      "preset": "docs",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "Semantic Search" },
+        { "title": "Embeddings Backend" }
+      ]
+    },
+    {
+      "id": "ru-skill-taxonomy",
+      "language": "ru",
+      "query": "группы скиллов домены подгруппы маршрутизация и связанные навыки",
+      "preset": "skills",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "Skill Taxonomy" },
+        { "title": "Skills Map" },
+        { "title": "Skill Routing" }
+      ]
+    },
+    {
+      "id": "ru-project-memory",
+      "language": "ru",
+      "query": "обнови память проекта краткий бриф архитектурную карту карточку obsidian и индекс",
+      "preset": "docs",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "AI Dev Control Center" },
+        { "title": "Auto Commands" },
+        { "title": "Project Registry And Map Refresh" }
+      ]
+    },
+    {
+      "id": "ru-accessibility",
+      "language": "ru",
+      "query": "проверь доступность интерфейса клавиатурную навигацию фокус контраст aria и скринридер",
+      "preset": "quality",
+      "limit": 10,
+      "top_k": 6,
+      "expected_any": [
+        { "title": "frontend-quality-gate" },
+        { "title": "Frontend QA Runner" }
+      ]
+    },
+    {
+      "id": "ui-ux-design-intelligence",
+      "query": "generate a product specific design system with palette typography density motion accessibility and stack guidance",
+      "preset": "frontend",
+      "limit": 12,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "frontend-product-builder" },
+        { "title": "ui-ux-pro-max" },
+        { "title": "UI UX Pro Max" },
+        { "title": "UI UX Pro Max Integration" }
+      ]
+    },
+    {
+      "id": "ru-ui-ux-design-intelligence",
+      "language": "ru",
+      "query": "создай продуктовую дизайн систему палитру типографику плотность анимацию доступность и правила для frontend стека",
+      "preset": "frontend",
+      "limit": 12,
+      "top_k": 8,
+      "expected_any": [
+        { "title": "frontend-product-builder" },
+        { "title": "ui-ux-pro-max" },
+        { "title": "UI UX Pro Max" },
+        { "title": "UI UX Pro Max Integration" }
+      ]
+    }
+  ]
+}

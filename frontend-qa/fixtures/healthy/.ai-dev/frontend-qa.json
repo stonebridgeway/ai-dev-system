@@ -1,0 +1,23 @@
+{
+  "dev_command": "pnpm run dev -- --port 4181",
+  "routes": ["/"],
+  "viewports": [
+    { "name": "desktop", "width": 960, "height": 720 },
+    { "name": "mobile", "width": 390, "height": 844 }
+  ],
+  "scenarios": [
+    {
+      "name": "complete confirmation",
+      "state": "success",
+      "route": "/",
+      "actions": [
+        { "action": "fill", "selector": "#name", "value": "Codex" },
+        { "action": "click", "selector": "#submit" },
+        { "action": "expect_text", "selector": "#status", "text": "Confirmed: Codex" }
+      ]
+    }
+  ],
+  "check_accessibility_axe": true,
+  "check_visual_regression": true,
+  "max_pixel_diff_ratio": 0.001
+}

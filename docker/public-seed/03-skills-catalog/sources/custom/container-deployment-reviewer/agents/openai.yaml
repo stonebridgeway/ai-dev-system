@@ -1,0 +1,4 @@
+interface:
+  display_name: "Container Deployment Reviewer"
+  short_description: "Review container builds and runtime safety"
+  default_prompt: "Use $container-deployment-reviewer to inspect this Docker or container deployment for reproducibility, security, and operability."

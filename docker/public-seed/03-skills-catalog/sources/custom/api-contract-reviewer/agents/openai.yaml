@@ -1,0 +1,4 @@
+interface:
+  display_name: "API Contract Reviewer"
+  short_description: "Review API contracts and compatibility"
+  default_prompt: "Use $api-contract-reviewer to review this API change for contract correctness and backward compatibility."
