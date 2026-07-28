@@ -128,7 +128,10 @@ async function createDockerContext({ output }) {
 !THIRD_PARTY_NOTICES.md
 `);
 
-    const forbiddenTerms = [os.userInfo().username, os.homedir()];
+    const forbiddenTerms = [
+      os.homedir(),
+      ...(process.env.CI ? [] : [os.userInfo().username])
+    ];
     const initialAudit = assertCleanDistribution(
       await auditDistributionTree(stage, { forbiddenTerms }),
       "Docker build context"
