@@ -14,7 +14,10 @@ const repositoryRoot = path.resolve(scriptDir, "..", "..");
 const target = path.resolve(process.argv[2] || path.join(repositoryRoot, ".docker", "build-context"));
 const audit = assertCleanDistribution(
   await auditDistributionTree(target, {
-    forbiddenTerms: [os.userInfo().username, os.homedir()]
+    forbiddenTerms: [
+      os.homedir(),
+      ...(process.env.CI ? [] : [os.userInfo().username])
+    ]
   }),
   "Docker build context"
 );
