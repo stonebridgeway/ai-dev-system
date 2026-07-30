@@ -65,6 +65,8 @@ requireText(srcinfo, /^pkgbase = ai-dev-system-git$/m, ".SRCINFO");
 requireText(srcinfo, /^\s+arch = x86_64$/m, ".SRCINFO");
 requireText(srcinfo, /^\s+arch = aarch64$/m, ".SRCINFO");
 requireText(formula, /^class AiDevSystem < Formula$/m, "Homebrew formula");
+requireText(formula, /^# typed: strict$/m, "Homebrew formula");
+requireText(formula, /^# frozen_string_literal: true$/m, "Homebrew formula");
 requireText(formula, /head "https:\/\/github\.com\/stonebridgeway\/ai-dev-system\.git", branch: "main"/, "Homebrew formula");
 requireText(formula, /inreplace launcher, "@AI_DEV_SYSTEM_ROOT@", libexec/, "Homebrew formula");
 requireText(formula, /launcher\.chmod 0755/, "Homebrew formula");

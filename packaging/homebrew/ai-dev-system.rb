@@ -1,3 +1,7 @@
+# typed: strict
+# frozen_string_literal: true
+
+# Homebrew package for the local AI Dev MCP runtime and bootstrap launcher.
 class AiDevSystem < Formula
   desc "Local-first MCP development system for AI agents"
   homepage "https://github.com/stonebridgeway/ai-dev-system"
