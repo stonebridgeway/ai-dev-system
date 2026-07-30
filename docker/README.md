@@ -44,26 +44,27 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1
 ```
 
 Скрипт проверяет Docker Desktop и Node.js 24, при отсутствии устанавливает их через `winget`,
-создаёт безопасную локальную папку проектов, собирает образ, проводит MCP smoke-проверку и
+создаёт безопасную локальную папку проектов, скачивает опубликованный образ, проводит MCP smoke-проверку и
 добавляет Docker launcher в локальные конфигурации Codex, Cursor, Gemini, VS Code и Claude.
 Права администратора требуются только для первой установки Docker Desktop или Node.js.
 
 ### macOS и Linux: автоматическая подготовка без Node.js на хосте
 
 ```bash
-sh ./bootstrap.sh
+sh ./bootstrap.sh --install-prerequisites
 ```
 
-На macOS нужен запущенный Docker Desktop. На Linux скрипт может установить Docker Engine через
-`apt`, `dnf` или `pacman` при запуске `sh ./bootstrap.sh --install-prerequisites`; после этого
-потребуется заново войти в систему для доступа к Docker без `sudo`. Временный `node:24` контейнер
-используется только для сборки и настройки клиентов и не становится частью итогового образа.
+На macOS скрипт устанавливает Homebrew при необходимости, затем Docker Desktop через Homebrew,
+запускает приложение и ждёт готовности engine. На Linux Docker Engine устанавливается через
+`apt`, `dnf` или `pacman`; после добавления пользователя в группу `docker` потребуется заново
+войти в систему и повторить команду. Если Docker уже готов, достаточно `sh ./bootstrap.sh`.
+Временный `node:24` контейнер используется только для настройки клиентов.
 
-После публикации замените имя образа на адрес своего GitHub-репозитория:
+Опубликованный образ:
 
 ```powershell
-docker pull ghcr.io/OWNER/REPOSITORY:latest
-$env:AI_DEV_IMAGE = "ghcr.io/OWNER/REPOSITORY:latest"
+docker pull ghcr.io/stonebridgeway/ai-dev-system:latest
+$env:AI_DEV_IMAGE = "ghcr.io/stonebridgeway/ai-dev-system:latest"
 $env:AI_DEV_PROJECT_PATH = "C:\Dev"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\docker\run-mcp.ps1
 ```
@@ -71,8 +72,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\docker\run-mcp.ps1
 macOS/Linux:
 
 ```bash
-docker pull ghcr.io/OWNER/REPOSITORY:latest
-export AI_DEV_IMAGE="ghcr.io/OWNER/REPOSITORY:latest"
+docker pull ghcr.io/stonebridgeway/ai-dev-system:latest
+export AI_DEV_IMAGE="ghcr.io/stonebridgeway/ai-dev-system:latest"
 export AI_DEV_PROJECT_PATH="$HOME/Dev"
 sh ./docker/run-mcp.sh
 ```
@@ -138,7 +139,7 @@ Windows-вариант с явным проектным каталогом:
         "C:\\ABSOLUTE\\PATH\\docker\\run-mcp.ps1"
       ],
       "env": {
-        "AI_DEV_IMAGE": "ai-dev-system:local",
+        "AI_DEV_IMAGE": "ghcr.io/stonebridgeway/ai-dev-system:latest",
         "AI_DEV_PROJECT_PATH": "C:\\Dev"
       }
     }
@@ -157,7 +158,7 @@ macOS/Linux:
         "/absolute/path/docker/run-mcp.sh"
       ],
       "env": {
-        "AI_DEV_IMAGE": "ai-dev-system:local",
+        "AI_DEV_IMAGE": "ghcr.io/stonebridgeway/ai-dev-system:latest",
         "AI_DEV_PROJECT_PATH": "/home/user/Dev"
       }
     }
@@ -173,7 +174,7 @@ macOS/Linux:
 [mcp_servers.ai-dev]
 command = "powershell.exe"
 args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\ABSOLUTE\\PATH\\docker\\run-mcp.ps1"]
-env = { AI_DEV_IMAGE = "ai-dev-system:local", AI_DEV_PROJECT_PATH = "C:\\Dev" }
+env = { AI_DEV_IMAGE = "ghcr.io/stonebridgeway/ai-dev-system:latest", AI_DEV_PROJECT_PATH = "C:\\Dev" }
 startup_timeout_sec = 120
 tool_timeout_sec = 3600
 ```

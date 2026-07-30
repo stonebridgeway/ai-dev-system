@@ -1,0 +1,46 @@
+pkgname=ai-dev-system-git
+pkgver=1.0.0.r0.g07d5db2
+pkgrel=1
+pkgdesc="Local-first MCP development system for AI agents"
+arch=('x86_64' 'aarch64')
+url="https://github.com/stonebridgeway/ai-dev-system"
+license=('MIT')
+depends=('docker')
+makedepends=('git')
+optdepends=(
+  'docker-compose: Docker Compose workflows'
+  'visual-studio-code-bin: VS Code MCP client'
+)
+provides=('ai-dev-system')
+conflicts=('ai-dev-system')
+source=('ai-dev-system::git+https://github.com/stonebridgeway/ai-dev-system.git#branch=main')
+sha256sums=('SKIP')
+
+pkgver() {
+  cd ai-dev-system
+  git describe --long --tags --abbrev=7 2>/dev/null \
+    | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' \
+    || printf '1.0.0.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+package() {
+  local root="${pkgdir}/usr/share/ai-dev-system"
+  cd ai-dev-system
+
+  install -d "$root" "${pkgdir}/usr/bin"
+  cp -a \
+    ai-dev-mcp-server \
+    docker \
+    embeddings \
+    frontend-qa \
+    search-eval \
+    search-index \
+    bootstrap.sh \
+    LICENSE \
+    THIRD_PARTY_NOTICES.md \
+    "$root/"
+
+  sed "s|@AI_DEV_SYSTEM_ROOT@|/usr/share/ai-dev-system|g" \
+    packaging/launcher.sh > "${pkgdir}/usr/bin/ai-dev-system"
+  chmod 755 "${pkgdir}/usr/bin/ai-dev-system"
+}

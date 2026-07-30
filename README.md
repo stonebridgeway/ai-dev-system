@@ -22,7 +22,7 @@ MCP-сервера.
 
 Для Docker-варианта:
 
-- Docker Desktop (Windows/macOS) или Docker Engine с Compose v2 (Linux);
+- Docker Desktop (Windows/macOS) или Docker Engine (Linux); bootstrap может установить его;
 - Docker должен иметь доступ к выбранной папке с проектами.
 
 Для запуска из исходников дополнительно нужны Node.js 24 и npm. На Windows можно использовать
@@ -37,8 +37,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1
 ```
 
 Скрипт сам создаёт изолированную папку `AI-Dev-Projects` в домашнем каталоге, устанавливает
-Docker Desktop и Node.js 24 LTS через `winget`, если их нет, готовит и проверяет Docker-образ,
-а затем добавляет локальный MCP-сервер `ai-dev` в Codex, Cursor, Gemini, VS Code и Claude.
+Docker Desktop и Node.js 24 LTS через `winget`, если их нет, скачивает опубликованный образ,
+проверяет MCP и добавляет локальный сервер `ai-dev` в Codex, Cursor, Gemini, VS Code и Claude.
 Для Windows он также устанавливает копию только лаунчера в
 `C:\ProgramData\AI-Dev-System\run-mcp.ps1`: это исключает проблемы кодировки, когда путь к
 клону содержит кириллицу. В эту папку не копируются проекты, Vault, токены или пароли.
@@ -62,15 +62,33 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1 `
 
 ## Один запуск на macOS и Linux
 
-После `git clone` в корне репозитория выполните:
+Если Docker уже установлен и запущен:
 
 ```bash
 sh ./bootstrap.sh
 ```
 
-Скрипт не требует Node.js на хосте: для подготовки Docker context и настройки MCP он использует
-временный `node:24` контейнер. По умолчанию рабочая папка создаётся как `~/AI-Dev-Projects`.
-Она монтируется в MCP-контейнер как `/workspace`.
+Если Docker ещё не установлен, одна команда выбирается по системе:
+
+| Система | Команда после `git clone` |
+| --- | --- |
+| macOS | `sh ./bootstrap.sh --install-prerequisites` |
+| Debian / Ubuntu | `sh ./bootstrap.sh --install-prerequisites` |
+| Fedora | `sh ./bootstrap.sh --install-prerequisites` |
+| Arch Linux / Manjaro | `sh ./bootstrap.sh --install-prerequisites` |
+
+На macOS скрипт использует Homebrew: при необходимости устанавливает Homebrew официальным
+инсталлятором, затем выполняет `brew install --cask docker`, запускает Docker Desktop и ждёт
+готовности engine. Первый запуск Docker Desktop может потребовать принятия лицензии и подтверждения
+привилегированных настроек в окне приложения.
+
+На Linux используются `apt`, `dnf` или `pacman`, включается сервис Docker и текущий пользователь
+добавляется в группу `docker`. После этого нужно выйти и войти в систему, затем повторить команду.
+
+Bootstrap не требует Node.js на хосте: для настройки MCP-клиентов он использует временный
+`node:24` контейнер. По умолчанию скачивается
+`ghcr.io/stonebridgeway/ai-dev-system:latest`, а рабочая папка создаётся как
+`~/AI-Dev-Projects` и монтируется в контейнер как `/workspace`.
 
 Чтобы Claude Desktop и другие клиенты не обрывали медленный холодный запуск Docker, bootstrap
 создаёт служебный контейнер `ai-dev-system-runtime-$(id -u)`. Он работает без сети, с
@@ -78,12 +96,6 @@ read-only filesystem, без Linux capabilities и с `no-new-privileges`; до�
 к named volume системы и выбранной папке проектов. Сам MCP-процесс запускается через быстрый
 `docker exec`, а launcher немедленно завершает протокольную инициализацию. Контейнер автоматически
 поднимается после перезапуска Docker благодаря `restart=unless-stopped`.
-
-На macOS предварительно установите и запустите Docker Desktop. На Linux при отсутствии Docker
-можно выполнить `sh ./bootstrap.sh --install-prerequisites`: скрипт использует `sudo` и
-поддерживает `apt`, `dnf` и `pacman`. После добавления пользователя в группу `docker` потребуется
-выйти и войти в систему, затем повторить команду. Это единственный случай, когда нужны права
-администратора.
 
 Для другой папки проектов и части клиентов:
 
@@ -98,15 +110,18 @@ Named volume, индексы, база знаний и файлы проекто
 docker ps --filter "label=ai-dev.system.runtime=true"
 ```
 
+Для разработки самого образа используйте явный локальный режим:
+
+```bash
+sh ./bootstrap.sh --build-local
+```
+
 ## Быстрый старт: Docker
 
 ### 1. Получите образ
 
-После первой публикации команды замените `OWNER/REPOSITORY` на GitHub owner и название
-репозитория:
-
 ```powershell
-docker pull ghcr.io/OWNER/REPOSITORY:latest
+docker pull ghcr.io/stonebridgeway/ai-dev-system:latest
 ```
 
 Либо соберите образ из клона репозитория:
@@ -136,7 +151,7 @@ npm run docker:smoke -- --image ai-dev-system:local
 Windows:
 
 ```powershell
-$env:AI_DEV_IMAGE = "ai-dev-system:local"
+$env:AI_DEV_IMAGE = "ghcr.io/stonebridgeway/ai-dev-system:latest"
 $env:AI_DEV_PROJECT_PATH = "C:\\Dev"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\docker\\run-mcp.ps1
 ```
@@ -144,7 +159,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\docker\\run-mcp.ps1
 macOS/Linux:
 
 ```bash
-export AI_DEV_IMAGE="ai-dev-system:local"
+export AI_DEV_IMAGE="ghcr.io/stonebridgeway/ai-dev-system:latest"
 export AI_DEV_PROJECT_PATH="$HOME/Dev"
 sh ./docker/run-mcp.sh
 ```
@@ -165,7 +180,7 @@ sh ./docker/run-mcp.sh
 [mcp_servers.ai-dev]
 command = "powershell.exe"
 args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\ABSOLUTE\\PATH\\docker\\run-mcp.ps1"]
-env = { AI_DEV_IMAGE = "ai-dev-system:local", AI_DEV_PROJECT_PATH = "C:\\Dev" }
+env = { AI_DEV_IMAGE = "ghcr.io/stonebridgeway/ai-dev-system:latest", AI_DEV_PROJECT_PATH = "C:\\Dev" }
 startup_timeout_sec = 120
 tool_timeout_sec = 3600
 ```
@@ -204,7 +219,7 @@ MCP-инструментов появился сервер `ai-dev`.
         "C:\\ABSOLUTE\\PATH\\docker\\run-mcp.ps1"
       ],
       "env": {
-        "AI_DEV_IMAGE": "ai-dev-system:local",
+        "AI_DEV_IMAGE": "ghcr.io/stonebridgeway/ai-dev-system:latest",
         "AI_DEV_PROJECT_PATH": "C:\\Dev"
       }
     }
@@ -237,7 +252,7 @@ MCP-инструментов появился сервер `ai-dev`.
         "C:\\ABSOLUTE\\PATH\\docker\\run-mcp.ps1"
       ],
       "env": {
-        "AI_DEV_IMAGE": "ai-dev-system:local",
+        "AI_DEV_IMAGE": "ghcr.io/stonebridgeway/ai-dev-system:latest",
         "AI_DEV_PROJECT_PATH": "C:\\Dev"
       }
     }
@@ -312,9 +327,33 @@ Workflow [docker-publish.yml](.github/workflows/docker-publish.yml) провер
 
 1. Откройте package в GitHub и выберите видимость `private/internal` для команды или `public`.
 2. Убедитесь, что у коллег есть право читать GitHub Packages.
-3. Дайте коллегам адрес `ghcr.io/OWNER/REPOSITORY:latest` и этот README.
+3. Дайте коллегам адрес `ghcr.io/stonebridgeway/ai-dev-system:latest` и этот README.
 4. Каждый коллега указывает свою локальную папку проектов через `AI_DEV_PROJECT_PATH`; чужие
    файлы в образ и Git не попадают.
+
+## Arch/AUR и Homebrew
+
+Arch-пакет можно собрать из клона:
+
+```bash
+cd packaging/arch
+makepkg -si
+ai-dev-system --install-prerequisites
+```
+
+Имя пакета для будущей публикации в AUR: `ai-dev-system-git`. Сам GitHub-репозиторий не может
+публиковать в AUR без отдельного AUR-аккаунта и SSH-репозитория сопровождающего.
+
+На macOS доступна HEAD-формула:
+
+```bash
+brew install --HEAD --formula ./packaging/homebrew/ai-dev-system.rb
+ai-dev-system --install-prerequisites
+```
+
+Короткая команда через Homebrew tap потребует отдельного репозитория
+`stonebridgeway/homebrew-tap`. Подробности для сопровождающих находятся в
+[packaging/README.md](packaging/README.md).
 
 ## Проверка и диагностика
 

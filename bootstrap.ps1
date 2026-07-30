@@ -1,14 +1,18 @@
 [CmdletBinding()]
 param(
     [string]$ProjectPath = (Join-Path $HOME "AI-Dev-Projects"),
-    [string]$Image = "ai-dev-system:local",
+    [string]$Image = "ghcr.io/stonebridgeway/ai-dev-system:latest",
     [string]$Clients = "codex,cursor,gemini,vscode,claude",
+    [switch]$BuildLocal,
     [switch]$SkipSmoke,
     [switch]$SkipClientInstall,
     [switch]$Plan
 )
 
 $ErrorActionPreference = "Stop"
+if ($BuildLocal -and -not $PSBoundParameters.ContainsKey("Image")) {
+    $Image = "ai-dev-system:local"
+}
 $repoRoot = Split-Path -Parent $PSCommandPath
 $serverRoot = Join-Path $repoRoot "ai-dev-mcp-server"
 $launcher = Join-Path $repoRoot "docker\run-mcp.ps1"
@@ -137,6 +141,7 @@ if ($Plan) {
         repository = $repoRoot
         project_path = $resolvedProjectPath
         image = $Image
+        build_local = [bool]$BuildLocal
         clients = $Clients
         installs_prerequisites_when_missing = $true
         writes_only_local_client_config = $true
@@ -144,39 +149,64 @@ if ($Plan) {
     exit 0
 }
 
-$node = Ensure-Node
-$env:PATH = "$(Split-Path -Parent $node);$env:PATH"
 Ensure-Docker
-$npm = Get-NpmCommand $node
-
-New-Item -ItemType Directory -Path $resolvedProjectPath -Force | Out-Null
-Push-Location $serverRoot
-try {
-    Write-Host "Installing locked server dependencies..."
-    & $npm ci --ignore-scripts --no-audit --no-fund
-    if ($LASTEXITCODE -ne 0) { throw "npm ci failed (exit code $LASTEXITCODE)." }
-
-    Write-Host "Preparing and auditing the private-data-safe Docker context..."
-    & $npm run docker:prepare
-    if ($LASTEXITCODE -ne 0) { throw "Docker context preparation failed (exit code $LASTEXITCODE)." }
-    & $npm run docker:audit
-    if ($LASTEXITCODE -ne 0) { throw "Docker privacy audit failed (exit code $LASTEXITCODE)." }
-} finally {
-    Pop-Location
+$node = $null
+$npm = $null
+if ($BuildLocal -or -not $SkipClientInstall) {
+    $node = Ensure-Node
+    $env:PATH = "$(Split-Path -Parent $node);$env:PATH"
+}
+if ($BuildLocal) {
+    $npm = Get-NpmCommand $node
 }
 
-Write-Host "Building $Image..."
-& docker build --tag $Image (Join-Path $repoRoot ".docker\build-context")
-if ($LASTEXITCODE -ne 0) { throw "Docker image build failed (exit code $LASTEXITCODE)." }
-
-if (-not $SkipSmoke) {
+New-Item -ItemType Directory -Path $resolvedProjectPath -Force | Out-Null
+if ($BuildLocal) {
     Push-Location $serverRoot
     try {
-        Write-Host "Running MCP smoke test..."
-        & $npm run docker:smoke -- --image $Image
-        if ($LASTEXITCODE -ne 0) { throw "Docker MCP smoke test failed (exit code $LASTEXITCODE)." }
+        Write-Host "Installing locked server dependencies..."
+        & $npm ci --ignore-scripts --no-audit --no-fund
+        if ($LASTEXITCODE -ne 0) { throw "npm ci failed (exit code $LASTEXITCODE)." }
+
+        Write-Host "Preparing and auditing the private-data-safe Docker context..."
+        & $npm run docker:prepare
+        if ($LASTEXITCODE -ne 0) { throw "Docker context preparation failed (exit code $LASTEXITCODE)." }
+        & $npm run docker:audit
+        if ($LASTEXITCODE -ne 0) { throw "Docker privacy audit failed (exit code $LASTEXITCODE)." }
     } finally {
         Pop-Location
+    }
+
+    Write-Host "Building $Image..."
+    & docker build --tag $Image (Join-Path $repoRoot ".docker\build-context")
+    if ($LASTEXITCODE -ne 0) { throw "Docker image build failed (exit code $LASTEXITCODE)." }
+} else {
+    Write-Host "Pulling $Image..."
+    & docker pull $Image
+    if ($LASTEXITCODE -ne 0) {
+        & docker image inspect $Image *> $null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Warning "Registry pull failed; using the existing local image $Image."
+        } else {
+            throw "Could not pull $Image, and no cached copy exists."
+        }
+    }
+}
+
+if (-not $SkipSmoke) {
+    Write-Host "Running MCP smoke test..."
+    $init = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ai-dev-bootstrap","version":"1"}}}'
+    $response = $init | & docker run --rm -i `
+        --read-only `
+        --tmpfs /tmp:rw,exec,nosuid,size=512m `
+        --tmpfs /data:rw,nosuid,size=512m,uid=1000,gid=1000,mode=0700 `
+        --shm-size 1g `
+        --network none `
+        --security-opt no-new-privileges:true `
+        --cap-drop ALL `
+        $Image
+    if ($LASTEXITCODE -ne 0 -or ($response -join "`n") -notmatch '"serverInfo"') {
+        throw "Docker MCP smoke test failed."
     }
 }
 

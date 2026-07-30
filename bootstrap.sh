@@ -2,11 +2,13 @@
 set -eu
 
 project_path="${HOME}/AI-Dev-Projects"
-image="ai-dev-system:local"
+image="${AI_DEV_IMAGE:-ghcr.io/stonebridgeway/ai-dev-system:latest}"
+image_set=0
 clients="codex,cursor,gemini,vscode,claude"
 skip_smoke=0
 skip_client_install=0
 install_prerequisites=0
+build_local=0
 plan=0
 node_image="${AI_DEV_BOOTSTRAP_NODE_IMAGE:-node:24-bookworm-slim}"
 data_volume="${AI_DEV_DATA_VOLUME:-ai-dev-system-data}"
@@ -17,9 +19,10 @@ Usage: sh ./bootstrap.sh [options]
 
 Options:
   --project-path PATH       Folder to mount as /workspace.
-  --image NAME              Docker image tag (default: ai-dev-system:local).
+  --image NAME              Docker image tag (default: published GHCR latest).
   --clients LIST            Comma-separated: codex,cursor,gemini,vscode,claude.
-  --install-prerequisites   Install Docker Engine on supported Linux package managers.
+  --install-prerequisites   Install Docker with Homebrew, apt, dnf, or pacman.
+  --build-local             Build ai-dev-system:local from this checkout.
   --skip-smoke              Skip the final MCP stdio negotiation check.
   --skip-client-install     Do not modify local AI-client configuration files.
   --plan                    Print the local plan without installing or building.
@@ -29,9 +32,10 @@ EOF
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --project-path) project_path="$2"; shift 2 ;;
-    --image) image="$2"; shift 2 ;;
+    --image) image="$2"; image_set=1; shift 2 ;;
     --clients) clients="$2"; shift 2 ;;
     --install-prerequisites) install_prerequisites=1; shift ;;
+    --build-local) build_local=1; shift ;;
     --skip-smoke) skip_smoke=1; shift ;;
     --skip-client-install) skip_client_install=1; shift ;;
     --plan) plan=1; shift ;;
@@ -39,6 +43,10 @@ while [ "$#" -gt 0 ]; do
     *) printf '%s\n' "Unknown argument: $1" >&2; usage >&2; exit 64 ;;
   esac
 done
+
+if [ "$build_local" -eq 1 ] && [ "$image_set" -eq 0 ]; then
+  image="ai-dev-system:local"
+fi
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 server_root="${repo_root}/ai-dev-mcp-server"
@@ -51,11 +59,62 @@ if [ ! -f "${server_root}/package.json" ] || [ ! -f "${launcher}" ]; then
   exit 66
 fi
 
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
 if [ "$plan" -eq 1 ]; then
-  printf '{"repository":"%s","project_path":"%s","image":"%s","clients":"%s","runtime_container":"%s","data_volume":"%s","node_on_host_required":false}\n' \
-    "$repo_root" "$project_path" "$image" "$clients" "$runtime_container" "$data_volume"
+  plan_repo=$(json_escape "$repo_root")
+  plan_project=$(json_escape "$project_path")
+  plan_image=$(json_escape "$image")
+  plan_clients=$(json_escape "$clients")
+  plan_runtime=$(json_escape "$runtime_container")
+  plan_volume=$(json_escape "$data_volume")
+  printf '{"repository":"%s","project_path":"%s","image":"%s","clients":"%s","runtime_container":"%s","data_volume":"%s","build_local":%s,"node_on_host_required":false}\n' \
+    "$plan_repo" "$plan_project" "$plan_image" "$plan_clients" "$plan_runtime" "$plan_volume" "$build_local"
   exit 0
 fi
+
+ensure_homebrew() {
+  if command -v brew >/dev/null 2>&1; then
+    return
+  fi
+  if [ "$install_prerequisites" -ne 1 ]; then
+    printf '%s\n' "Homebrew or Docker Desktop is required on macOS. Re-run with --install-prerequisites, or install Docker Desktop manually." >&2
+    exit 69
+  fi
+  if ! command -v curl >/dev/null 2>&1; then
+    printf '%s\n' "curl is required to install Homebrew from its official installer." >&2
+    exit 69
+  fi
+  printf '%s\n' "Installing Homebrew from https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh ..."
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  for brew_path in /opt/homebrew/bin /usr/local/bin; do
+    if [ -x "${brew_path}/brew" ]; then
+      PATH="${brew_path}:${PATH}"
+      export PATH
+      break
+    fi
+  done
+  if ! command -v brew >/dev/null 2>&1; then
+    printf '%s\n' "Homebrew was installed but is not available in this shell. Open a new terminal and run bootstrap.sh again." >&2
+    exit 69
+  fi
+}
+
+install_docker_macos() {
+  if [ "$install_prerequisites" -ne 1 ]; then
+    printf '%s\n' "Docker Desktop is required on macOS. Re-run with --install-prerequisites, or install and start Docker Desktop manually." >&2
+    exit 69
+  fi
+  ensure_homebrew
+  printf '%s\n' "Installing Docker Desktop through Homebrew..."
+  brew install --cask docker
+  if [ -d "/Applications/Docker.app/Contents/Resources/bin" ]; then
+    PATH="/Applications/Docker.app/Contents/Resources/bin:${PATH}"
+    export PATH
+  fi
+}
 
 install_docker_linux() {
   if [ "$install_prerequisites" -ne 1 ]; then
@@ -84,10 +143,14 @@ install_docker_linux() {
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
     if [ "$platform" = "Darwin" ]; then
-      printf '%s\n' "Docker Desktop is required on macOS. Install and start it, then run bootstrap.sh again." >&2
-      exit 69
+      install_docker_macos
+    else
+      install_docker_linux
     fi
-    install_docker_linux
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    printf '%s\n' "Docker was installed but its CLI is not available in this shell. Open a new terminal and run bootstrap.sh again." >&2
+    exit 69
   fi
   if docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
     return
@@ -122,11 +185,22 @@ run_node() {
     "$node_image" "$@"
 }
 
-printf '%s\n' "Preparing the checked Docker context with temporary Node.js 24..."
-run_node sh -lc 'npm ci --ignore-scripts --no-audit --no-fund --cache /tmp/npm-cache && node scripts/prepare-docker-context.mjs && node scripts/audit-docker-context.mjs'
-
-printf '%s\n' "Building ${image}..."
-docker build --tag "$image" "${repo_root}/.docker/build-context"
+if [ "$build_local" -eq 1 ]; then
+  printf '%s\n' "Preparing the checked Docker context with temporary Node.js 24..."
+  run_node sh -lc 'node scripts/prepare-docker-context.mjs && node scripts/audit-docker-context.mjs'
+  printf '%s\n' "Building ${image}..."
+  docker build --tag "$image" "${repo_root}/.docker/build-context"
+else
+  printf '%s\n' "Pulling ${image}..."
+  if ! docker pull "$image"; then
+    if docker image inspect "$image" >/dev/null 2>&1; then
+      printf '%s\n' "Registry pull failed; using the existing local image ${image}." >&2
+    else
+      printf '%s\n' "Could not pull ${image}, and no cached copy exists." >&2
+      exit 69
+    fi
+  fi
+fi
 
 existing_runtime=$(docker ps -a --filter "name=^/${runtime_container}$" --format '{{.ID}}')
 if [ -n "$existing_runtime" ]; then
@@ -179,7 +253,7 @@ if [ "$skip_client_install" -ne 1 ]; then
   printf '%s\n' "Installing local MCP client configurations..."
   docker run --rm --network none \
     --user "${uid}:${gid}" \
-    --mount "type=bind,source=${repo_root},target=${repo_root}" \
+    --mount "type=bind,source=${repo_root},target=${repo_root},readonly" \
     --mount "type=bind,source=${HOME},target=${HOME}" \
     --workdir "$server_root" \
     "$node_image" node scripts/install-docker-mcp-clients.mjs \

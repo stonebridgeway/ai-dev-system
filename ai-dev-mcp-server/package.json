@@ -21,6 +21,7 @@
     "docker:build": "node scripts/prepare-docker-context.mjs && docker build --tag ai-dev-system:local ../.docker/build-context",
     "docker:smoke": "node scripts/docker-smoke.mjs",
     "unix:launcher-smoke": "node scripts/unix-launcher-smoke.mjs",
+    "packaging:check": "node scripts/validate-packaging.mjs",
     "clients:install": "node scripts/install-local-mcp-clients.mjs --apply",
     "start:legacy": "node src/mcp-stdio.mjs",
     "test": "node --test",
