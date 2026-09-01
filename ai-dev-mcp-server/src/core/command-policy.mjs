@@ -32,6 +32,14 @@ function executableName(executable) {
   return path.basename(executable).toLowerCase();
 }
 
+/**
+ * Split a command string into argv tokens while rejecting anything that implies
+ * a shell: operators (`; | & > < \``), `$(...)`/`${...}` interpolation, control
+ * characters, newlines, and unclosed quotes. Throws {@link CommandPolicyError}.
+ *
+ * @param {string} command - Raw command line.
+ * @returns {string[]} Non-empty argv token list (`tokens[0]` is the executable).
+ */
 export function tokenizeCommand(command) {
   if (typeof command !== "string" || command.trim() === "") {
     throw new CommandPolicyError("Command must be a non-empty string.");
@@ -165,6 +173,17 @@ function directTool(tokens, purpose) {
   throw new CommandPolicyError(`Executable '${name}' is not approved for quality gates.`);
 }
 
+/**
+ * Parse and allowlist a command for a specific purpose. Only named package
+ * scripts (npm/pnpm/yarn/bun), a small set of verification tools (pytest, ruff,
+ * mypy, eslint, tsc, `node --test/--check`, cargo/go/dotnet subcommands, …), and
+ * whitelisted Python verification scripts are permitted; shells, `npx`, and
+ * network fetchers are always rejected. Throws {@link CommandPolicyError}.
+ *
+ * @param {string} command - Raw command line.
+ * @param {{ purpose?: "quality" | "development" }} [options] - Intended use.
+ * @returns {{ executable: string, args: string[], display: string, purpose: string, kind: string, script?: string, adapter?: string, projectFile?: string }}
+ */
 export function parseSafeCommand(command, { purpose = "quality" } = {}) {
   if (!["quality", "development"].includes(purpose)) {
     throw new CommandPolicyError(`Unknown command purpose: ${purpose}`);
@@ -199,6 +218,14 @@ export function parseSafeCommand(command, { purpose = "quality" } = {}) {
   };
 }
 
+/**
+ * Guard that an absolute executable path lives inside `projectRoot` (relative
+ * executables pass through untouched). Throws {@link CommandPolicyError}.
+ *
+ * @param {{ executable: string }} parsed - Result of {@link parseSafeCommand}.
+ * @param {string} projectRoot - Directory the executable must be under.
+ * @returns {typeof parsed} The same object, on success.
+ */
 export function validateProjectExecutable(parsed, projectRoot) {
   if (!path.isAbsolute(parsed.executable)) return parsed;
   const relative = path.relative(path.resolve(projectRoot), path.resolve(parsed.executable));
@@ -211,6 +238,14 @@ export function validateProjectExecutable(parsed, projectRoot) {
   return parsed;
 }
 
+/**
+ * Classify why a command is risky (file deletion, `git reset --hard`, dependency
+ * mutation, deploy/migrate, system mutation, shell interpreter, …) for
+ * confirmation prompts. Never throws.
+ *
+ * @param {string} command - Raw command line.
+ * @returns {string} Short risk reason, or `""` when nothing risky was detected.
+ */
 export function commandRiskReason(command) {
   let tokens;
   try {

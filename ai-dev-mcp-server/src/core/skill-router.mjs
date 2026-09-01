@@ -10,12 +10,26 @@ function normalized(value) {
 const FRONTEND_PRODUCT_PATTERN = /(frontend product|product interface|design[- ]first|anti[- ]?slop|visual direction|design system|landing page|(?:build|create|implement|design|redesign|improve|upgrade).{0,48}(?:front.?end|ui\b|ux\b|interface|landing|website|page)|\u0438\u0438[- ]?\u0441\u043b\u043e\u043f|\u0441\u0434\u0435\u043b\u0430\u0439.{0,48}(?:\u0434\u0438\u0437\u0430\u0439\u043d|\u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441|\u0441\u0430\u0439\u0442|\u043b\u0435\u043d\u0434\u0438\u043d\u0433)|(?:\u0441\u043e\u0437\u0434\u0430\u0439|\u0441\u043e\u0437\u0434\u0430\u0442\u044c|\u0440\u0430\u0437\u0440\u0430\u0431\u043e\u0442\u0430\u0439|\u0441\u0432\u0435\u0440\u0441\u0442\u0430\u0439).{0,48}(?:\u0434\u0438\u0437\u0430\u0439\u043d|\u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441|\u0444\u0440\u043e\u043d\u0442\u0435\u043d\u0434|\u0441\u0430\u0439\u0442|\u043b\u0435\u043d\u0434\u0438\u043d\u0433)|\u0443\u043b\u0443\u0447\u0448\u0438.{0,48}(?:\u0434\u0438\u0437\u0430\u0439\u043d|\u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441|\u0444\u0440\u043e\u043d\u0442\u0435\u043d\u0434)|\u0440\u0435\u0434\u0438\u0437\u0430\u0439\u043d)/i;
 const FRONTEND_REFERENCE_PATTERN = /(reference factory|generate.{0,32}(?:frontend|visual|design|interface|website).{0,24}reference|create.{0,32}(?:visual|interface).{0,24}reference|no reference|without reference|\u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0441\u043e\u0437\u0434\u0430\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0441\u0434\u0435\u043b\u0430\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441[^\n]{0,24}\u043d\u0435\u0442)/i;
 
+/**
+ * True when the task text (RU/EN) implies frontend-product or design-first work
+ * that must go through the visual-direction workflow.
+ *
+ * @param {string} value - Task or request text.
+ * @returns {boolean}
+ */
 export function taskRequiresFrontendProductWorkflow(value) {
   const valueNormalized = normalized(value);
   return FRONTEND_PRODUCT_PATTERN.test(valueNormalized) ||
     FRONTEND_REFERENCE_PATTERN.test(valueNormalized);
 }
 
+/**
+ * True when the task text implies there is no external visual reference and the
+ * Reference Factory must generate one.
+ *
+ * @param {string} value - Task or request text.
+ * @returns {boolean}
+ */
 export function taskRequiresGeneratedFrontendReferences(value) {
   return FRONTEND_REFERENCE_PATTERN.test(normalized(value));
 }
@@ -130,6 +144,15 @@ function workflowFor(text) {
   return { name: "feature-builder", role: "workflow", reason: "scoped implementation workflow" };
 }
 
+/**
+ * Deterministically route a task to at most three skills — one workflow, plus
+ * domain and verification skills chosen from priority-ordered keyword rules and
+ * the project's own type/stack. Reference-factory tasks short-circuit to the
+ * design-first triple.
+ *
+ * @param {{ task: string, projectTypes?: string[], stack?: string[], maxSkills?: number }} input
+ * @returns {{ normalized_intent: string, matched_rules: string[], skills: Array<{ name: string, source: string, role: string, reason: string, rule: string }> }}
+ */
 export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3 }) {
   const text = normalized([task, ...projectTypes, ...stack].join(" "));
   const selected = [];
@@ -205,6 +228,16 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
   };
 }
 
+/**
+ * Merge routed skills into a scored recommendation list: routed entries come
+ * first (keeping registry metadata when found, otherwise synthesised as a
+ * high-score custom skill) and the result is capped at `maxSkills` (≤ 3).
+ *
+ * @param {Array<{ name: string }>} recommendations - Registry recommendations.
+ * @param {{ skills: Array<{ name: string, role: string, rule: string, reason: string }> }} route - Result of {@link routeSkills}.
+ * @param {number} [maxSkills=3]
+ * @returns {Array<object>}
+ */
 export function prioritizeRoutedRecommendations(recommendations, route, maxSkills = 3) {
   const byName = new Map(recommendations.map((item) => [item.name, item]));
   const output = [];

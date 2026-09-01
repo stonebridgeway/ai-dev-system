@@ -117,6 +117,15 @@ function normalizeDimensions(dimensions) {
   return PILOT_DIMENSIONS.map((name) => byName.get(name));
 }
 
+/**
+ * Validate a human pilot review and return its canonical record: verdict enum,
+ * bounded `revision_count` / `duration_minutes`, a reviewer that must be
+ * independent from the implementer, and scored dimensions (an `accepted`
+ * verdict cannot carry a failing dimension). Throws on any violation.
+ *
+ * @param {{ verdict: string, revision_count: number, duration_minutes: number, reviewer: object, dimensions: object[], notes?: string }} input
+ * @returns {{ at: string, verdict: string, reviewer: object, revision_count: number, duration_minutes: number, first_pass_accepted: boolean, dimensions: object[], notes: string }}
+ */
 export function validatePilotReview(input) {
   const verdict = String(input.verdict || "").trim();
   if (!["accepted", "needs_revision", "rejected"].includes(verdict)) {

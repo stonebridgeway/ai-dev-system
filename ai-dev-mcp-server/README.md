@@ -1,29 +1,50 @@
 # AI Dev MCP Server
 
-Local, offline-first MCP server for the Obsidian-based AI Dev System. It gives Codex and Claude
-bounded project context, deterministic skill routing, controlled repository setup, hybrid search,
-verification, and evidence-bound task completion.
+Local, offline-first MCP server for the Obsidian-based AI Dev System. It gives any MCP-capable
+coding agent (Claude Code / Desktop, Cursor, VS Code, Gemini, Codex, …) bounded project context,
+deterministic skill routing, controlled repository setup, hybrid search, verification, and
+evidence-bound task completion.
 
 ## Runtime
 
 - `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.29.0`.
-- `src/mcp-stdio.mjs`: composed domain-service facade plus the rollback transport entry point.
+- `src/mcp-stdio-legacy.mjs`: single source of truth for tool dispatch (`callTool`), the
+  `tools` contract list, and the hand-rolled JSON-RPC fallback server (`start:legacy`).
+- `src/mcp-stdio.mjs`: thin compatibility shim that re-exports the legacy module for
+  `server.mjs`, the scripts, and the tests.
 - `src/tool-definitions.mjs`: typed MCP tool contracts, separated from runtime dispatch.
 - `src/core/`: path, command, process, project identity, context, task, routing, outcome, dashboard,
   overlay, frontend-quality, and distribution modules.
-- Node.js: 24.x from the bundled Codex runtime.
-- State: `%USERPROFILE%\.codex\state\ai-dev-system`.
-- Search cache: `%USERPROFILE%\.codex\cache\ai-dev-system\search-index`.
-- Frontend artifacts: `%USERPROFILE%\.codex\artifacts\frontend-qa`.
+- Node.js: 24+ on `PATH` (any distribution). No agent-specific runtime is required.
+- Regenerable runtime data lives under the **AI Dev home** — `AI_DEV_HOME`, default `~/.ai-dev`:
+  - `~/.ai-dev/state` — task lifecycle, skill outcomes, pilots (override: `AI_DEV_STATE_ROOT`)
+  - `~/.ai-dev/cache/search-index` — SQLite + dense index (override: `AI_DEV_SEARCH_INDEX_DIR`)
+  - `~/.ai-dev/artifacts/frontend-qa` — QA screenshots (override: `AI_DEV_FRONTEND_QA_ARTIFACT_ROOT`)
+  - `~/.ai-dev/models/bge-m3` — embedding model (override: `BGE_M3_MODEL_DIR`)
+  - A pre-existing `~/.codex/<...>` layout is used automatically if the `~/.ai-dev` path is absent,
+    so installs migrated from the Codex-only runtime keep their history.
 
 Start:
 
-```powershell
-& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" src\server.mjs
+```bash
+AI_DEV_VAULT_ROOT="/path/to/vault" node src/server.mjs
 ```
 
 The server negotiates MCP over stdio and exposes structured tool results, Resources, resource
-templates, Prompts, progress notifications, and tool annotations.
+templates, Prompts, progress notifications, and tool annotations. Any stdio MCP client works —
+Claude Code / Desktop, Cursor, VS Code, Gemini, Codex. Minimal client entry:
+
+```jsonc
+{
+  "mcpServers": {
+    "ai-dev-system": {
+      "command": "node",
+      "args": ["/path/to/vault/09-mcp/ai-dev-mcp-server/src/server.mjs"],
+      "env": { "AI_DEV_VAULT_ROOT": "/path/to/vault" }
+    }
+  }
+}
+```
 
 ## Main Workflow
 
@@ -237,27 +258,25 @@ See `docs/SECURITY.md`.
 
 Pinned dependencies:
 
-```powershell
-$node = "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-$npm = "$env:USERPROFILE\.codex\runtimes\npm-11.6.2\node_modules\npm\bin\npm-cli.js"
-& $node $npm ci --ignore-scripts --no-audit --no-fund
+```bash
+npm ci --ignore-scripts --no-audit --no-fund
 ```
 
-Or restore both MCP and Frontend QA runtimes:
-
-```powershell
-..\scripts\restore-runtime.ps1
-```
+Or restore both MCP and Frontend QA runtimes (`../scripts/restore-runtime.ps1`) — it prefers
+`node` / `npm` / `pnpm` on `PATH` and falls back to a bundled Codex runtime only if one is present.
 
 Environment overrides:
 
 ```text
-AI_DEV_VAULT_ROOT
-AI_DEV_STATE_ROOT
-AI_DEV_RUNTIME_CONFIG
-AI_DEV_PYTHON
-BGE_M3_MODEL_DIR
-BGE_M3_DEVICE
+AI_DEV_VAULT_ROOT   absolute path to the Obsidian vault (required outside the repo)
+AI_DEV_HOME         runtime-data root (default ~/.ai-dev)
+AI_DEV_STATE_ROOT   task/outcome/pilot state (default $AI_DEV_HOME/state)
+AI_DEV_SEARCH_INDEX_DIR   search index dir (default $AI_DEV_HOME/cache/search-index)
+AI_DEV_FRONTEND_QA_ARTIFACT_ROOT   QA artifacts (default $AI_DEV_HOME/artifacts/frontend-qa)
+AI_DEV_RUNTIME_CONFIG   path to a runtime profile JSON
+AI_DEV_PYTHON       python interpreter (default: python3 on PATH)
+BGE_M3_MODEL_DIR    embedding model dir (default $AI_DEV_HOME/models/bge-m3)
+BGE_M3_DEVICE       cpu | cuda
 ```
 
 ## Docker
@@ -266,11 +285,10 @@ The repository ships a local-only, non-root Docker runtime with Chromium, Python
 public skill seed, persistent local state, and no network listener. It is built from a generated
 allowlist context rather than from the Vault or repository root.
 
-```powershell
-$node = "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-& $node scripts\prepare-docker-context.mjs
-docker build --tag ai-dev-system:local ..\.docker\build-context
-& $node scripts\docker-smoke.mjs --image ai-dev-system:local
+```bash
+node scripts/prepare-docker-context.mjs
+docker build --tag ai-dev-system:local ../.docker/build-context
+node scripts/docker-smoke.mjs --image ai-dev-system:local
 ```
 
 Passwords, project contexts, task history, indexes, models, caches, logs, backups, `.codex`,
@@ -298,27 +316,27 @@ Python search-index tests, coverage thresholds, static modularity checks, and lo
 
 ## Local Operations
 
-```powershell
-.\scripts\start-local.ps1
-& $node scripts\ai-dev.mjs doctor
-& $node scripts\ai-dev.mjs dashboard
-& $node scripts\ai-dev.mjs reindex
-& $node scripts\ai-dev.mjs refresh --full
-& $node scripts\ai-dev.mjs distribution
+```bash
+./scripts/start-local.ps1   # or: node src/server.mjs
+node scripts/ai-dev.mjs doctor
+node scripts/ai-dev.mjs dashboard
+node scripts/ai-dev.mjs reindex
+node scripts/ai-dev.mjs refresh --full
+node scripts/ai-dev.mjs distribution
 ```
 
 Install or refresh the same local stdio server for Cursor, Gemini Code Assist, native VS Code MCP,
 and Claude Code. Existing JSON files are merged and backed up before they are changed:
 
-```powershell
-& $node scripts\install-local-mcp-clients.mjs
-& $node scripts\install-local-mcp-clients.mjs --apply
+```bash
+node scripts/install-local-mcp-clients.mjs           # dry run
+node scripts/install-local-mcp-clients.mjs --apply
 ```
 
-The first command is a dry run. Client configurations point to the stable
-`%USERPROFILE%\.codex\links\ai-dev-system` junction and the local bundled runtimes. Restart or reload
-each client after installation. Any model selected inside an MCP-capable client can use the same
-tools; a raw model endpoint still needs an MCP-capable host.
+Client configurations point to this repository's `src/server.mjs` (set `AI_DEV_VAULT_ROOT` to
+override the vault root) and to `node` / `python3` on `PATH`. Restart or reload each client after
+installation. Any model selected inside an MCP-capable client can use the same tools; a raw model
+endpoint still needs an MCP-capable host.
 
 The shipped runtime profile is local stdio. A future remote profile is configuration scaffolding,
 not an enabled network server: remote mode remains blocked until TLS, authentication, allowlists,

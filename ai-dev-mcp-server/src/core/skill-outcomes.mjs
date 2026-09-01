@@ -45,6 +45,13 @@ function checkStatus(check) {
   return check.result?.status || check.result?.gate || "unknown";
 }
 
+/**
+ * Bucket a verification result as `"none"` (passed), `"infrastructure"` (checks
+ * could not run), `"policy"` (blocked), or `"product"` (genuine failure).
+ *
+ * @param {{ passed?: boolean, checks?: Array<{ result?: { status?: string, gate?: string } }> }} verification
+ * @returns {"none" | "infrastructure" | "policy" | "product"}
+ */
 export function classifyVerificationFailure(verification) {
   if (verification?.passed) return "none";
   const statuses = (verification?.checks || []).map(checkStatus);
@@ -75,6 +82,16 @@ function normalizeTerminalOutcomes(outcomes) {
   return [...byTask.values()];
 }
 
+/**
+ * Aggregate terminal task outcomes per custom skill: attempts, pass rate,
+ * distinct projects, human-review counts and average score, and an
+ * `empirical_status` of `pass` / `observed` / `not-measured` against the given
+ * thresholds. Only the latest non-synthetic terminal outcome per task counts.
+ *
+ * @param {object[]} outcomes - Raw stored outcome records.
+ * @param {{ minimumAttempts?: number, minimumProjects?: number, minimumPassRate?: number, minimumHumanReviews?: number }} [thresholds]
+ * @returns {Record<string, object>} Map of skill name → summary.
+ */
 export function summarizeSkillOutcomes(outcomes, {
   minimumAttempts = 3,
   minimumProjects = 2,
@@ -148,6 +165,15 @@ export function summarizeSkillOutcomes(outcomes, {
   return summaries;
 }
 
+/**
+ * Fold an empirical summary into a skill registry/recommendation record,
+ * setting `empirical_*`, `validation_status`, `validation_evidence`, `maturity`,
+ * and `quality_basis`. Returns `item` unchanged when `summary` is falsy.
+ *
+ * @param {object} item - Skill record.
+ * @param {object | null | undefined} summary - Entry from {@link summarizeSkillOutcomes}.
+ * @returns {object} Updated record.
+ */
 export function applySkillOutcome(item, summary) {
   if (!summary) return item;
   const passed = summary.empirical_status === "pass";

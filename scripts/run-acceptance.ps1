@@ -9,8 +9,17 @@ if (-not $VaultRoot) {
   $VaultRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 }
 
-$node = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-$python = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
+function Resolve-Runtime([string]$explicit, [string]$name, [string]$codexRelative) {
+  if ($explicit -and (Test-Path -LiteralPath $explicit -PathType Leaf)) { return $explicit }
+  $onPath = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue
+  if ($onPath) { return $onPath.Source }
+  $codex = Join-Path $env:USERPROFILE $codexRelative
+  if (Test-Path -LiteralPath $codex -PathType Leaf) { return $codex }
+  throw "$name not found. Install it, or set AI_DEV_NODE / AI_DEV_PYTHON."
+}
+
+$node = Resolve-Runtime $env:AI_DEV_NODE "node" ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+$python = Resolve-Runtime $env:AI_DEV_PYTHON "python" ".cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
 $server = Join-Path $VaultRoot "09-mcp\ai-dev-mcp-server"
 $frontendQa = Join-Path $VaultRoot "09-mcp\frontend-qa"
 $search = Join-Path $VaultRoot "09-mcp\search-index"

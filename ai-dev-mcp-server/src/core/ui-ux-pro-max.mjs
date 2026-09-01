@@ -92,6 +92,14 @@ const RUSSIAN_QUERY_HINTS = Object.freeze([
   [/конверси/iu, "conversion"]
 ]);
 
+/**
+ * Append English keyword hints to a Russian UI/UX query (accessibility, colour,
+ * typography, motion, industry, aesthetic, …) so the downstream English-only
+ * knowledge base retrieves. Non-Cyrillic queries pass through unchanged.
+ *
+ * @param {string} query - Raw query.
+ * @returns {string} Possibly hint-expanded query.
+ */
 export function expandUiUxQuery(query) {
   if (!/[а-яё]/iu.test(query)) return query;
   const hints = [];
@@ -143,6 +151,14 @@ function clampedInteger(value, { fallback, min, max, label }) {
   return Math.max(min, Math.min(Math.round(numeric), max));
 }
 
+/**
+ * Validate and normalise arguments for a UI/UX knowledge query: bounded query
+ * text, an optional `domain` **or** `stack` enum (not both), and `max_results`
+ * clamped to 1–10. Throws on invalid input.
+ *
+ * @param {{ query: string, domain?: string, stack?: string, max_results?: number }} [input]
+ * @returns {{ query: string, search_query: string, domain: string, stack: string, max_results: number }}
+ */
 export function normalizeUiUxKnowledgeInput({
   query,
   domain = "",
@@ -169,6 +185,14 @@ export function normalizeUiUxKnowledgeInput({
   };
 }
 
+/**
+ * Validate and normalise arguments for a UI/UX design-system generation call:
+ * bounded query and optional project name, plus `variance` / `motion` /
+ * `density` clamped to 1–10 (or `null` when omitted). Throws on invalid input.
+ *
+ * @param {{ query: string, project_name?: string, variance?: number, motion?: number, density?: number }} [input]
+ * @returns {{ query: string, search_query: string, project_name: string, variance: number | null, motion: number | null, density: number | null }}
+ */
 export function normalizeUiUxDesignInput({
   query,
   project_name = "",
@@ -205,6 +229,12 @@ export function normalizeUiUxDesignInput({
   };
 }
 
+/**
+ * Build the CLI argv for a UI/UX knowledge query from raw input.
+ *
+ * @param {object} [input] - Raw knowledge-query input (see {@link normalizeUiUxKnowledgeInput}).
+ * @returns {{ normalized: object, args: string[] }}
+ */
 export function buildUiUxKnowledgeArgs(input = {}) {
   const normalized = normalizeUiUxKnowledgeInput(input);
   const args = ["--json", "--max-results", String(normalized.max_results)];
@@ -229,10 +259,22 @@ function buildDesignArgs(input, format) {
   return { normalized, args };
 }
 
+/**
+ * Build the CLI argv for JSON design-system generation.
+ *
+ * @param {object} [input] - Raw design input (see {@link normalizeUiUxDesignInput}).
+ * @returns {{ normalized: object, args: string[] }}
+ */
 export function buildUiUxDesignJsonArgs(input = {}) {
   return buildDesignArgs(input, "json");
 }
 
+/**
+ * Build the CLI argv for Markdown design-system generation.
+ *
+ * @param {object} [input] - Raw design input (see {@link normalizeUiUxDesignInput}).
+ * @returns {{ normalized: object, args: string[] }}
+ */
 export function buildUiUxDesignMarkdownArgs(input = {}) {
   return buildDesignArgs(input, "markdown");
 }

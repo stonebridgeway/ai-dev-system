@@ -1,12 +1,12 @@
 # Backup And Recovery
 
-## Current vNext Checkpoint
+## Source Checkpoints
 
-The pre-migration source checkpoint is stored under:
+Source checkpoints are stored under:
 
-`${CODEX_HOME}/backups/ai-dev-system-vnext/YYYY-MM-DD_HH-MM-SS`
+`${AI_DEV_HOME}/backups/ai-dev-system/<label>_<timestamp>` (default `~/.ai-dev/backups/...`)
 
-It excludes models, virtual environments, generated SQLite databases, and runtime artifacts.
+They exclude models, virtual environments, generated SQLite databases, and runtime artifacts.
 
 Create a current source backup:
 
@@ -15,18 +15,19 @@ Create a current source backup:
 ```
 
 The script writes a ZIP, manifest, and SHA-256 sidecar under
-`%USERPROFILE%\.codex\backups\ai-dev-system`. It includes local vault content and must remain private.
+`%AI_DEV_HOME%\backups` (default `%USERPROFILE%\.ai-dev\backups`). It includes local vault
+content and must remain private.
 
 ## Recovery Order
 
-1. Stop Codex so the stdio server is not writing.
+1. Stop the MCP client so the stdio server is not writing.
 2. Restore the MCP source and registry folders from the checkpoint.
-3. Restore the matching `codex-config.toml` MCP block if the entry point changed.
+3. Restore the matching MCP client config block if the entry point changed.
 4. Restore pinned dependencies:
    `09-mcp\scripts\restore-runtime.ps1`.
 5. Run `09-mcp\scripts\run-acceptance.ps1 -IncludeDense`.
 6. Run MCP `system_health_check` with dense smoke enabled.
-7. Switch Codex back to `src/server.mjs` only after these checks pass.
+7. Switch the MCP client back to `src/server.mjs` only after these checks pass.
 8. Rebuild disposable SQLite and dense indexes.
 
 Do not restore cache databases over newer knowledge. Rebuild them from source notes instead.

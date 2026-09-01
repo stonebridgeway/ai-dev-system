@@ -87,6 +87,14 @@ function sanitizeRemote(raw) {
   }
 }
 
+/**
+ * Derive a stable identity for a project directory: canonical (realpath) root,
+ * git detection, sanitised `origin` remote (credentials and `.git` stripped),
+ * a content-hashed `project_id` / `repository_id`, and every known path alias.
+ *
+ * @param {string} projectPath - Absolute path to a project directory.
+ * @returns {Promise<{ schema_version: number, project_id: string, repository_id: string | null, kind: "git" | "filesystem", project_root: string, canonical_path: string, requested_path: string, aliases: string[], git: { detected: boolean, root: string | null, common_dir: string | null, remote: string | null } }>}
+ */
 export async function resolveProjectIdentity(projectPath) {
   if (!projectPath || typeof projectPath !== "string" || !path.isAbsolute(projectPath)) {
     throw new Error("projectPath must be an absolute directory path.");
@@ -139,6 +147,14 @@ export async function resolveProjectIdentity(projectPath) {
   };
 }
 
+/**
+ * Compare two identities (or identity/path values) by `project_id` when both
+ * have one, otherwise by normalised canonical path.
+ *
+ * @param {object | string} left
+ * @param {object | string} right
+ * @returns {boolean}
+ */
 export function sameProjectIdentity(left, right) {
   if (!left || !right) return false;
   if (left.project_id && right.project_id) return left.project_id === right.project_id;
@@ -146,6 +162,13 @@ export function sameProjectIdentity(left, right) {
     === normalizePath(right.canonical_path || right.project_root || right);
 }
 
+/**
+ * Return a stable storage key for an identity object (its `project_id`) or,
+ * given a bare path, a filesystem-derived `project-<hash>` key.
+ *
+ * @param {{ project_id?: string } | string} identityOrPath
+ * @returns {string}
+ */
 export function projectIdentityKey(identityOrPath) {
   if (identityOrPath && typeof identityOrPath === "object" && identityOrPath.project_id) {
     return identityOrPath.project_id;

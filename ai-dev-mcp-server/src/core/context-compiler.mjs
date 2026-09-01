@@ -175,6 +175,15 @@ function relevantCommands(commands, domains) {
   return (selected.length ? selected : commands ?? []).slice(0, 10);
 }
 
+/**
+ * Assemble the smallest useful, char-bounded context pack for a task: task-type
+ * hints, ranked candidate source files (secrets and generated files excluded),
+ * acceptance criteria, routed skills, and the project brief/map/quality-gate,
+ * all fingerprinted against the current project state for freshness checks.
+ *
+ * @param {{ projectRoot: string, task: string, project?: object, identity?: object, acceptanceCriteria?: string[], skills?: object[], projectState?: object, agentRules?: string, projectBrief?: string, projectMap?: string, qualityGate?: string, maxSourceFiles?: number, maxChars?: number, now?: string }} input
+ * @returns {Promise<object>} Context pack.
+ */
 export async function compileContextPack({
   projectRoot,
   task,
@@ -316,6 +325,13 @@ function bullet(values, empty = "None detected.") {
   return values?.length ? values.map((value) => `- ${normalize(value)}`).join("\n") : `- ${empty}`;
 }
 
+/**
+ * Render a context pack (from {@link compileContextPack}) to the Markdown block
+ * an agent reads at the start of a task.
+ *
+ * @param {object} pack - Context pack.
+ * @returns {string} Markdown.
+ */
 export function renderContextPack(pack) {
   const lines = [
     "# Project Context Pack",
@@ -400,6 +416,14 @@ export function renderContextPack(pack) {
   return lines.join("\n");
 }
 
+/**
+ * Compare the project-state fingerprint baked into a context pack against the
+ * current state to decide whether the pack should be recompiled.
+ *
+ * @param {{ source_state_fingerprint?: string }} pack
+ * @param {{ fingerprint?: string }} projectState - Current project state.
+ * @returns {{ fresh: boolean, source_state_fingerprint: string, current_state_fingerprint: string, reason: string }}
+ */
 export function contextPackFreshness(pack, projectState) {
   const current = normalize(projectState?.fingerprint);
   const source = normalize(pack?.source_state_fingerprint);

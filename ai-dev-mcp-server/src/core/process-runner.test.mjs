@@ -34,7 +34,7 @@ test("Windows package-manager shims resolve to a Node entrypoint", {
   await fs.writeFile(shim, "@echo off\r\n", "utf8");
   await fs.writeFile(entrypoint, "process.exit(0);\n", "utf8");
   try {
-    const invocation = await resolveSpawnInvocation(shim, ["run", "dev"]);
+    const invocation = await resolveSpawnInvocation(shim, ["run", "dev"], { runtimeRoots: [] });
     assert.equal(invocation.executable, process.execPath);
     assert.equal(invocation.packageManagerEntrypoint, entrypoint);
     assert.deepEqual(invocation.args.slice(1), ["run", "dev"]);
@@ -54,7 +54,7 @@ test("Windows npm quality commands can use the bundled pnpm entrypoint", {
   await fs.writeFile(shim, "@echo off\r\n", "utf8");
   await fs.writeFile(entrypoint, "process.exit(0);\n", "utf8");
   try {
-    const invocation = await resolveSpawnInvocation(shim, ["run", "test"]);
+    const invocation = await resolveSpawnInvocation(shim, ["run", "test"], { runtimeRoots: [] });
     assert.equal(invocation.executable, process.execPath);
     assert.equal(invocation.adapter, "npm-via-pnpm-node-entrypoint");
     assert.equal(invocation.packageManagerEntrypoint, entrypoint);

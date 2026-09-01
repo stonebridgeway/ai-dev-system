@@ -20,6 +20,14 @@ async function git(projectRoot, args) {
   }
 }
 
+/**
+ * Snapshot a project's verification state. For a git repo this is HEAD + branch
+ * + full porcelain status, hashed into a `fingerprint` (strength `"strong"`);
+ * for a non-git directory only the path is fingerprinted (strength `"weak"`).
+ *
+ * @param {string} projectRoot - Repository or directory path.
+ * @returns {Promise<{ kind: "git" | "filesystem", project_root: string, git: boolean, head?: string, branch?: string, dirty?: boolean, dirty_files?: string[], status_hash?: string, fingerprint: string, captured_at: string, strength: "strong" | "weak" }>}
+ */
 export async function captureProjectState(projectRoot) {
   const rootResult = await git(projectRoot, ["rev-parse", "--show-toplevel"]);
   if (!rootResult.ok) {
@@ -58,6 +66,13 @@ export async function captureProjectState(projectRoot) {
   };
 }
 
+/**
+ * Bind a check result to the project state it was produced from, so completion
+ * can later prove the evidence is still current.
+ *
+ * @param {{ type: string, result?: { status?: string, gate?: string, ok?: boolean }, projectState: { fingerprint: string, head?: string }, details?: Record<string, unknown> }} input
+ * @returns {{ type: string, status: string, source_state_fingerprint: string, source_head: string | null, captured_at: string, details: Record<string, unknown> }}
+ */
 export function bindEvidence({ type, result, projectState, details = {} }) {
   return {
     type,
@@ -69,6 +84,14 @@ export function bindEvidence({ type, result, projectState, details = {} }) {
   };
 }
 
+/**
+ * True when `evidence` was captured against the exact `projectState` fingerprint
+ * (i.e. nothing has changed since the check ran).
+ *
+ * @param {{ source_state_fingerprint?: string } | null | undefined} evidence
+ * @param {{ fingerprint?: string } | null | undefined} projectState
+ * @returns {boolean}
+ */
 export function evidenceMatchesState(evidence, projectState) {
   return Boolean(
     evidence?.source_state_fingerprint

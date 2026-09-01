@@ -86,6 +86,14 @@ function placeholderCredential(value) {
     || /^[A-Z][A-Z0-9_]+$/.test(text);
 }
 
+/**
+ * Privacy findings for a single distribution-relative path: forbidden directory
+ * names, private vault zones (`02-knowledge/Projects`, `10-inbox`, `99-archive`,
+ * …), and forbidden file patterns.
+ *
+ * @param {string} relativePath - Path relative to the distribution root.
+ * @returns {Array<{ rule: string, path: string }>}
+ */
 export function distributionPathFindings(relativePath) {
   const normalized = normalizedRelativePath(relativePath);
   const segments = normalized.toLowerCase().split("/").filter(Boolean);
@@ -120,6 +128,16 @@ function forbiddenTermVariants(terms) {
   return [...variants];
 }
 
+/**
+ * Privacy findings for a text file's contents: known secret patterns, non-
+ * placeholder credential assignments, and any configured forbidden owner-context
+ * terms (matched case-insensitively with `/` and `\` variants).
+ *
+ * @param {string} text - File contents.
+ * @param {string} relativePath - Path recorded on each finding.
+ * @param {{ forbiddenTerms?: string[] }} [options]
+ * @returns {Array<{ rule: string, path: string }>}
+ */
 export function distributionTextFindings(text, relativePath, { forbiddenTerms = [] } = {}) {
   const source = String(text || "");
   const findings = [];
@@ -168,6 +186,14 @@ async function walk(root, current = root) {
   return result;
 }
 
+/**
+ * Recursively audit a prepared distribution tree: reject symlinks, run path and
+ * text privacy checks on every file, and record a SHA-256 per file.
+ *
+ * @param {string} root - Distribution root directory.
+ * @param {{ forbiddenTerms?: string[] }} [options] - Passed to {@link distributionTextFindings}.
+ * @returns {Promise<{ ok: boolean, findings: Array<{ rule: string, path: string }>, files: Array<{ path: string, bytes: number, sha256: string }>, total_files: number, total_bytes: number }>}
+ */
 export async function auditDistributionTree(root, options = {}) {
   const findings = [];
   const files = [];
@@ -202,6 +228,13 @@ export async function auditDistributionTree(root, options = {}) {
   };
 }
 
+/**
+ * Throw a summarised error if an audit result is not clean; return it otherwise.
+ *
+ * @param {{ ok: boolean, findings: Array<{ rule: string, path: string }> }} audit - Result of {@link auditDistributionTree}.
+ * @param {string} [label="distribution"] - Prefix for the error message.
+ * @returns {typeof audit}
+ */
 export function assertCleanDistribution(audit, label = "distribution") {
   if (audit.ok) return audit;
   const summary = audit.findings
@@ -211,6 +244,15 @@ export function assertCleanDistribution(audit, label = "distribution") {
   throw new Error(`${label} failed privacy audit:\n${summary}`);
 }
 
+/**
+ * Recursively copy a directory into the distribution target, honouring an
+ * `exclude(relativePath, dirent)` predicate and refusing to copy symlinks.
+ *
+ * @param {string} source - Source directory.
+ * @param {string} target - Target directory.
+ * @param {{ exclude?: (relativePath: string, entry: import("node:fs").Dirent) => boolean }} [options]
+ * @returns {Promise<void>}
+ */
 export async function copyDistributionTree(source, target, { exclude = () => false } = {}) {
   const sourceRoot = path.resolve(source);
   const targetRoot = path.resolve(target);
@@ -238,6 +280,14 @@ export async function copyDistributionTree(source, target, { exclude = () => fal
   await copyDirectory(sourceRoot, targetRoot);
 }
 
+/**
+ * Copy a single regular file into the distribution (creating parent dirs).
+ * Throws if the source is a symlink or not a regular file.
+ *
+ * @param {string} source - Source file.
+ * @param {string} target - Target file path.
+ * @returns {Promise<void>}
+ */
 export async function copyDistributionFile(source, target) {
   const stat = await fs.lstat(source);
   if (!stat.isFile() || stat.isSymbolicLink()) {
@@ -247,6 +297,13 @@ export async function copyDistributionFile(source, target) {
   await fs.copyFile(source, target);
 }
 
+/**
+ * Order-sensitive SHA-256 over an audit's file list (`path`, `bytes`, `sha256`
+ * each), used to detect whether a prepared distribution changed.
+ *
+ * @param {Array<{ path: string, bytes: number, sha256: string }>} files
+ * @returns {string} Hex digest.
+ */
 export function distributionContentFingerprint(files) {
   const source = files
     .map((item) => `${item.path}\0${item.bytes}\0${item.sha256}`)

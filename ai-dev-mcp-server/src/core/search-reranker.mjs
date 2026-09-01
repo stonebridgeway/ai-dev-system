@@ -41,6 +41,14 @@ function cp1251ReverseMap() {
   return windows1251ReverseMap;
 }
 
+/**
+ * Best-effort repair of Cyrillic text that was decoded as Windows-1251 then
+ * re-encoded as UTF-8 (classic `Ð /Ð¡` mojibake). Returns the input unchanged
+ * unless the round-trip demonstrably reduces the mojibake markers.
+ *
+ * @param {string} value - Possibly mangled text.
+ * @returns {string}
+ */
 export function repairSearchMojibake(value) {
   const input = String(value ?? "");
   const markers = input.match(/[РС]/g) ?? [];
@@ -69,6 +77,14 @@ function tokens(value) {
     .filter((token) => token.length >= 2 && !STOP_WORDS.has(token)))];
 }
 
+/**
+ * Detect coarse topic intents (frontend, backend, database, devops, security,
+ * debug, review, quality, project, knowledge) present in a query or document
+ * text via RU/EN keyword lists.
+ *
+ * @param {string} value - Text to classify.
+ * @returns {string[]} Matched intent names.
+ */
 export function inferSearchIntents(value) {
   const normalized = normalize(value);
   return Object.entries(INTENT_DEFINITIONS)
@@ -76,6 +92,14 @@ export function inferSearchIntents(value) {
     .map(([intent]) => intent);
 }
 
+/**
+ * True when a query is about the skill catalog itself (taxonomy / groups /
+ * routing / registry) rather than an individual skill — it needs both a
+ * skill subject term and a catalog-intent term.
+ *
+ * @param {string} value - Query text.
+ * @returns {boolean}
+ */
 export function isSkillCatalogQuery(value) {
   const normalized = normalize(value);
   const hasSkillSubject = [
@@ -136,6 +160,17 @@ function round(value) {
   return Math.round(value * 1_000_000) / 1_000_000;
 }
 
+/**
+ * Re-score and re-order hybrid search results using lexical overlap, title/path
+ * exact matches, intent alignment and conflicts, scope compatibility, source
+ * curation, and golden-case hard negatives. Adds `rerank_*`, `original_*`,
+ * `reranked_rank`, and overwrites `score` with the reranked value.
+ *
+ * @param {string} query - Search query.
+ * @param {Array<object>} results - Ranked hybrid-search hits.
+ * @param {{ scope?: string, preset?: string, hardNegativeRules?: Array<{ id?: string, query: string, patterns: object[] }> }} [options]
+ * @returns {Array<object>} Reranked results, best first.
+ */
 export function rerankSearchResults(query, results, {
   scope = "all",
   preset = "",
@@ -274,6 +309,13 @@ export function rerankSearchResults(query, results, {
   }));
 }
 
+/**
+ * Convert golden search-eval cases into hard-negative rules for
+ * {@link rerankSearchResults} (one rule per case that has a `must_not` list).
+ *
+ * @param {Array<{ id?: string, query: string, must_not?: object[] }>} [cases]
+ * @returns {Array<{ id: string | undefined, query: string, patterns: object[] }>}
+ */
 export function hardNegativeRulesFromCases(cases = []) {
   return (cases ?? [])
     .filter((testCase) => Array.isArray(testCase.must_not) && testCase.must_not.length)

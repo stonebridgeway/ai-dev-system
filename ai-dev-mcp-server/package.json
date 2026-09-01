@@ -25,6 +25,7 @@
     "clients:install": "node scripts/install-local-mcp-clients.mjs --apply",
     "start:legacy": "node src/mcp-stdio.mjs",
     "test": "node --test",
+    "test:core": "node --test \"src/core/**/*.test.mjs\"",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/core/*.mjs --test-coverage-exclude=src/core/*.test.mjs --test-coverage-lines=85 --test-coverage-branches=60 --test-coverage-functions=85",
     "lint": "node scripts/static-quality.mjs",
     "security": "node scripts/security-check.mjs",

@@ -1,0 +1,44 @@
+{
+  "_comment": "Example of the file written by `node ai-dev-mcp-server/scripts/ai-dev.mjs distribution` (MCP tool: prepare_runtime_distribution). The real runtime-distribution.json is git-ignored because it embeds machine-specific absolute paths. Placeholders below use ${VAR} expansion.",
+  "schema_version": 1,
+  "generated_at": "1970-01-01T00:00:00.000Z",
+  "profile": {
+    "schema_version": 1,
+    "mode": "local-first",
+    "vault_root": "${AI_DEV_VAULT_ROOT}",
+    "node_executable": "${AI_DEV_NODE}",
+    "transport": {
+      "type": "stdio",
+      "remote_enabled": false
+    },
+    "state": {
+      "root": "${AI_DEV_HOME}/state",
+      "cache": "${AI_DEV_HOME}/cache",
+      "artifacts": "${AI_DEV_HOME}/artifacts"
+    },
+    "remote_foundation": {
+      "status": "disabled",
+      "bind": "127.0.0.1",
+      "tls": { "mode": "required-before-enable" },
+      "authentication": {
+        "mode": "bearer",
+        "token_env": "AI_DEV_MCP_BEARER_TOKEN"
+      },
+      "allowed_clients": [],
+      "rate_limit_per_minute": 60,
+      "trust_proxy": false
+    }
+  },
+  "profile_source": "generated local-first defaults",
+  "profile_validation": { "ok": true, "errors": [], "warnings": [] },
+  "entrypoint": "src/server.mjs",
+  "tools": 83,
+  "commands": {
+    "start": "powershell -File scripts/start-local.ps1",
+    "doctor": "node scripts/ai-dev.mjs doctor",
+    "acceptance": "node scripts/ai-dev.mjs acceptance",
+    "backup": "node scripts/ai-dev.mjs backup <label>"
+  },
+  "remote_transport_implemented": false,
+  "remote_policy": "blocked until official HTTP transport, TLS, environment-bound bearer auth, allowlist, rate limit, audit log, and threat review are implemented"
+}

@@ -97,6 +97,14 @@ function routeSearchPresetDocs(normalized) {
   };
 }
 
+/**
+ * Deterministically map a natural-language query (RU/EN) to a curated set of
+ * vault documents for known workflows (project-memory refresh, project
+ * formatting, UI/UX design intelligence, search presets).
+ *
+ * @param {string} query - User request text.
+ * @returns {{ id: string, paths: string[], reason: string } | null} Matched route, or `null`.
+ */
 export function routeKnowledgeDocuments(query) {
   const normalized = normalizeIntent(query);
   if (!normalized) return null;
@@ -109,6 +117,15 @@ export function routeKnowledgeDocuments(query) {
   )) || null;
 }
 
+/**
+ * Re-order search results so that documents belonging to the matched knowledge
+ * route float to the top, tagged with `retrieval_stage` / `routing_rule` /
+ * `routing_reason`. Returns `results` unchanged when no route matches.
+ *
+ * @param {string} query - User request text.
+ * @param {Array<{ path?: string }>} [results] - Ranked search hits.
+ * @returns {Array<object>} Re-ordered results.
+ */
 export function prioritizeKnowledgeResults(query, results = []) {
   const route = routeKnowledgeDocuments(query);
   if (!route || !Array.isArray(results) || !results.length) return results;

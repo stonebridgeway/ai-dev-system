@@ -7,10 +7,17 @@ param(
 $ErrorActionPreference = "Stop"
 $serverRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if (-not $Node) {
-  $Node = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+  # Prefer node on PATH; fall back to a bundled Codex runtime if one is present.
+  $onPath = Get-Command node -CommandType Application -ErrorAction SilentlyContinue
+  if ($onPath) {
+    $Node = $onPath.Source
+  } else {
+    $codexNode = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+    if (Test-Path -LiteralPath $codexNode -PathType Leaf) { $Node = $codexNode }
+  }
 }
-if (-not (Test-Path -LiteralPath $Node -PathType Leaf)) {
-  throw "Node.js runtime not found: $Node"
+if (-not $Node -or -not (Test-Path -LiteralPath $Node -PathType Leaf)) {
+  throw "Node.js 24+ not found. Install Node, or pass -Node <path> / set AI_DEV_NODE."
 }
 if ($VaultRoot) {
   $env:AI_DEV_VAULT_ROOT = (Resolve-Path -LiteralPath $VaultRoot).Path

@@ -8,7 +8,18 @@ import time
 
 
 MODEL_NAME = "BAAI/bge-m3"
-DEFAULT_MODEL_DIR = Path(os.environ.get("BGE_M3_MODEL_DIR", Path.home() / ".codex" / "models" / "bge-m3"))
+
+
+def _default_model_dir():
+    env = os.environ.get("BGE_M3_MODEL_DIR")
+    if env:
+        return Path(env)
+    new = Path.home() / ".ai-dev" / "models" / "bge-m3"
+    legacy = Path.home() / ".codex" / "models" / "bge-m3"
+    return legacy if not new.exists() and legacy.exists() else new
+
+
+DEFAULT_MODEL_DIR = _default_model_dir()
 
 
 def write_json(value):

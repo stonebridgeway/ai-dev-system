@@ -1,11 +1,15 @@
 [CmdletBinding()]
 param(
   [string]$VaultRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
-  [string]$Destination = (Join-Path $env:USERPROFILE ".codex\backups\ai-dev-system"),
+  [string]$Destination,
   [string]$Label = "manual"
 )
 
 $ErrorActionPreference = "Stop"
+if (-not $Destination) {
+  $aiDevHome = if ($env:AI_DEV_HOME) { $env:AI_DEV_HOME } else { Join-Path $env:USERPROFILE ".ai-dev" }
+  $Destination = Join-Path $aiDevHome "backups"
+}
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 

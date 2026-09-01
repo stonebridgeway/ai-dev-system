@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -31,12 +32,28 @@ function parseArgs(argv) {
   return options;
 }
 
+const repoVaultRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
+
+function resolvePython(nodeExecutable) {
+  if (process.env.AI_DEV_PYTHON) return process.env.AI_DEV_PYTHON;
+  // Codex-runtime layout: <runtime>/node/bin/node + <runtime>/python/...
+  const bundled = path.resolve(
+    path.dirname(nodeExecutable),
+    "..",
+    "..",
+    "python",
+    process.platform === "win32" ? "python.exe" : "bin/python"
+  );
+  return existsSync(bundled) ? bundled : "python3";
+}
+
 function portablePaths({
   home = os.homedir(),
   appData = process.env.APPDATA || path.join(home, "AppData", "Roaming"),
-  nodeExecutable = process.execPath
+  nodeExecutable = process.execPath,
+  vaultRoot = process.env.AI_DEV_VAULT_ROOT || repoVaultRoot
 } = {}) {
-  const linkedVaultRoot = path.join(home, ".codex", "links", "ai-dev-system");
+  const linkedVaultRoot = path.resolve(vaultRoot);
   const serverPath = path.join(
     linkedVaultRoot,
     "09-mcp",
@@ -44,13 +61,7 @@ function portablePaths({
     "src",
     "server.mjs"
   );
-  const pythonExecutable = path.resolve(
-    path.dirname(nodeExecutable),
-    "..",
-    "..",
-    "python",
-    process.platform === "win32" ? "python.exe" : "bin/python"
-  );
+  const pythonExecutable = resolvePython(nodeExecutable);
   return {
     home,
     appData,

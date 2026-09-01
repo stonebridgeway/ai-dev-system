@@ -138,6 +138,21 @@ const vaultRoot = path.resolve(
   process.env.AI_DEV_VAULT_ROOT ?? path.join(serverDir, "..", "..", "..")
 );
 
+// Home for regenerable runtime data (task state, search cache, models, QA
+// artifacts). Agent-neutral: defaults to ~/.ai-dev, overridable per directory
+// with the AI_DEV_* env vars, and falls back to a pre-existing ~/.codex/<...>
+// layout so installs migrated from the Codex-only runtime keep their history.
+const userHome = process.env.AI_DEV_HOME
+  || process.env.USERPROFILE
+  || process.env.HOME
+  || path.dirname(vaultRoot);
+function aiDevRuntimePath(envVar, segments, legacySegments = segments) {
+  if (process.env[envVar]) return path.resolve(process.env[envVar]);
+  const next = path.join(userHome, ".ai-dev", ...segments);
+  const legacy = path.join(userHome, ".codex", ...legacySegments);
+  return !existsSync(next) && existsSync(legacy) ? legacy : next;
+}
+
 const skillIndexPath = path.join(
   vaultRoot,
   "03-skills-catalog",
@@ -170,8 +185,11 @@ const projectsDir = path.join(vaultRoot, projectsRelativeDir);
 const projectsIndexRelativePath = `${projectsRelativeDir}/Projects Index.md`;
 const searchSourceDir = path.join(vaultRoot, "09-mcp", "search-index");
 const searchIndexDir = path.resolve(
-  process.env.AI_DEV_SEARCH_INDEX_DIR
-    ?? path.join(process.env.USERPROFILE || process.env.HOME || path.dirname(vaultRoot), ".codex", "cache", "ai-dev-system", "search-index")
+  aiDevRuntimePath(
+    "AI_DEV_SEARCH_INDEX_DIR",
+    ["cache", "search-index"],
+    ["cache", "ai-dev-system", "search-index"]
+  )
 );
 const searchIndexPath = path.join(searchIndexDir, "ai-dev-search.sqlite");
 const searchCliPath = path.join(searchSourceDir, "search_cli.py");
@@ -188,22 +206,20 @@ const uiUxProMaxRoot = path.join(
 );
 const uiUxProMaxSearchPath = path.join(uiUxProMaxRoot, "scripts", "search.py");
 const uiUxProMaxProvenancePath = path.join(uiUxProMaxRoot, "upstream.json");
-const frontendQaArtifactsRoot = path.join(
-  process.env.USERPROFILE || path.dirname(vaultRoot),
-  ".codex",
-  "artifacts",
-  "frontend-qa"
+const frontendQaArtifactsRoot = path.resolve(
+  aiDevRuntimePath("AI_DEV_FRONTEND_QA_ARTIFACT_ROOT", ["artifacts", "frontend-qa"])
 );
 const taskStateRoot = path.resolve(
-  process.env.AI_DEV_STATE_ROOT
-    ?? path.join(process.env.USERPROFILE || process.env.HOME || path.dirname(vaultRoot), ".codex", "state", "ai-dev-system")
+  aiDevRuntimePath("AI_DEV_STATE_ROOT", ["state"], ["state", "ai-dev-system"])
 );
 const taskStore = new TaskStore({ stateRoot: taskStateRoot });
 const skillOutcomeStore = new SkillOutcomeStore({ stateRoot: taskStateRoot });
 const pilotStore = new PilotStore({ stateRoot: taskStateRoot });
 const bgeM3EmbedCliPath = path.join(embeddingsDir, "bge_m3_embed.py");
 const bgeM3WorkerCliPath = path.join(embeddingsDir, "bge_m3_worker.py");
-const defaultBgeM3ModelDir = path.join(process.env.USERPROFILE || process.env.HOME || "", ".codex", "models", "bge-m3");
+const defaultBgeM3ModelDir = path.resolve(
+  aiDevRuntimePath("BGE_M3_MODEL_DIR", ["models", "bge-m3"])
+);
 const searchFreshnessCacheMs = 1000;
 let searchIndexRefreshPromise = null;
 let searchIndexDirtyReason = "";

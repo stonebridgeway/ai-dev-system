@@ -16,6 +16,15 @@ function comparable(value) {
   return process.platform === "win32" ? normalized.toLowerCase() : normalized;
 }
 
+/**
+ * Lexical containment check: is `candidate` at or below `root` without any `..`
+ * escape? Case-insensitive on Windows. Does not touch the filesystem.
+ *
+ * @param {string} root - Directory that must contain the candidate.
+ * @param {string} candidate - Path to test.
+ * @param {{ allowRoot?: boolean }} [options] - Whether `candidate === root` counts as inside (default true).
+ * @returns {boolean}
+ */
 export function isPathInside(root, candidate, { allowRoot = true } = {}) {
   const rootValue = comparable(root);
   const candidateValue = comparable(candidate);
@@ -64,6 +73,17 @@ async function nearestExistingAncestor(candidate) {
   }
 }
 
+/**
+ * Resolve `requestedPath` against `root` and prove — both lexically and via
+ * `realpath` (symlink-aware) — that the result stays inside `root`. For writes
+ * the check walks to the nearest existing ancestor so new files are allowed.
+ * Throws {@link PathPolicyError} on any violation.
+ *
+ * @param {string} root - Trusted root directory.
+ * @param {string} requestedPath - Relative (or, with `allowAbsolute`, absolute) path.
+ * @param {{ mode?: "read" | "write", allowAbsolute?: boolean, allowRoot?: boolean }} [options]
+ * @returns {string} Absolute, containment-checked path.
+ */
 export function resolveWithinSync(
   root,
   requestedPath,
@@ -93,6 +113,14 @@ export function resolveWithinSync(
   return candidate;
 }
 
+/**
+ * Async counterpart of {@link resolveWithinSync} using `fs.promises.realpath`.
+ *
+ * @param {string} root - Trusted root directory.
+ * @param {string} requestedPath - Relative (or, with `allowAbsolute`, absolute) path.
+ * @param {{ mode?: "read" | "write", allowAbsolute?: boolean, allowRoot?: boolean }} [options]
+ * @returns {Promise<string>} Absolute, containment-checked path.
+ */
 export async function resolveWithin(
   root,
   requestedPath,
@@ -122,6 +150,14 @@ export async function resolveWithin(
   return candidate;
 }
 
+/**
+ * POSIX-style (`/`-separated) path of `candidate` relative to `root`, after
+ * asserting lexical containment. Throws {@link PathPolicyError} if it escapes.
+ *
+ * @param {string} root - Base directory.
+ * @param {string} candidate - Path at or below `root`.
+ * @returns {string} Forward-slash relative path.
+ */
 export function relativeWithin(root, candidate) {
   const rootAbsolute = path.resolve(root);
   const candidateAbsolute = path.resolve(candidate);

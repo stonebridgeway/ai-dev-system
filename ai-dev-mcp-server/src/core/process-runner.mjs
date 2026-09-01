@@ -56,7 +56,18 @@ async function findPackageManagerEntrypoint(manager, roots) {
   return "";
 }
 
-export async function resolveSpawnInvocation(executable, args = []) {
+/**
+ * Turn a requested executable into a shell-free spawn plan. On Windows this
+ * rewrites package-manager `.cmd` shims to `node <entrypoint>` (falling back to
+ * the bundled pnpm entrypoint for `npm`); elsewhere it is a pass-through.
+ * Throws when no shell-free entrypoint can be found.
+ *
+ * @param {string} executable - Requested executable name or path.
+ * @param {string[]} [args] - Arguments to forward.
+ * @param {{ runtimeRoots?: string[] }} [options] - Pin the bundled-runtime search roots (mainly for tests).
+ * @returns {Promise<{ executable: string, args: string[], adapter: string, packageManagerEntrypoint?: string }>}
+ */
+export async function resolveSpawnInvocation(executable, args = [], options = {}) {
   if (process.platform !== "win32") return { executable, args, adapter: "direct" };
   const manager = path.basename(executable).toLowerCase().replace(/\.(?:cmd|exe)$/, "");
   if (manager === "node" && !path.isAbsolute(executable)) {
@@ -69,9 +80,15 @@ export async function resolveSpawnInvocation(executable, args = []) {
   if (resolved.toLowerCase().endsWith(".exe")) {
     return { executable: resolved, args, adapter: "package-manager-executable" };
   }
+  // `runtimeRoots` lets callers (and hermetic tests) pin the bundled-runtime
+  // search path instead of inheriting the ambient Node install next to
+  // `process.execPath`.
+  const runtimeRoots = Array.isArray(options.runtimeRoots)
+    ? options.runtimeRoots
+    : ancestorDirectories(path.dirname(process.execPath));
   const roots = new Set([
     ...ancestorDirectories(path.dirname(resolved || executable)),
-    ...ancestorDirectories(path.dirname(process.execPath))
+    ...runtimeRoots
   ]);
   const entrypoint = await findPackageManagerEntrypoint(manager, roots);
   if (entrypoint) {
@@ -125,6 +142,15 @@ function collectBounded(target, chunk, state, maxBytes) {
   if (state.bytes > maxBytes) state.truncated = true;
 }
 
+/**
+ * Build the child-process environment: inherit `process.env` plus `extraEnv`,
+ * then force `PATH` to start with the bundled Node directory (case-insensitive
+ * de-dupe) and, for pnpm adapters, disable pre-run dependency verification.
+ *
+ * @param {{ adapter?: string }} invocation - Plan from {@link resolveSpawnInvocation}.
+ * @param {Record<string, string>} [extraEnv] - Extra variables (a `PATH` key here wins).
+ * @returns {Record<string, string>} Environment for `child_process.spawn`.
+ */
 export function buildSpawnEnvironment(invocation, extraEnv = {}) {
   const environment = { ...process.env, ...extraEnv };
   const extraPathKey = Object.keys(extraEnv).find((key) => key.toLowerCase() === "path");
@@ -145,6 +171,14 @@ export function buildSpawnEnvironment(invocation, extraEnv = {}) {
   return environment;
 }
 
+/**
+ * Spawn a process with `shell: false`, bounded stdout/stderr capture, and a hard
+ * timeout that kills the whole process tree. Never rejects on non-zero exit —
+ * inspect `ok` / `exitCode` / `timedOut` on the result.
+ *
+ * @param {{ executable: string, args?: string[], cwd: string, timeoutMs?: number, maxOutputBytes?: number, env?: Record<string, string> }} options
+ * @returns {Promise<{ exitCode: number | null, signal: string | null, invocation: object, ok: boolean, timedOut: boolean, truncated: boolean, stdout: string, stderr: string, durationMs: number }>}
+ */
 export async function runProcess({
   executable,
   args = [],
@@ -194,6 +228,13 @@ export async function runProcess({
   };
 }
 
+/**
+ * Parse `command` through {@link parseSafeCommand} + {@link validateProjectExecutable},
+ * then run it with {@link runProcess} inside `projectRoot`.
+ *
+ * @param {{ command: string, projectRoot: string, purpose?: "quality" | "development", timeoutMs?: number, maxOutputBytes?: number, env?: Record<string, string> }} options
+ * @returns {Promise<{ command: object } & Awaited<ReturnType<typeof runProcess>>>}
+ */
 export async function runPolicyCommand({
   command,
   projectRoot,

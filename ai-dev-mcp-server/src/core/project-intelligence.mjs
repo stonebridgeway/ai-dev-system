@@ -261,6 +261,16 @@ async function architectureInventory(root, components, maxDepth = 4) {
   return { source_roots: sourceRoots, test_roots: testRoots, entrypoints, api_surfaces: apiSurfaces, data_paths: dataPaths, ci, max_depth: maxDepth };
 }
 
+/**
+ * Statically analyse a repository: discover manifests up to `maxDepth`, group
+ * them into per-directory components (Node, Python, generic), and derive stack,
+ * command map, entrypoints, CI workflows, documentation status, risk signals,
+ * and side-effectful scripts. Filesystem read-only; never runs project code.
+ *
+ * @param {string} projectRoot - Repository root.
+ * @param {{ projectName?: string, maxDepth?: number }} [options]
+ * @returns {Promise<object>} Structured project analysis.
+ */
 export async function analyzeProject(projectRoot, { projectName = "", maxDepth = 4 } = {}) {
   const root = path.resolve(projectRoot);
   const manifests = await discoverManifests(root, maxDepth);

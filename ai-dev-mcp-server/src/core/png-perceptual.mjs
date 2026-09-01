@@ -135,6 +135,14 @@ function sampledLuminance(image, sampleWidth = 9, sampleHeight = 9) {
   return samples;
 }
 
+/**
+ * Compute a 128-bit perceptual difference hash of a PNG using a dependency-free
+ * decoder (non-interlaced 8-bit only). Samples a 9×9 luminance grid and encodes
+ * horizontal and vertical brightness gradients.
+ *
+ * @param {Buffer} buffer - PNG file bytes.
+ * @returns {string} 32-character lowercase hex hash.
+ */
 export function pngDifferenceHash(buffer) {
   const image = parsePng(buffer);
   const values = sampledLuminance(image);
@@ -159,6 +167,14 @@ export function pngDifferenceHash(buffer) {
   return bits.toString(16).padStart(32, "0");
 }
 
+/**
+ * Hamming distance between two 128-bit perceptual hashes (0 = identical).
+ * Throws if either argument is not 32 hex characters.
+ *
+ * @param {string} left - Hex hash from {@link pngDifferenceHash}.
+ * @param {string} right - Hex hash from {@link pngDifferenceHash}.
+ * @returns {number} Bit distance in `[0, 128]`.
+ */
 export function perceptualHashDistance(left, right) {
   if (!/^[a-f0-9]{32}$/i.test(String(left)) || !/^[a-f0-9]{32}$/i.test(String(right))) {
     throw new Error("Perceptual hashes must be 128-bit hexadecimal strings.");
@@ -172,6 +188,14 @@ export function perceptualHashDistance(left, right) {
   return distance;
 }
 
+/**
+ * All unordered pairs of items whose `perceptual_hash` values are within
+ * `maximumDistance` (and that pass the optional `comparable` predicate).
+ *
+ * @param {Array<{ id: string, perceptual_hash?: string }>} items
+ * @param {{ maximumDistance?: number, comparable?: (a: object, b: object) => boolean }} [options]
+ * @returns {Array<{ left_id: string, right_id: string, distance: number, maximum_distance: number }>}
+ */
 export function findNearDuplicateImages(items, {
   maximumDistance = 6,
   comparable = () => true

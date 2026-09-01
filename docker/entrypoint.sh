@@ -15,9 +15,9 @@ esac
 mkdir -p \
   "${vault_root}" \
   "${HOME:-/data/runtime-home}" \
-  "${AI_DEV_STATE_ROOT:-/data/runtime-home/.codex/state/ai-dev-system}" \
-  "${AI_DEV_SEARCH_INDEX_DIR:-/data/runtime-home/.codex/cache/ai-dev-system/search-index}" \
-  "${AI_DEV_FRONTEND_QA_ARTIFACT_ROOT:-/data/runtime-home/.codex/artifacts/frontend-qa}" \
+  "${AI_DEV_STATE_ROOT:-/data/runtime-home/.ai-dev/state}" \
+  "${AI_DEV_SEARCH_INDEX_DIR:-/data/runtime-home/.ai-dev/cache/search-index}" \
+  "${AI_DEV_FRONTEND_QA_ARTIFACT_ROOT:-/data/runtime-home/.ai-dev/artifacts/frontend-qa}" \
   "${vault_root}/09-mcp"
 
 # Seed only missing files. Existing local knowledge and task state are never overwritten.

@@ -10,6 +10,14 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
+/**
+ * Deterministic SHA-256 over the parts of a system snapshot that should drive
+ * dashboard regeneration (tools, skills, quality, projects, selected search
+ * metrics, outcomes, pilots, overlays, runtime).
+ *
+ * @param {object} snapshot - System snapshot.
+ * @returns {string} Hex digest.
+ */
 export function dashboardSourceFingerprint(snapshot) {
   const source = {
     tools: snapshot.tools,
@@ -43,6 +51,13 @@ function rows(values) {
   return values.length ? values.join("\n") : "| - | - |";
 }
 
+/**
+ * Render `01-system/System Dashboard.md` (frontmatter + runtime/skills/search/
+ * delivery/projects tables) from a system snapshot.
+ *
+ * @param {object} snapshot - System snapshot with `generated_at` and `source_fingerprint`.
+ * @returns {string} Markdown document.
+ */
 export function renderSystemDashboard(snapshot) {
   const skillSources = Object.entries(snapshot.skills.by_source ?? {})
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
@@ -141,6 +156,14 @@ Use \`begin_task\` for substantive work. It compiles the smallest useful project
 `;
 }
 
+/**
+ * Compare a saved dashboard's `source_fingerprint` against a freshly computed
+ * one to decide whether the dashboard needs rebuilding.
+ *
+ * @param {{ source_fingerprint?: string } | null | undefined} saved - Previously written dashboard state.
+ * @param {object} current - Current system snapshot.
+ * @returns {{ fresh: boolean, saved_fingerprint: string, current_fingerprint: string, reason: string }}
+ */
 export function dashboardFreshness(saved, current) {
   const savedFingerprint = String(saved?.source_fingerprint || "");
   const currentFingerprint = dashboardSourceFingerprint(current);

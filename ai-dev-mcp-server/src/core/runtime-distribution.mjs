@@ -2,6 +2,13 @@ import crypto from "node:crypto";
 
 export const RUNTIME_PROFILE_SCHEMA_VERSION = 1;
 
+/**
+ * Build the default local-first runtime profile: stdio transport, remote
+ * foundation disabled, paths expressed as `${VAR}` placeholders.
+ *
+ * @param {{ vaultRoot?: string, nodeExecutable?: string }} [options]
+ * @returns {object} Runtime profile (schema {@link RUNTIME_PROFILE_SCHEMA_VERSION}).
+ */
 export function createLocalRuntimeProfile({
   vaultRoot = "${AI_DEV_VAULT_ROOT}",
   nodeExecutable = "${AI_DEV_NODE}"
@@ -16,9 +23,9 @@ export function createLocalRuntimeProfile({
       remote_enabled: false
     },
     state: {
-      root: "${USERPROFILE}/.codex/state/ai-dev-system",
-      cache: "${USERPROFILE}/.codex/cache/ai-dev-system",
-      artifacts: "${USERPROFILE}/.codex/artifacts"
+      root: "${AI_DEV_HOME}/state",
+      cache: "${AI_DEV_HOME}/cache",
+      artifacts: "${AI_DEV_HOME}/artifacts"
     },
     remote_foundation: {
       status: "disabled",
@@ -48,6 +55,14 @@ function secretFieldPaths(value, current = "") {
   return paths;
 }
 
+/**
+ * Validate a runtime profile. Always rejects stored secret values (only
+ * `*_env` references are allowed) and, when `transport.remote_enabled`, enforces
+ * HTTP + TLS + bearer `token_env` + explicit allowlist + trusted-proxy rules.
+ *
+ * @param {object} profile - Runtime profile.
+ * @returns {{ ok: boolean, errors: string[], warnings: string[] }}
+ */
 export function validateRuntimeProfile(profile) {
   const errors = [];
   const warnings = [];
@@ -103,6 +118,13 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
+/**
+ * Deterministic SHA-256 of a distribution manifest, ignoring `generated_at` and
+ * any existing `fingerprint`, so freshness can be compared across runs.
+ *
+ * @param {object} manifest - Distribution manifest.
+ * @returns {string} Hex digest.
+ */
 export function runtimeDistributionFingerprint(manifest) {
   const copy = { ...manifest };
   delete copy.generated_at;
@@ -110,6 +132,12 @@ export function runtimeDistributionFingerprint(manifest) {
   return crypto.createHash("sha256").update(stableJson(copy)).digest("hex");
 }
 
+/**
+ * Render the human-readable `Runtime Distribution.md` from a manifest.
+ *
+ * @param {object} manifest - Distribution manifest (mode, transport, commands, recovery, …).
+ * @returns {string} Markdown document.
+ */
 export function renderRuntimeDistribution(manifest) {
   return `# Runtime Distribution
 
@@ -133,7 +161,7 @@ Generated: ${manifest.generated_at}
 ## Local Data
 
 - Vault content stays in the configured Obsidian vault.
-- Runtime state, search cache, and QA artifacts stay under \`%USERPROFILE%\\.codex\`.
+- Runtime state, search cache, and QA artifacts stay under the AI Dev home (\`AI_DEV_HOME\`, default \`~/.ai-dev\`).
 - Password notes are not exposed as fixed MCP Resources and are not copied into this manifest.
 
 ## Future VPS Boundary

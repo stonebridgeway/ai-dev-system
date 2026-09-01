@@ -8,9 +8,9 @@
     "remote_enabled": false
   },
   "state": {
-    "root": "${USERPROFILE}/.codex/state/ai-dev-system",
-    "cache": "${USERPROFILE}/.codex/cache/ai-dev-system",
-    "artifacts": "${USERPROFILE}/.codex/artifacts"
+    "root": "${AI_DEV_HOME}/state",
+    "cache": "${AI_DEV_HOME}/cache",
+    "artifacts": "${AI_DEV_HOME}/artifacts"
   },
   "remote_foundation": {
     "status": "disabled",

@@ -18,7 +18,7 @@
    frontend quality, and runtime distribution.
 5. `09-mcp/search-index`: FTS and BGE-M3 hybrid retrieval.
 6. Obsidian: human-readable knowledge, generated project cards, workflows, and reports.
-7. `%USERPROFILE%/.codex/state/ai-dev-system`: runtime task state and evidence that should not clutter the vault.
+7. `${AI_DEV_HOME}/state` (default `~/.ai-dev/state`): runtime task state and evidence that should not clutter the vault.
 
 Frontend product projects add a repository-local state machine:
 
@@ -97,7 +97,7 @@ source of truth.
 - Completion rejects stale evidence and unresolved criteria.
 - Skill structure scores measure document readiness only.
 - Routing benchmarks measure selection behavior only.
-- `%USERPROFILE%/.codex/state/ai-dev-system/skill-outcomes.json` records verification-bound task outcomes.
+- `${AI_DEV_HOME}/state/skill-outcomes.json` records verification-bound task outcomes.
 - Empirical skill validation requires three terminal tasks, two canonical projects, at least 80%
   pass rate, and at least one human-confirmed review.
 - Pilot reviews measure independent dimension-level product outcomes and revision count without

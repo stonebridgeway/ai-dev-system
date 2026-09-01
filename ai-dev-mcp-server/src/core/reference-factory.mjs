@@ -170,10 +170,25 @@ function stableObject(value) {
   );
 }
 
+/**
+ * Stable SHA-256 of a product context object (key order normalised), used to
+ * detect whether a Reference Factory manifest is still current.
+ *
+ * @param {object} [context] - Frontend product context.
+ * @returns {string} Hex digest.
+ */
 export function referenceFactoryContextFingerprint(context = {}) {
   return hash(JSON.stringify(stableObject(context)));
 }
 
+/**
+ * Resolve the target surface (`web` | `application` | `mobile`). An explicit
+ * `surface` is validated and returned; otherwise it is inferred from `mode` and
+ * `productType` keywords, defaulting to `web`. Throws on an unsupported explicit value.
+ *
+ * @param {{ surface?: string, mode?: string, productType?: string }} [input]
+ * @returns {"web" | "application" | "mobile"}
+ */
 export function inferReferenceFactorySurface({
   surface = "",
   mode = "",
@@ -194,6 +209,14 @@ export function inferReferenceFactorySurface({
   return "web";
 }
 
+/**
+ * The fixed three-skill set for a Reference Factory run: the product-builder
+ * orchestrator, the surface-specific ImageGen skill, and the independent
+ * quality gate.
+ *
+ * @param {{ surface?: string }} [options]
+ * @returns {Array<{ name: string, source: string, role: string }>}
+ */
 export function selectReferenceFactorySkills({ surface = "web" } = {}) {
   const selectedSurface = inferReferenceFactorySurface({ surface });
   return [
@@ -335,6 +358,13 @@ function manifestFingerprint(manifest) {
   return hash(JSON.stringify(stableObject(source)));
 }
 
+/**
+ * Merge `updates` into a manifest and recompute its `manifest_fingerprint`.
+ *
+ * @param {object} manifest - Existing manifest.
+ * @param {object} [updates] - Shallow updates to apply.
+ * @returns {object} New manifest with a fresh fingerprint.
+ */
 export function updateReferenceFactoryManifest(manifest, updates = {}) {
   const next = {
     ...manifest,
@@ -347,6 +377,15 @@ export function updateReferenceFactoryManifest(manifest, updates = {}) {
   };
 }
 
+/**
+ * Validate a planning request before a manifest is created: product context must
+ * be prepared and truthful, the stage (`concepts` / `coverage`) must be legal
+ * for the current approval state, the generator/surface must be supported, and
+ * direction-count / artifact-budget must be in range.
+ *
+ * @param {{ state: object, stage?: string, surface?: string, generator?: string, directionCount?: number, artifactBudget?: number }} input
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateReferenceFactoryPlanning({
   state,
   stage = "auto",
@@ -392,6 +431,15 @@ export function validateReferenceFactoryPlanning({
   return errors;
 }
 
+/**
+ * Build a Reference Factory manifest (artifact jobs with output paths and prompt
+ * slots) for the concepts or coverage stage. Throws if
+ * {@link validateReferenceFactoryPlanning} reports errors. The MCP server only
+ * writes the manifest — the client must actually call ImageGen/Figma.
+ *
+ * @param {{ state: object, task?: string, stage?: string, surface?: string, generator?: string, directionCount?: number, artifactBudget?: number, conceptManifest?: object | null, now?: string }} input
+ * @returns {object} Reference Factory manifest.
+ */
 export function createReferenceFactoryManifest({
   state,
   task = "",
@@ -512,6 +560,14 @@ export function createReferenceFactoryManifest({
   };
 }
 
+/**
+ * Validate a stored manifest's schema, id format, and (when `state` is given)
+ * that it still matches the current product context and approvals.
+ *
+ * @param {object} manifest - Manifest to check.
+ * @param {{ state?: object | null }} [options]
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateReferenceFactoryManifest(manifest, {
   state = null
 } = {}) {
@@ -580,6 +636,14 @@ export function validateReferenceFactoryManifest(manifest, {
   return errors;
 }
 
+/**
+ * Check that supplied generation outputs cover exactly the manifest's artifact
+ * jobs — every `artifact_id` known, none missing, no duplicates or extras.
+ *
+ * @param {object} manifest - Manifest with an `artifacts` list.
+ * @param {Array<{ artifact_id?: string }>} [outputs] - Client-reported outputs.
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateReferenceFactoryOutputs(manifest, outputs = []) {
   const errors = [];
   const expected = new Map((manifest?.artifacts ?? []).map((artifact) => [artifact.id, artifact]));
@@ -625,6 +689,16 @@ export function validateReferenceFactoryOutputs(manifest, outputs = []) {
   return errors;
 }
 
+/**
+ * Assemble the registration payload that records generated references against a
+ * manifest: one reference per artifact with its output path, prompt hash, and
+ * per-file metadata (dimensions, sha256, perceptual hash).
+ *
+ * @param {object} manifest - Manifest with an `artifacts` list.
+ * @param {Array<{ artifact_id: string }>} outputs - Validated outputs.
+ * @param {Record<string, object>} [fileMetadata] - Per-artifact file metadata.
+ * @returns {object} Registration payload.
+ */
 export function buildReferenceFactoryRegistration(manifest, outputs, fileMetadata = {}) {
   const outputById = new Map(outputs.map((output) => [output.artifact_id, output]));
   const referenceIdByArtifact = new Map();
@@ -676,6 +750,13 @@ export function buildReferenceFactoryRegistration(manifest, outputs, fileMetadat
   return { references, directions };
 }
 
+/**
+ * Render a manifest into the human-readable plan the client follows to generate
+ * each artifact (prompts, output paths, and the "inspect every PNG" rules).
+ *
+ * @param {object} manifest - Reference Factory manifest.
+ * @returns {string} Markdown plan.
+ */
 export function renderReferenceFactoryPlan(manifest) {
   const lines = [
     "# Frontend Reference Factory Plan",

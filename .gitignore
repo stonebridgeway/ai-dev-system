@@ -15,3 +15,9 @@ embeddings/models/
 docker/.env
 docker/compose.local.yaml
 *.log
+
+# Generated live-state (machine-specific absolute paths); regenerated locally by
+# `node scripts/ai-dev.mjs distribution` and the project-prep MCP tools.
+runtime-distribution.json
+.ai-dev/project-brief.md
+.ai-dev/project-map.md

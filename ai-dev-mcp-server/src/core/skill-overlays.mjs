@@ -19,10 +19,25 @@ function list(value) {
     .filter(Boolean))];
 }
 
+/**
+ * Canonical `"<source>:<name>"` key (both lower-cased and trimmed) used to index
+ * skill-specific overlays.
+ *
+ * @param {string} source - Skill source (e.g. `custom`, `membrane/foo`).
+ * @param {string} name - Skill name.
+ * @returns {string}
+ */
 export function skillOverlayKey(source, name) {
   return `${text(source).toLowerCase()}:${text(name).toLowerCase()}`;
 }
 
+/**
+ * Create an empty overlay document seeded with the default per-source routing
+ * policies (custom = high priority, membrane/* = low + connector caveats, …).
+ *
+ * @param {string} [now] - ISO timestamp for `generated_at`.
+ * @returns {object} Overlay document (schema {@link SKILL_OVERLAY_SCHEMA_VERSION}).
+ */
 export function createSkillOverlayDocument(now = new Date().toISOString()) {
   return {
     schema_version: SKILL_OVERLAY_SCHEMA_VERSION,
@@ -62,6 +77,14 @@ function sanitizeOverlay(input = {}) {
   return result;
 }
 
+/**
+ * Validate an overlay document's schema, key format, field allowlist, and
+ * (when provided) that `primary_group` / overlay targets exist in the registry.
+ *
+ * @param {object} document - Overlay document.
+ * @param {{ knownGroups?: string[], knownSkills?: string[] }} [context]
+ * @returns {string[]} Human-readable error messages (empty when valid).
+ */
 export function validateSkillOverlayDocument(document, {
   knownGroups = [],
   knownSkills = []
@@ -105,6 +128,15 @@ function sourcePolicy(document, source) {
   return prefix?.[1] ?? {};
 }
 
+/**
+ * Apply the matching source policy and skill-specific overlay to a skill record:
+ * array fields are merged (deduped), `do_not_use_when` is replaced, text fields
+ * win when non-empty, and an `overlay` provenance block is attached.
+ *
+ * @param {{ source?: string, name?: string }} item - Skill record.
+ * @param {object} document - Overlay document.
+ * @returns {object} Overlaid record.
+ */
 export function applySkillOverlay(item, document) {
   const policy = sanitizeOverlay(sourcePolicy(document, text(item?.source)));
   const specific = sanitizeOverlay(document?.skills?.[skillOverlayKey(item?.source, item?.name)] ?? {});
@@ -129,6 +161,15 @@ export function applySkillOverlay(item, document) {
   return result;
 }
 
+/**
+ * Return a new overlay document with the overlay for `<source>:<name>` merged
+ * in (stamping `reviewed_by` / `reviewed_at`). Throws if source/name are missing
+ * or the overlay has no supported fields.
+ *
+ * @param {object} document - Existing overlay document.
+ * @param {{ source: string, name: string, overlay: object, reviewer?: string, now?: string }} input
+ * @returns {object} Updated overlay document.
+ */
 export function upsertSkillOverlay(document, {
   source,
   name,
@@ -157,6 +198,14 @@ export function upsertSkillOverlay(document, {
   return next;
 }
 
+/**
+ * Report overlay coverage over a skill list: policy/specific counts, orphan
+ * overlays (targets not in the list), and routing-priority distribution.
+ *
+ * @param {object} document - Overlay document.
+ * @param {Array<{ source: string, name: string }>} [items] - Registry skills.
+ * @returns {object} Summary.
+ */
 export function summarizeSkillOverlays(document, items = []) {
   const itemList = Array.isArray(items) ? items : [];
   const specificKeys = new Set(Object.keys(document?.skills ?? {}));

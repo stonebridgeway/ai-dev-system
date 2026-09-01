@@ -18,7 +18,7 @@
 - Output, duration, and process trees are bounded.
 - Password notes are left unchanged by explicit owner decision. They are not exposed as MCP resources.
 - Backup archives may contain those owner-kept local notes and therefore stay under the local
-  `%USERPROFILE%\.codex\backups` boundary.
+  `%AI_DEV_HOME%\backups` boundary (default `%USERPROFILE%\.ai-dev\backups`).
 
 ## Command Policy
 

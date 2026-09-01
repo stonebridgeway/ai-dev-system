@@ -10,6 +10,13 @@ function rounded(value) {
   return Number(Number(value || 0).toFixed(4));
 }
 
+/**
+ * Load a routing benchmark JSON file (`{ schema_version, description, cases[] }`).
+ * Throws if `cases` is not an array.
+ *
+ * @param {string} filePath - Path to the benchmark file.
+ * @returns {Promise<{ path: string, schema_version: number, description: string, cases: object[] }>}
+ */
 export async function readSkillRoutingCases(filePath) {
   const resolved = path.resolve(filePath);
   const parsed = JSON.parse(await fs.readFile(resolved, "utf8"));
@@ -24,6 +31,14 @@ export async function readSkillRoutingCases(filePath) {
   };
 }
 
+/**
+ * Run one benchmark case through the router and score it against
+ * `expected_all` / `expected_any` / `must_not` plus the "1–3 skills" rule.
+ *
+ * @param {{ id?: string, task?: string, project_types?: string[], stack?: string[], expected_all?: string[], expected_any?: string[], must_not?: string[] }} testCase
+ * @param {typeof routeSkills} [router] - Router override (for testing).
+ * @returns {{ id: string, status: "pass" | "fail", task: string, project_types: string[], stack: string[], selected: object[], matched_rules: string[], expectations: object, failures: object }}
+ */
 export function evaluateSkillRoutingCase(testCase, router = routeSkills) {
   const route = router({
     task: String(testCase.task || ""),
@@ -62,6 +77,14 @@ export function evaluateSkillRoutingCase(testCase, router = routeSkills) {
   };
 }
 
+/**
+ * Evaluate a whole benchmark suite and aggregate pass rate, expected-skill
+ * coverage, and "max three" / "empty route" violation counts.
+ *
+ * @param {object[]} cases - Benchmark cases.
+ * @param {typeof routeSkills} [router] - Router override (for testing).
+ * @returns {{ status: "pass" | "fail", generated_at: string, summary: object, cases: object[] }}
+ */
 export function evaluateSkillRoutingSuite(cases, router = routeSkills) {
   const results = cases.map((testCase) => evaluateSkillRoutingCase(testCase, router));
   const expectedSkills = new Set();

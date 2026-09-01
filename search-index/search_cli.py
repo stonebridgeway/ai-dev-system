@@ -35,7 +35,16 @@ DENSE_MODEL_NAME = "BAAI/bge-m3"
 DENSE_DIMENSIONS = 1024
 DEFAULT_DENSE_TEXT_LIMIT = 1200
 HYBRID_CANDIDATE_LIMIT = 500
-DEFAULT_DENSE_MODEL_DIR = Path(os.environ.get("BGE_M3_MODEL_DIR", Path.home() / ".codex" / "models" / "bge-m3"))
+def _default_dense_model_dir():
+    env = os.environ.get("BGE_M3_MODEL_DIR")
+    if env:
+        return Path(env)
+    new = Path.home() / ".ai-dev" / "models" / "bge-m3"
+    legacy = Path.home() / ".codex" / "models" / "bge-m3"
+    return legacy if not new.exists() and legacy.exists() else new
+
+
+DEFAULT_DENSE_MODEL_DIR = _default_dense_model_dir()
 INDEX_SCHEMA_VERSION = 2
 SQLITE_READ_RETRY_DELAYS = (0.15, 0.35, 0.75)
 DEFAULT_REBUILD_LOCK_TIMEOUT = 600.0

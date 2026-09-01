@@ -234,6 +234,14 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
+/**
+ * Stable SHA-256 over the parts of a product state that a concept jury or
+ * direction approval is bound to (context, references, directions), so a later
+ * change invalidates the approval.
+ *
+ * @param {object} state - Frontend product state.
+ * @returns {string} Hex digest.
+ */
 export function frontendDirectionsFingerprint(state) {
   const references = new Map((state?.references ?? []).map((reference) => [
     text(reference.id),
@@ -305,6 +313,13 @@ function validateMarkdownSections(markdown, sections, documentName) {
   return errors;
 }
 
+/**
+ * The three skills for a frontend product build, tuned to `mode`
+ * (`new` | `redesign` | `landing` | `maintenance`).
+ *
+ * @param {{ mode?: string }} [options]
+ * @returns {Array<{ name: string, source: string, role: string }>}
+ */
 export function selectFrontendProductSkills({ mode = "new" } = {}) {
   const selectedMode = validMode(mode);
   const specialist = {
@@ -345,6 +360,13 @@ export function selectFrontendProductSkills({ mode = "new" } = {}) {
   ];
 }
 
+/**
+ * Create the initial Frontend Product Quality state: normalised context, mode,
+ * implementer, empty references/directions/approvals, and a schema stamp.
+ *
+ * @param {{ projectName: string, mode?: string, implementer?: string, context?: object, now?: string }} input
+ * @returns {object} Frontend product state.
+ */
 export function createFrontendProductState({
   projectName,
   mode = "new",
@@ -393,6 +415,11 @@ export function createFrontendProductState({
   };
 }
 
+/**
+ * Render `design-brief.md` from the product state.
+ * @param {object} state - Frontend product state.
+ * @returns {string} Markdown.
+ */
 export function renderDesignBrief(state) {
   const context = state.context ?? {};
   return `# Frontend Design Brief
@@ -442,6 +469,11 @@ ${markdownList([
 `;
 }
 
+/**
+ * Render the `design-system.md` template (sections the author must complete).
+ * @param {object} state - Frontend product state.
+ * @returns {string} Markdown.
+ */
 export function renderDesignSystem(state) {
   return `# Project Design System
 
@@ -493,6 +525,11 @@ TBD - define keyboard, focus, contrast, semantics, announcements, and test targe
 `;
 }
 
+/**
+ * Render the `ui-inventory.md` template.
+ * @param {object} state - Frontend product state.
+ * @returns {string} Markdown.
+ */
 export function renderUiInventory(state) {
   return `# UI Inventory
 
@@ -520,6 +557,10 @@ TBD - record dense tables, long text, navigation, forms, media, and touch risks.
 `;
 }
 
+/**
+ * Render the static `visual-acceptance.md` template (Product Design Scorecard).
+ * @returns {string} Markdown.
+ */
 export function renderVisualAcceptance() {
   return `# Visual Acceptance
 
@@ -553,6 +594,10 @@ TBD - list screenshot, baseline, diff, scenario, accessibility, console, and ind
 `;
 }
 
+/**
+ * Render the static `anti-slop-policy.md` (the banned generic-AI patterns).
+ * @returns {string} Markdown.
+ */
 export function renderAntiSlopPolicy() {
   return `# Anti-Slop Policy
 
@@ -565,6 +610,11 @@ ${rule.description}
 `;
 }
 
+/**
+ * Render the static `references/README.md` explaining how approved references
+ * are stored and cited.
+ * @returns {string} Markdown.
+ */
 export function renderReferencesReadme() {
   return `# Approved Visual References
 
@@ -585,6 +635,13 @@ Do not auto-update approved baselines during verification. A changed baseline is
 `;
 }
 
+/**
+ * Build the full set of scaffold files (relative path → contents) that
+ * `prepare_frontend_product` writes into the repo.
+ *
+ * @param {object} state - Frontend product state.
+ * @returns {Map<string, string>} Path → file contents.
+ */
 export function buildFrontendProductFiles(state) {
   return new Map([
     [FRONTEND_PRODUCT_PATHS.designBrief, renderDesignBrief(state)],
@@ -596,6 +653,13 @@ export function buildFrontendProductFiles(state) {
   ]);
 }
 
+/**
+ * Validate that the product context is complete and not placeholder text
+ * (product name/type, audience, primary task, constraints, …).
+ *
+ * @param {object} [context] - Product context.
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateFrontendProductContext(context = {}) {
   const errors = [];
   for (const field of REQUIRED_PRODUCT_CONTEXT_FIELDS) {
@@ -612,6 +676,13 @@ export function validateFrontendProductContext(context = {}) {
   return errors;
 }
 
+/**
+ * Validate the approved-reference list: each entry needs a source, a stored
+ * path, and concrete observations; at least the minimum count must be present.
+ *
+ * @param {object[]} [references] - Reference records.
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateFrontendReferences(references = []) {
   const errors = [];
   const normalized = Array.isArray(references) ? references : [];
@@ -670,6 +741,14 @@ export function validateFrontendReferences(references = []) {
   return errors;
 }
 
+/**
+ * Validate the two or three visual directions: distinct ids, required
+ * descriptive fields, and each citing at least one approved reference.
+ *
+ * @param {object[]} [directions] - Direction records.
+ * @param {object[]} [references] - Approved references they may cite.
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateFrontendDirections(directions = [], references = []) {
   const errors = [];
   const normalized = Array.isArray(directions) ? directions : [];
@@ -717,6 +796,13 @@ export function validateFrontendDirections(directions = [], references = []) {
   return errors;
 }
 
+/**
+ * Validate that the design-system, UI-inventory, and visual-acceptance
+ * documents contain all their required sections.
+ *
+ * @param {{ designSystem?: string, uiInventory?: string, visualAcceptance?: string }} [documents] - Markdown contents.
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateFrontendDocuments({
   designSystem = "",
   uiInventory = "",
@@ -729,6 +815,13 @@ export function validateFrontendDocuments({
   ];
 }
 
+/**
+ * Validate anti-slop exception requests: each must name a known rule and give a
+ * concrete justification.
+ *
+ * @param {object[]} [exceptions] - Exception records.
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateAntiSlopExceptions(exceptions = []) {
   const knownRules = new Set(ANTI_SLOP_RULES.map((rule) => rule.id));
   const errors = [];
@@ -745,6 +838,13 @@ export function validateAntiSlopExceptions(exceptions = []) {
   return errors;
 }
 
+/**
+ * Validate a completed Product Design Scorecard: all ten dimensions present,
+ * each with a numeric score in range and a written rationale.
+ *
+ * @param {object} scorecard - Scorecard object.
+ * @returns {string[]} Error messages (empty when valid).
+ */
 export function validateProductDesignScorecard(scorecard) {
   if (!scorecard || typeof scorecard !== "object" || Array.isArray(scorecard)) {
     return ["Product Design Scorecard must be an object keyed by dimension."];
@@ -785,6 +885,15 @@ export function validateProductDesignScorecard(scorecard) {
   return errors;
 }
 
+/**
+ * Record an independent concept-jury review onto the product state after
+ * revalidating context, references, and directions. Throws / returns errors if
+ * the reviewer is not independent or the state is incomplete.
+ *
+ * @param {object} state - Frontend product state.
+ * @param {{ reviewer: string, independentFromImplementer?: boolean, comparison?: string, directionReviews?: object[], now?: string }} input
+ * @returns {object} Updated state (or `{ errors }`).
+ */
 export function recordConceptJuryState(state, {
   reviewer,
   independentFromImplementer = false,
@@ -895,6 +1004,15 @@ export function recordConceptJuryState(state, {
   };
 }
 
+/**
+ * Approve exactly one visual direction, stamping approver, evidence, and the
+ * directions fingerprint. Requires a passing concept jury and a valid
+ * `directionId`; returns `{ errors }` otherwise.
+ *
+ * @param {object} state - Frontend product state.
+ * @param {{ directionId: string, approver: string, evidence?: string, now?: string }} input
+ * @returns {object} Updated state (or `{ errors }`).
+ */
 export function approveDirectionState(state, {
   directionId,
   approver,
@@ -949,6 +1067,15 @@ export function approveDirectionState(state, {
   };
 }
 
+/**
+ * Approve the design system after a direction is approved: revalidates the
+ * required documents, records document hashes and the bound project state, and
+ * checks that no product UI files were changed before approval.
+ *
+ * @param {object} state - Frontend product state.
+ * @param {{ approver: string, evidence?: string, documentHashes?: Record<string,string>, baseline?: object, dirtyFiles?: string[], documents?: Record<string,string>, now?: string }} input
+ * @returns {object} Updated state (or `{ errors }`).
+ */
 export function approveDesignSystemState(state, {
   approver,
   evidence = "",
@@ -1008,6 +1135,16 @@ function changedApprovedDocuments(state, currentDocumentHashes) {
   return changed;
 }
 
+/**
+ * Evaluate whether the product may pass a gate. `implementation` requires
+ * approved direction + design system with unchanged document hashes;
+ * `handoff` additionally requires current review artifacts and scorecard.
+ * Returns blockers and warnings. Throws on an unknown gate name.
+ *
+ * @param {object} state - Frontend product state.
+ * @param {{ gate?: "implementation" | "handoff", currentDocumentHashes?: Record<string,string>, reviewArtifactsCurrent?: boolean | null }} [options]
+ * @returns {{ gate: string, ok: boolean, blockers: string[], warnings: string[] }}
+ */
 export function evaluateFrontendProductGate(state, {
   gate = "implementation",
   currentDocumentHashes = {},
