@@ -46,11 +46,44 @@ jobs:
         working-directory: ai-dev-mcp-server
         run: npm run packaging:check
 
-      # The full tool surface is coupled to the vault layout (03-skills-catalog,
-      # 01-system, ...). A standalone checkout can only exercise the vault-free
-      # src/core modules; the vault-coupled suite, coverage gate, and the
-      # protocol / lifecycle smokes run from the docker-publish workflow and
-      # from a full vault checkout.
       - name: Core unit tests
         working-directory: ai-dev-mcp-server
         run: npm run test:core
+
+  vault-suite:
+    name: MCP server (vault-coupled suite + smokes)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ai-dev-mcp-server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      # A standalone checkout has no full Obsidian vault, so the server resolves
+      # its content root to the bundled docker/public-seed tree. That seed ships
+      # skill sources only; build its registry / taxonomy so the vault-coupled
+      # tool surface can route skills.
+      - name: Build the bundled seed skill registry
+        working-directory: ai-dev-mcp-server
+        run: npm run skills:ensure-index
+
+      - name: Vault-coupled unit tests
+        working-directory: ai-dev-mcp-server
+        run: npm test
+
+      - name: MCP protocol smoke
+        working-directory: ai-dev-mcp-server
+        run: npm run protocol:smoke
+
+      - name: Task lifecycle smoke
+        working-directory: ai-dev-mcp-server
+        run: npm run lifecycle:smoke

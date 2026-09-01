@@ -1,13 +1,20 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { callTool } from "./mcp-stdio.mjs";
+import { callTool, vaultRoot } from "./mcp-stdio.mjs";
 import { PRODUCT_DESIGN_SCORECARD_DIMENSIONS } from "./core/frontend-product-quality.mjs";
+
+const requiresFrontendQaRunner = existsSync(
+  path.join(vaultRoot, "09-mcp", "frontend-qa", "frontend_qa_runner.mjs")
+)
+  ? false
+  : "requires the 09-mcp/frontend-qa runner (only present in a full vault checkout)";
 
 const execFileAsync = promisify(execFile);
 
@@ -342,7 +349,7 @@ test("frontend product tools enforce preparation, direction approval, and pre-co
   assert.equal(gate.ok, true);
 });
 
-test("strict visual workflow requires browser evidence and independent scorecard before handoff", async (t) => {
+test("strict visual workflow requires browser evidence and independent scorecard before handoff", { skip: requiresFrontendQaRunner }, async (t) => {
   const projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), "frontend-product-visual-"));
   t.after(() => fs.rm(projectRoot, { recursive: true, force: true }));
   await fs.writeFile(path.join(projectRoot, "package.json"), JSON.stringify({

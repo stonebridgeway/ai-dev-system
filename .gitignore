@@ -16,6 +16,13 @@ docker/.env
 docker/compose.local.yaml
 *.log
 
+# Skill registry / taxonomy / cards generated on demand for the bundled seed by
+# `npm run skills:ensure-index` (standalone checkouts only; a full vault commits
+# these under 03-skills-catalog/registries).
+docker/public-seed/03-skills-catalog/registries/
+docker/public-seed/03-skills-catalog/cards/
+docker/public-seed/03-skills-catalog/groups/
+
 # Generated live-state (machine-specific absolute paths); regenerated locally by
 # `node scripts/ai-dev.mjs distribution` and the project-prep MCP tools.
 runtime-distribution.json

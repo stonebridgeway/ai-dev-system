@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+
+const CATALOG_REGISTRY = fileURLToPath(
+  new URL("../../../03-skills-catalog/registries/skills.index.json", import.meta.url)
+);
+const requiresCatalog = existsSync(CATALOG_REGISTRY)
+  ? false
+  : "requires the full skill catalog (03-skills-catalog/registries/skills.index.json)";
 
 import {
   canonicalSkillGroup,
@@ -107,7 +115,7 @@ test("normalizes aliases and infers groups from Russian and English tasks", () =
   assert(integration.includes("integrations-automation"));
 });
 
-test("assigns every skill in the current registry exactly one known primary group", async () => {
+test("assigns every skill in the current registry exactly one known primary group", { skip: requiresCatalog }, async () => {
   const registryUrl = new URL("../../../03-skills-catalog/registries/skills.index.json", import.meta.url);
   const current = JSON.parse(await fs.readFile(registryUrl, "utf8"));
   const classified = current.map(classifySkill);
@@ -117,7 +125,7 @@ test("assigns every skill in the current registry exactly one known primary grou
   assert.equal(summary.reduce((total, group) => total + group.count, 0), current.length);
 });
 
-test("keeps every Stage 1 engineering domain populated", async () => {
+test("keeps every Stage 1 engineering domain populated", { skip: requiresCatalog }, async () => {
   const registryUrl = new URL("../../../03-skills-catalog/registries/skills.index.json", import.meta.url);
   const current = JSON.parse(await fs.readFile(registryUrl, "utf8"));
   const summary = summarizeSkillTaxonomy(current.map(classifySkill));
@@ -129,7 +137,7 @@ test("keeps every Stage 1 engineering domain populated", async () => {
   }
 });
 
-test("generated visual graph links every registry source exactly once", async () => {
+test("generated visual graph links every registry source exactly once", { skip: requiresCatalog }, async () => {
   const catalogRoot = fileURLToPath(new URL("../../../03-skills-catalog/", import.meta.url));
   const registry = JSON.parse(await fs.readFile(path.join(catalogRoot, "registries", "skills.index.json"), "utf8"));
   const graphRegistry = JSON.parse(await fs.readFile(path.join(catalogRoot, "registries", "skill-graph.index.json"), "utf8"));

@@ -134,9 +134,35 @@ import { buildToolDefinitions } from "./tool-definitions.mjs";
 import { autoCommands } from "./auto-commands.mjs";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
-const vaultRoot = path.resolve(
-  process.env.AI_DEV_VAULT_ROOT ?? path.join(serverDir, "..", "..", "..")
-);
+
+/**
+ * Resolve the vault root the server reads content from.
+ *
+ * Order: an explicit `AI_DEV_VAULT_ROOT`, then the sibling Obsidian vault three
+ * levels up (the normal in-vault layout), then the `docker/public-seed` tree
+ * bundled in the published repository. The seed fallback lets a standalone
+ * checkout — and the test suite running against it — work without a full vault.
+ *
+ * @returns {string} absolute path to the resolved vault root
+ */
+function resolveVaultRoot() {
+  if (process.env.AI_DEV_VAULT_ROOT) {
+    return path.resolve(process.env.AI_DEV_VAULT_ROOT);
+  }
+  const siblingVault = path.resolve(path.join(serverDir, "..", "..", ".."));
+  const looksLikeVault = existsSync(path.join(siblingVault, "03-skills-catalog"))
+    || existsSync(path.join(siblingVault, "01-system"));
+  if (looksLikeVault) {
+    return siblingVault;
+  }
+  const bundledSeed = path.resolve(path.join(serverDir, "..", "..", "docker", "public-seed"));
+  if (existsSync(bundledSeed)) {
+    return bundledSeed;
+  }
+  return siblingVault;
+}
+
+const vaultRoot = resolveVaultRoot();
 
 // Home for regenerable runtime data (task state, search cache, models, QA
 // artifacts). Agent-neutral: defaults to ~/.ai-dev, overridable per directory

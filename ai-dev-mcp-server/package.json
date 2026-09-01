@@ -21,6 +21,8 @@
     "docker:build": "node scripts/prepare-docker-context.mjs && docker build --tag ai-dev-system:local ../.docker/build-context",
     "docker:smoke": "node scripts/docker-smoke.mjs",
     "unix:launcher-smoke": "node scripts/unix-launcher-smoke.mjs",
+    "skills:ensure-index": "node scripts/ensure-skill-index.mjs",
+    "test:vault": "node scripts/ensure-skill-index.mjs && node --test",
     "packaging:check": "node scripts/validate-packaging.mjs",
     "clients:install": "node scripts/install-local-mcp-clients.mjs --apply",
     "start:legacy": "node src/mcp-stdio.mjs",
@@ -32,7 +34,7 @@
     "test:legacy": "node --test src/skill-taxonomy.test.mjs src/skill-quality.test.mjs",
     "protocol:smoke": "node scripts/protocol-smoke.mjs",
     "lifecycle:smoke": "node scripts/lifecycle-smoke.mjs",
-    "check": "node scripts/static-quality.mjs && node --test --experimental-test-coverage --test-coverage-include=src/core/*.mjs --test-coverage-exclude=src/core/*.test.mjs --test-coverage-lines=85 --test-coverage-branches=60 --test-coverage-functions=85 && node scripts/security-check.mjs && node scripts/protocol-smoke.mjs && node scripts/lifecycle-smoke.mjs",
+    "check": "node scripts/static-quality.mjs && node scripts/ensure-skill-index.mjs && node --test --experimental-test-coverage --test-coverage-include=src/core/*.mjs --test-coverage-exclude=src/core/*.test.mjs --test-coverage-lines=85 --test-coverage-branches=60 --test-coverage-functions=85 && node scripts/security-check.mjs && node scripts/protocol-smoke.mjs && node scripts/lifecycle-smoke.mjs",
     "dev": "node --watch src/server.mjs"
   },
   "dependencies": {

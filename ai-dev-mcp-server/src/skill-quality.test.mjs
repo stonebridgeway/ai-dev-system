@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   SKILL_SCHEMA_VERSION,
@@ -157,7 +159,14 @@ test("quality summary separates structural readiness from empirical validation",
   assert.equal(summary.by_validation_status.provisional, 1);
 });
 
-test("the generated registry persists Schema v2 for every current skill", async () => {
+const CATALOG_REGISTRY = fileURLToPath(
+  new URL("../../../03-skills-catalog/registries/skills.index.json", import.meta.url)
+);
+const requiresCatalog = existsSync(CATALOG_REGISTRY)
+  ? false
+  : "requires the full skill catalog (03-skills-catalog/registries/skills.index.json)";
+
+test("the generated registry persists Schema v2 for every current skill", { skip: requiresCatalog }, async () => {
   const registryUrl = new URL("../../../03-skills-catalog/registries/skills.index.json", import.meta.url);
   const registry = JSON.parse(await fs.readFile(registryUrl, "utf8"));
   const custom = registry.filter((item) => item.source === "custom");
