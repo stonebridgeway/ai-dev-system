@@ -9,7 +9,7 @@
     "check": "node --check frontend_qa_runner.mjs && node --test"
   },
   "devDependencies": {
-    "@axe-core/playwright": "4.12.1",
+    "@axe-core/playwright": "4.13.0",
     "pixelmatch": "7.2.0",
     "playwright": "1.61.1",
     "pngjs": "7.0.0"
