@@ -3136,11 +3136,10 @@ async function systemHealthCheck({
     const required = [
       "00-start-here.md",
       "01-system/AI Dev Control Center.md",
+      "09-mcp/README.md",
       "09-mcp/ai-dev-mcp-server/README.md",
-      "03-skills-catalog/Skill Cards.md",
-      "09-mcp/Semantic Search.md",
-      "09-mcp/Search Eval.md",
-      "09-mcp/Embeddings Backend.md"
+      "09-mcp/ai-dev-mcp-server/docs/ARCHITECTURE.md",
+      "03-skills-catalog/Skill Cards.md"
     ];
     const files = [];
     for (const relative of required) {
