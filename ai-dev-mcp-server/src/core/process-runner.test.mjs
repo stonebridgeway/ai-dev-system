@@ -43,7 +43,7 @@ test("Windows package-manager shims resolve to a Node entrypoint", {
   }
 });
 
-test("Windows npm quality commands can use the bundled pnpm entrypoint", {
+test("Windows npm quality commands do not fall back to pnpm", {
   skip: process.platform !== "win32"
 }, async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-npm-fallback-"));
@@ -54,11 +54,10 @@ test("Windows npm quality commands can use the bundled pnpm entrypoint", {
   await fs.writeFile(shim, "@echo off\r\n", "utf8");
   await fs.writeFile(entrypoint, "process.exit(0);\n", "utf8");
   try {
-    const invocation = await resolveSpawnInvocation(shim, ["run", "test"], { runtimeRoots: [] });
-    assert.equal(invocation.executable, process.execPath);
-    assert.equal(invocation.adapter, "npm-via-pnpm-node-entrypoint");
-    assert.equal(invocation.packageManagerEntrypoint, entrypoint);
-    assert.deepEqual(invocation.args.slice(1), ["run", "test"]);
+    await assert.rejects(
+      resolveSpawnInvocation(shim, ["run", "test"], { runtimeRoots: [] }),
+      /Could not resolve a shell-free npm entrypoint/
+    );
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
@@ -66,7 +65,7 @@ test("Windows npm quality commands can use the bundled pnpm entrypoint", {
 
 test("pnpm adapters expose bundled Node and disable dependency auto-install", () => {
   const environment = buildSpawnEnvironment(
-    { adapter: "npm-via-pnpm-node-entrypoint" },
+    { adapter: "pnpm-node-entrypoint" },
     { PATH: "C:\\project-bin" }
   );
   assert.equal(

@@ -62,12 +62,18 @@ requireText(pkgbuild, /^pkgname=ai-dev-system-git$/m, "PKGBUILD");
 requireText(pkgbuild, /^arch=\('x86_64' 'aarch64'\)$/m, "PKGBUILD");
 requireText(pkgbuild, /git\+https:\/\/github\.com\/stonebridgeway\/ai-dev-system\.git#branch=main/, "PKGBUILD");
 requireText(srcinfo, /^pkgbase = ai-dev-system-git$/m, ".SRCINFO");
+// `-git` packages compute pkgver() at build time; the committed value is only a
+// syntactically valid placeholder, so assert its shape, not an exact commit.
+requireText(srcinfo, /^\tpkgver = \d+\.\d+\.\d+\.r\d+\.g[0-9a-f]{7,}$/m, ".SRCINFO");
 requireText(srcinfo, /^\s+arch = x86_64$/m, ".SRCINFO");
 requireText(srcinfo, /^\s+arch = aarch64$/m, ".SRCINFO");
+requireText(srcinfo, /^\tsource = ai-dev-system::git\+https:\/\/github\.com\/stonebridgeway\/ai-dev-system\.git#branch=main$/m, ".SRCINFO");
+requireText(srcinfo, /^\tsha256sums = SKIP$/m, ".SRCINFO");
 requireText(formula, /^class AiDevSystem < Formula$/m, "Homebrew formula");
 requireText(formula, /^# typed: strict$/m, "Homebrew formula");
 requireText(formula, /^# frozen_string_literal: true$/m, "Homebrew formula");
-requireText(formula, /head "https:\/\/github\.com\/stonebridgeway\/ai-dev-system\.git", branch: "main"/, "Homebrew formula");
+requireText(formula, /url "https:\/\/github\.com\/stonebridgeway\/ai-dev-system\/archive\/refs\/tags\/v1\.0\.0\.tar\.gz"/, "Homebrew formula");
+requireText(formula, /sha256 "ca99b696f024d3d0688088ff63f68add9c122577fbecb23a960d7efb25d0e4b5"/, "Homebrew formula");
 requireText(formula, /inreplace launcher, "@AI_DEV_SYSTEM_ROOT@", libexec/, "Homebrew formula");
 requireText(formula, /launcher\.chmod 0755/, "Homebrew formula");
 

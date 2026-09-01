@@ -58,8 +58,8 @@ async function findPackageManagerEntrypoint(manager, roots) {
 
 /**
  * Turn a requested executable into a shell-free spawn plan. On Windows this
- * rewrites package-manager `.cmd` shims to `node <entrypoint>` (falling back to
- * the bundled pnpm entrypoint for `npm`); elsewhere it is a pass-through.
+ * rewrites package-manager `.cmd` shims to `node <entrypoint>`; elsewhere it
+ * is a pass-through.
  * Throws when no shell-free entrypoint can be found.
  *
  * @param {string} executable - Requested executable name or path.
@@ -98,17 +98,6 @@ export async function resolveSpawnInvocation(executable, args = [], options = {}
       adapter: `${manager}-node-entrypoint`,
       packageManagerEntrypoint: entrypoint
     };
-  }
-  if (manager === "npm") {
-    const pnpmEntrypoint = await findPackageManagerEntrypoint("pnpm", roots);
-    if (pnpmEntrypoint) {
-      return {
-        executable: process.execPath,
-        args: [pnpmEntrypoint, ...args],
-        adapter: "npm-via-pnpm-node-entrypoint",
-        packageManagerEntrypoint: pnpmEntrypoint
-      };
-    }
   }
   throw new Error(`Could not resolve a shell-free ${manager} entrypoint from PATH or the bundled runtime.`);
 }

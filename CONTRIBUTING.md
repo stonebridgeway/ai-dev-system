@@ -25,10 +25,20 @@ A standalone checkout resolves its content root to `docker/public-seed`.
 ## Prerequisites
 
 - Node.js ≥ 24 (`.nvmrc` pins `24`)
-- npm (the server uses npm and `package-lock.json`; only `frontend-qa/` uses pnpm)
+- npm (the server); pnpm only if you work on `frontend-qa/`
 - Git
 - Docker Desktop / Engine — only for the Docker and packaging paths
 - Python 3.11+ — only for the embeddings and search-eval helpers
+
+## Package-manager policy
+
+`ai-dev-mcp-server/` uses npm (`package-lock.json`, `packageManager: npm`) because
+it is the server's published runtime and its CI / Docker install path;
+`frontend-qa/` uses pnpm (`pnpm-lock.yaml`, `packageManager: pnpm`) because it is a
+separately packaged Playwright helper bundled into the runtime image. Keep the two
+lockfiles and managers independent. The server's own tooling always shells out to
+npm; a user's project checked out under `/workspace` may still be a pnpm project,
+and the quality gate runs it with pnpm in that case.
 
 ## Setup
 

@@ -6,9 +6,9 @@ class AiDevSystem < Formula
   desc "Local-first MCP development system for AI agents"
   homepage "https://github.com/stonebridgeway/ai-dev-system"
   license "MIT"
-  head "https://github.com/stonebridgeway/ai-dev-system.git", branch: "main"
+  url "https://github.com/stonebridgeway/ai-dev-system/archive/refs/tags/v1.0.0.tar.gz"
+  sha256 "ca99b696f024d3d0688088ff63f68add9c122577fbecb23a960d7efb25d0e4b5"
 
-  depends_on "git" => :build
   depends_on :macos
 
   def install

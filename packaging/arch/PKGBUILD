@@ -1,5 +1,5 @@
 pkgname=ai-dev-system-git
-pkgver=1.0.0.r0.g07d5db2
+pkgver=1.0.0.r0.g9b7988d
 pkgrel=1
 pkgdesc="Local-first MCP development system for AI agents"
 arch=('x86_64' 'aarch64')

@@ -11,9 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `.github/` issue and pull-request templates and a `dependabot.yml` for npm,
   pip, and GitHub Actions updates.
+- Stable Homebrew tap formula source for `v1.0.0`, validation of AUR `.SRCINFO`,
+  and documented maintainer-only publication paths for `stonebridgeway/tap` and
+  `ai-dev-system-git`.
 
 ### Changed
 
+- Package-manager split is now explicit: `packageManager` fields plus a
+  `CONTRIBUTING.md` policy section pin `ai-dev-mcp-server/` to npm and
+  `frontend-qa/` to pnpm. `resolveSpawnInvocation` no longer silently runs an
+  npm command through a bundled pnpm entrypoint — it fails closed instead.
 - `npm run docker:audit` now prints a clear "run `npm run docker:prepare` first"
   message when the build context is missing, instead of an `ENOENT` stack trace.
 

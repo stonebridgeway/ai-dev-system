@@ -336,7 +336,14 @@ Workflow [docker-publish.yml](.github/workflows/docker-publish.yml) провер
 
 ## Arch/AUR и Homebrew
 
-Arch-пакет можно собрать из клона:
+После публикации в AUR на Arch Linux / Manjaro выполните:
+
+```bash
+yay -S ai-dev-system-git
+ai-dev-system --install-prerequisites
+```
+
+Пакет также можно собрать из этого клона:
 
 ```bash
 cd packaging/arch
@@ -344,19 +351,19 @@ makepkg -si
 ai-dev-system --install-prerequisites
 ```
 
-Имя пакета для будущей публикации в AUR: `ai-dev-system-git`. Сам GitHub-репозиторий не может
-публиковать в AUR без отдельного AUR-аккаунта и SSH-репозитория сопровождающего.
+Имя AUR-пакета: `ai-dev-system-git`; он следует ветке `main`. Для публикации нужны отдельный
+AUR-аккаунт и SSH-репозиторий сопровождающего.
 
-На macOS доступна HEAD-формула:
+На macOS после публикации Homebrew tap выполните:
 
 ```bash
-brew install --HEAD --formula ./packaging/homebrew/ai-dev-system.rb
+brew tap stonebridgeway/tap
+brew install ai-dev-system
 ai-dev-system --install-prerequisites
 ```
 
-Короткая команда через Homebrew tap потребует отдельного репозитория
-`stonebridgeway/homebrew-tap`. Подробности для сопровождающих находятся в
-[packaging/README.md](packaging/README.md).
+Формула устанавливает стабильный релиз `v1.0.0`. Инструкции для сопровождающего по публикации
+tap и обновлению релизов находятся в [packaging/README.md](packaging/README.md).
 
 ## Проверка и диагностика
 

@@ -356,7 +356,14 @@ After the first push:
 
 ## Arch / AUR and Homebrew
 
-The Arch package can be built from a clone:
+After publication in AUR, install on Arch Linux / Manjaro with:
+
+```bash
+yay -S ai-dev-system-git
+ai-dev-system --install-prerequisites
+```
+
+The package follows `main`. It can also be built from this clone:
 
 ```bash
 cd packaging/arch
@@ -364,20 +371,19 @@ makepkg -si
 ai-dev-system --install-prerequisites
 ```
 
-The package name for a future AUR release is `ai-dev-system-git`. The GitHub
-repository cannot publish to the AUR without a separate AUR account and the
-maintainer's SSH repository.
+The AUR package name is `ai-dev-system-git`. Publishing requires a separate AUR
+account and the maintainer's SSH repository.
 
-On macOS a HEAD formula is available:
+On macOS, after the Homebrew tap is published:
 
 ```bash
-brew install --HEAD --formula ./packaging/homebrew/ai-dev-system.rb
+brew tap stonebridgeway/tap
+brew install ai-dev-system
 ai-dev-system --install-prerequisites
 ```
 
-A short `brew` command through a tap would need a separate
-`stonebridgeway/homebrew-tap` repository. Maintainer details are in
-[packaging/README.md](packaging/README.md).
+The formula installs the stable `v1.0.0` release. Maintainer publishing and
+release-update details are in [packaging/README.md](packaging/README.md).
 
 ## Verification and diagnostics
 
