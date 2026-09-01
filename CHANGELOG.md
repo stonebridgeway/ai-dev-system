@@ -8,32 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `vault-suite` CI job: runs the vault-coupled test suite plus the protocol and
-  lifecycle smokes against the bundled `docker/public-seed`.
-- `npm run skills:ensure-index` / `scripts/ensure-skill-index.mjs`: builds the
-  bundled seed's skill registry on demand so a standalone checkout can route
-  skills.
-- English `README.md`; the Russian version moves to `README.ru.md`.
-- Root `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and this changelog.
-- `.nvmrc` pinning Node 24.
+
+- `.github/` issue and pull-request templates and a `dependabot.yml` for npm,
+  pip, and GitHub Actions updates.
 
 ### Changed
-- Vault root resolution: a checkout with no full vault now falls back to the
-  bundled `docker/public-seed`, so the server and tests work from source without
-  `AI_DEV_VAULT_ROOT`.
-- `npm run check` now provisions the seed skill registry before running tests, so
-  it passes on a fresh clone.
 
-### Fixed
-- Vault-coupled tests that require the full production skill catalog or the
-  Playwright frontend-qa runner now `skip` when those fixtures are absent instead
-  of failing a standalone checkout.
+- `npm run docker:audit` now prints a clear "run `npm run docker:prepare` first"
+  message when the build context is missing, instead of an `ENOENT` stack trace.
 
 ## [1.0.0] - 2026-09-01
 
 First tagged release.
 
 ### Added
+
 - Local `stdio` MCP server (`@modelcontextprotocol/sdk`) exposing repository
   context, a knowledge base, a managed skill library, hybrid search, quality
   gates, Frontend QA, and a verifiable task lifecycle
@@ -49,16 +38,39 @@ First tagged release.
   launcher / `ClaudeMcpProxy`, Arch `PKGBUILD`, and a Homebrew formula.
 - `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/RECOVERY.md`; JSDoc types for
   every exported `src/core` function; ~86% line coverage on `src/core`.
-- CI: static-quality, security, packaging, and vault-free unit gates
-  (`ci.yml`); privacy-policy, context-audit, image-build, and GHCR publish
-  (`docker-publish.yml`).
+- CI: static-quality, security, packaging, and vault-free unit gates (`ci.yml`);
+  a `vault-suite` job runs the full vault-coupled test suite plus the protocol and
+  lifecycle smokes against the bundled seed; privacy-policy, context-audit,
+  image-build, and GHCR publish (`docker-publish.yml`).
+- `npm run skills:ensure-index` / `scripts/ensure-skill-index.mjs`: builds the
+  bundled seed's skill registry on demand so a standalone checkout can route
+  skills.
+- English `README.md` (Russian preserved at `README.ru.md`), and root
+  `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, and this changelog.
+- BGE-M3 weight-download instructions for the source and Docker paths.
+- `.nvmrc` pinning Node 24.
 
 ### Changed
+
 - Agent-neutral runtime: regenerable data resolves under `~/.ai-dev`
   (`AI_DEV_HOME`) with per-directory `AI_DEV_*` overrides and a `~/.codex`
   fallback for migrated installs. Launchers, helper scripts, the Docker image,
   and the client installer use `node` / `python3` from `PATH`. Documentation and
   the shipped `mcpServers` snippet are client-neutral.
+- Vault root resolution: a checkout with no full vault falls back to the bundled
+  `docker/public-seed`, so the server and tests work from source without
+  `AI_DEV_VAULT_ROOT`. `npm run check` provisions the seed skill registry first,
+  so it passes on a fresh clone.
+
+### Fixed
+
+- Vault-coupled tests that require the full production skill catalog or the
+  Playwright frontend-qa runner now `skip` when those fixtures are absent instead
+  of failing a standalone checkout.
+- `buildDockerClientServerConfig` resolves `AI_DEV_PROJECT_PATH` with the path
+  API for the requested `platform`, so a Windows client config generated on a
+  non-Windows host is no longer mangled; the installer tests pin `platform`
+  explicitly instead of relying on `process.platform`.
 
 [Unreleased]: https://github.com/stonebridgeway/ai-dev-system/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/stonebridgeway/ai-dev-system/releases/tag/v1.0.0

@@ -1,0 +1,50 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How are you running it
+      options:
+        - Docker image (GHCR)
+        - Docker image (built locally)
+        - From source (node src/server.mjs)
+        - Arch package / Homebrew formula
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      placeholder: Claude Code, Claude Desktop, Cursor, VS Code, Codex, Gemini, …
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS and version, Node version (`node -v`), image tag or commit SHA.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Server stderr, `system_health_check` output, or CI logs. Redact secrets and personal paths.
+      render: text

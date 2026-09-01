@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/stonebridgeway/ai-dev-system/security/advisories/new
+    about: Report security issues privately — do not open a public issue. See SECURITY.md.
+  - name: Question or idea
+    url: https://github.com/stonebridgeway/ai-dev-system/discussions
+    about: Use Discussions for open-ended questions and design ideas.
