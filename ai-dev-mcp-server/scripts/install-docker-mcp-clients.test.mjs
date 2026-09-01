@@ -11,10 +11,14 @@ import {
   windowsClaudeDesktopStoreConfigPath
 } from "./install-docker-mcp-clients.mjs";
 
+// These fixtures assert Windows client behavior (PowerShell launchers, backslash
+// paths). Platform is pinned explicitly so the assertions hold on any CI runner,
+// not only when process.platform happens to be "win32".
 const options = {
   launcher: "C:\\tools\\ai-dev\\docker\\run-mcp.ps1",
   image: "ai-dev-system:local",
-  projectPath: "C:\\Dev"
+  projectPath: "C:\\Dev",
+  platform: "win32"
 };
 
 test("Docker client configuration uses the local stdio launcher and project mount", () => {
@@ -80,7 +84,18 @@ test("Unix clients use the shell launcher and native configuration roots", () =>
     platform: "darwin"
   });
   const macPaths = localPaths({ home: "/Users/dev", platform: "darwin" });
-  const linuxPaths = localPaths({ home: "/home/dev", platform: "linux" });
+  // XDG_CONFIG_HOME outranks the synthetic home when set (GitHub-hosted Linux
+  // runners set it to the real runner home), so clear it for this assertion —
+  // it is testing the "linux, no XDG override" default, not this host's env.
+  const previousXdgConfigHome = process.env.XDG_CONFIG_HOME;
+  delete process.env.XDG_CONFIG_HOME;
+  let linuxPaths;
+  try {
+    linuxPaths = localPaths({ home: "/home/dev", platform: "linux" });
+  } finally {
+    if (previousXdgConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+    else process.env.XDG_CONFIG_HOME = previousXdgConfigHome;
+  }
   const customLinuxPaths = localPaths({
     home: "/home/dev",
     appData: "/tmp/xdg-config",

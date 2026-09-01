@@ -142,7 +142,7 @@ export function buildDockerClientServerConfig(client, {
       : [resolvedLauncher],
     env: {
       AI_DEV_IMAGE: image,
-      AI_DEV_PROJECT_PATH: path.resolve(projectPath),
+      AI_DEV_PROJECT_PATH: pathApi.resolve(projectPath),
       ...(windows ? { AI_DEV_MCP_LAUNCHER: resolvedLauncher } : {}),
       ...(!windows && runtimeContainer ? { AI_DEV_RUNTIME_CONTAINER: runtimeContainer } : {})
     }
