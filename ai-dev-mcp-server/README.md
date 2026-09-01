@@ -207,6 +207,55 @@ displacing the exact workflow skill. Golden cases live in:
 - `09-mcp/search-eval/search_eval_cases.json`
 - `09-mcp/search-eval/skill_routing_eval_cases.json`
 
+## Semantic search (BGE-M3)
+
+Hybrid search works without a model: SQLite FTS, sparse aliases, and deterministic
+intent routing are always on. The optional local `BAAI/bge-m3` reranker improves
+concept and document retrieval. The Docker image never bundles the weights
+(~2.3 GB); the container mounts a host folder read-only at `/models/bge-m3`.
+
+### From a source checkout
+
+1. Install the Python helper dependencies:
+
+   ```bash
+   python3 -m venv 09-mcp/embeddings/.venv
+   09-mcp/embeddings/.venv/bin/pip install -r 09-mcp/embeddings/requirements-bge-m3.txt
+   ```
+
+2. Download the weights into the model directory the loader expects
+   (`$BGE_M3_MODEL_DIR`, else `~/.ai-dev/models/bge-m3`):
+
+   ```bash
+   09-mcp/embeddings/.venv/bin/python - <<'PY'
+   from pathlib import Path
+   from huggingface_hub import snapshot_download
+   target = Path.home() / ".ai-dev" / "models" / "bge-m3"
+   snapshot_download(
+       "BAAI/bge-m3",
+       local_dir=target,
+       allow_patterns=["*.json", "*.model", "sentencepiece.bpe.model", "pytorch_model.bin"],
+   )
+   print("downloaded to", target)
+   PY
+   ```
+
+   The loader checks for `pytorch_model.bin` in that folder and fails clearly if
+   it is missing. Set `BGE_M3_DEVICE=cuda` to use a GPU.
+
+3. Point `AI_DEV_PYTHON` at that venv's interpreter (or keep `python3` on `PATH`
+   with the packages installed) and run `run_search_eval` / `system_health_check`
+   to confirm the dense backend is picked up.
+
+### With the Docker image
+
+```bash
+docker build --build-arg INSTALL_BGE_M3=1 --tag ai-dev-system:bge .docker/build-context
+```
+
+Download the weights on the host as above, then set `AI_DEV_MODEL_PATH` to that
+folder; the launcher mounts it read-only as `/models/bge-m3`.
+
 ## Frontend QA Config
 
 Projects may define `.ai-dev/frontend-qa.json`:
