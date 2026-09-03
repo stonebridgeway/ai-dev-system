@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { runProcess } from "./process-runner.mjs";
 import {
+  configureRuntimeStateRoot,
   projectIdentityKey,
   resolveProjectIdentity,
   sameProjectIdentity
@@ -28,6 +29,23 @@ test("nested packages resolve to one canonical Git project", async (t) => {
   assert.equal(fromNested.project_id, fromRoot.project_id);
   assert.equal(fromNested.project_root, fromRoot.project_root);
   assert.equal(sameProjectIdentity(fromRoot, fromNested), true);
+});
+
+test("the configured runtime-state .ai-dev is not treated as a project boundary", async (t) => {
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-home-"));
+  t.after(() => {
+    configureRuntimeStateRoot("");
+    return fs.rm(home, { recursive: true, force: true });
+  });
+  // The runtime lives at <home>/.ai-dev; a non-git project sits directly under it.
+  const runtimeStateRoot = path.join(home, ".ai-dev");
+  await fs.mkdir(path.join(runtimeStateRoot, "projects", "my-app"), { recursive: true });
+  configureRuntimeStateRoot(runtimeStateRoot);
+  const project = path.join(runtimeStateRoot, "projects", "my-app");
+
+  const identity = await resolveProjectIdentity(project);
+  // Without the fix, the walk stops at <home> because <home>/.ai-dev exists.
+  assert.notEqual(identity.project_root, path.resolve(home));
 });
 
 test("filesystem projects use a stable canonical key", async (t) => {

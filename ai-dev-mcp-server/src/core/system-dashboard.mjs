@@ -84,6 +84,7 @@ This page is generated from live registries and runtime metadata. Run \`rebuild_
 | Static quality gate | Ready | \`npm run lint\` |
 | Coverage gate | Ready | ${snapshot.runtime.coverage_thresholds} |
 | Security gate | Ready | \`npm run security\` |
+| Archify diagrams | Ready | 9 MCP tools; local CLI with Chrome/Edge only for visual checks |
 | Project Context Compiler | Ready | bounded packs with freshness fingerprints |
 | Outcome Analytics v2 | Ready | one terminal outcome per task |
 | Reference Factory v2 | Ready | perceptual duplicate checks plus Concept Jury |

@@ -89,6 +89,18 @@
       "expected_all": ["feature-builder", "backend-api-engineer", "api-contract-reviewer"]
     },
     {
+      "id": "ru-architecture-diagram",
+      "task": "Построй диаграмму архитектуры платёжного сервиса из описания",
+      "project_types": ["backend"],
+      "stack": ["Node.js"],
+      "expected_any": ["archify"]
+    },
+    {
+      "id": "en-mermaid-convert",
+      "task": "Convert this Mermaid sequenceDiagram into a polished shareable diagram",
+      "expected_any": ["archify"]
+    },
+    {
       "id": "ru-db-migration",
       "task": "Добавь миграцию схемы базы данных и безопасный backfill",
       "project_types": ["backend"],

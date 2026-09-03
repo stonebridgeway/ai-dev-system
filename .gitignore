@@ -1,4 +1,10 @@
 **/node_modules/
+# The clean seed carries Archify's pinned *runtime* dependencies so the locally
+# executed diagram CLI works offline with no install step. The build-only
+# `simple-icons` package (~23 MB, used by generate-brand-marks) stays excluded.
+!docker/public-seed/03-skills-catalog/sources/external/archify/node_modules/
+!docker/public-seed/03-skills-catalog/sources/external/archify/node_modules/**
+docker/public-seed/03-skills-catalog/sources/external/archify/node_modules/simple-icons/
 **/.venv/
 **/__pycache__/
 **/*.pyc

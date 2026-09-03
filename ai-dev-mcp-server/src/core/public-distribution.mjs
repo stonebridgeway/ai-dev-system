@@ -48,6 +48,10 @@ const FORBIDDEN_FILE_PATTERNS = [
   { rule: "log-file", pattern: /\.log$/i }
 ];
 
+function isApprovedVendoredDependencyPath(relativePath) {
+  return /(?:^|\/)03-skills-catalog\/sources\/external\/archify\/node_modules(?:\/|$)/i.test(relativePath);
+}
+
 const SECRET_PATTERNS = [
   {
     rule: "private-key-material",
@@ -96,6 +100,11 @@ function placeholderCredential(value) {
  */
 export function distributionPathFindings(relativePath) {
   const normalized = normalizedRelativePath(relativePath);
+  // A pinned, provenance-reviewed third-party dependency tree carries its own
+  // normal artifacts (coverage/, *.pem test fixtures, *.log). Provenance is the
+  // guarantee here, not per-file structural scanning — so skip these checks for
+  // the approved vendored subtree. Secret content scanning still applies.
+  if (isApprovedVendoredDependencyPath(normalized)) return [];
   const segments = normalized.toLowerCase().split("/").filter(Boolean);
   const findings = [];
   for (const segment of segments) {

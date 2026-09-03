@@ -70,7 +70,11 @@ const READ_ONLY_TOOLS = new Set([
   "get_task",
   "list_tasks",
   "skill_outcome_status",
-  "project_pilot_status"
+  "project_pilot_status",
+  "archify_doctor",
+  "archify_guide",
+  "archify_validate",
+  "archify_brands"
 ]);
 
 const OPEN_WORLD_TOOLS = new Set(["import_skill_repo"]);
@@ -211,6 +215,25 @@ const PROMPTS = [
       `Обнови память проекта ${project_path}.`,
       "Вызови refresh_project_memory, проверь компоненты и команды, затем search_index_status.",
       "Сообщи, какие факты изменились и какие риски или quality gates остались."
+    ].join("\n")
+  },
+  {
+    name: "build_architecture_diagram",
+    title: "Построй диаграмму архитектуры",
+    description: "Create a verified Archify architecture diagram and finish with a delivery receipt.",
+    arguments: [
+      { name: "project_path", description: "Absolute repository path.", required: true },
+      { name: "scenario", description: "Architecture to document.", required: true },
+      { name: "output_path", description: "Project-relative output HTML path, for example docs/diagrams/architecture.html.", required: true }
+    ],
+    render: ({ project_path, scenario, output_path }) => [
+      `Проект: ${project_path}`,
+      `Сценарий: ${scenario}`,
+      `Артефакт: ${output_path}`,
+      "Вызови begin_task, затем archify_guide. Создай JSON IR и повторяй archify_validate до нулевых ошибок и предупреждений.",
+      "Вызови archify_deliver с artifact_location=project, quality=showcase и output_path, затем archify_visual_check для доставленного HTML.",
+      "Не смешивай deterministic delivery, automated browser evidence и perceptual review: последний остаётся отдельным человеческим или image-capable review.",
+      "Заверши только с receipt; передай его в verify_task или complete_task как evidence kind=archify_deliver."
     ].join("\n")
   }
 ];

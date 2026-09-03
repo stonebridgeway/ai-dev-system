@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteJson } from "./atomic-files.mjs";
-import { taskRequiresFrontendProductWorkflow } from "./skill-router.mjs";
+import { taskRequestsDiagram, taskRequiresFrontendProductWorkflow } from "./skill-router.mjs";
 
 const TASK_ID = /^task-\d{8}T\d{6}-[a-f0-9]{8}$/;
 
@@ -31,6 +31,9 @@ function defaultCriteria(task, projectTypes) {
   }
   if (projectTypes.includes("api")) {
     criteria.push("Changed API behavior preserves or explicitly documents request, response, error, and compatibility contracts.");
+  }
+  if (taskRequestsDiagram(task)) {
+    criteria.push("The diagram is delivered via archify_deliver at showcase quality with zero composition errors and warnings; if archify_visual_check evidence is provided it reports no overflow at every checked viewport.");
   }
   return criteria;
 }

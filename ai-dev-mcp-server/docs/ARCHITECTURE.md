@@ -20,6 +20,9 @@
 6. Obsidian: human-readable knowledge, generated project cards, workflows, and reports.
 7. `${AI_DEV_HOME}/state` (default `~/.ai-dev/state`): runtime task state and evidence that should not clutter the vault.
 
+Archify is a local, vendored diagram capability. Its nine typed MCP tools and
+artifact/evidence contract are documented in [ARCHIFY.md](ARCHIFY.md).
+
 Frontend product projects add a repository-local state machine:
 
 ```text

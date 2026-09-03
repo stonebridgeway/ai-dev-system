@@ -2,8 +2,23 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runProcess } from "./process-runner.mjs";
+import { resolveRuntimeStateRoot } from "./runtime-home.mjs";
 
 const PROJECT_ID_VERSION = 1;
+
+// The host (mcp-stdio) knows `vaultRoot`; project-identity does not. It sets this
+// once at startup so the runtime-state directory is identified consistently.
+let configuredRuntimeStateRoot = "";
+
+/**
+ * Pin the absolute runtime-state root (`<home>/.ai-dev`) so project-boundary
+ * detection never treats it as a project. Call once during host startup.
+ *
+ * @param {string} stateRoot
+ */
+export function configureRuntimeStateRoot(stateRoot) {
+  configuredRuntimeStateRoot = stateRoot ? String(stateRoot) : "";
+}
 
 function hash(value) {
   return crypto.createHash("sha256").update(String(value)).digest("hex");
@@ -53,9 +68,10 @@ async function git(cwd, args) {
 
 async function nearestProjectBoundary(start) {
   let current = start;
+  const runtimeRoot = normalizePath(configuredRuntimeStateRoot || resolveRuntimeStateRoot());
   while (true) {
     if (
-      await pathExists(path.join(current, ".ai-dev"))
+      (normalizePath(path.join(current, ".ai-dev")) !== runtimeRoot && await pathExists(path.join(current, ".ai-dev")))
       || await pathExists(path.join(current, ".git"))
     ) {
       return current;

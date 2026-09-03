@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Archify diagram capability: nine typed MCP tools for local validation,
+  rendering, delivery receipts, browser checks, comparisons, migrations, and
+  brand references; the clean Docker seed now carries its pinned runtime for
+  offline operation. Diagram-request detection (routing, recommendations, and
+  acceptance criteria) is a single shared pattern that excludes database and
+  API schema work. Delivery-receipt verification enforces the full showcase bar
+  (profile, zero errors/warnings, all checks, artifact hash) before an
+  acceptance criterion is marked met.
+- `docs/ARCHIFY.md`, integration notes, and third-party notices for the
+  vendored Archify package and its runtime dependencies.
 - `.github/` issue and pull-request templates and a `dependabot.yml` for npm,
   pip, and GitHub Actions updates.
 - Stable Homebrew tap formula source for `v1.0.0`, validation of AUR `.SRCINFO`,

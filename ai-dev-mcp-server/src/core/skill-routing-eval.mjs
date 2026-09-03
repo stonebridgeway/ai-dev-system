@@ -33,7 +33,8 @@ export async function readSkillRoutingCases(filePath) {
 
 /**
  * Run one benchmark case through the router and score it against
- * `expected_all` / `expected_any` / `must_not` plus the "1–3 skills" rule.
+ * `expected_all` / `expected_any` / `must_not` plus the "1–3 conventional
+ * skills" rule. Capability add-ons do not count toward that cardinality.
  *
  * @param {{ id?: string, task?: string, project_types?: string[], stack?: string[], expected_all?: string[], expected_any?: string[], must_not?: string[] }} testCase
  * @param {typeof routeSkills} [router] - Router override (for testing).
@@ -47,13 +48,14 @@ export function evaluateSkillRoutingCase(testCase, router = routeSkills) {
     maxSkills: 3
   });
   const names = route.skills.map((item) => item.name);
+  const conventional = route.skills.filter((item) => item.role !== "capability");
   const expectedAll = list(testCase.expected_all);
   const expectedAny = list(testCase.expected_any);
   const mustNot = list(testCase.must_not);
   const missing = expectedAll.filter((name) => !names.includes(name));
   const anyMatched = !expectedAny.length || expectedAny.some((name) => names.includes(name));
   const forbidden = mustNot.filter((name) => names.includes(name));
-  const limitPassed = names.length > 0 && names.length <= 3;
+  const limitPassed = conventional.length > 0 && conventional.length <= 3;
   const status = !missing.length && anyMatched && !forbidden.length && limitPassed ? "pass" : "fail";
   return {
     id: String(testCase.id || testCase.task || "unnamed"),
@@ -72,14 +74,14 @@ export function evaluateSkillRoutingCase(testCase, router = routeSkills) {
       missing,
       expected_any_unmatched: expectedAny.length > 0 && !anyMatched ? expectedAny : [],
       forbidden,
-      skill_limit: limitPassed ? null : names.length
+      skill_limit: limitPassed ? null : conventional.length
     }
   };
 }
 
 /**
  * Evaluate a whole benchmark suite and aggregate pass rate, expected-skill
- * coverage, and "max three" / "empty route" violation counts.
+ * coverage, and conventional "max three" / empty route violation counts.
  *
  * @param {object[]} cases - Benchmark cases.
  * @param {typeof routeSkills} [router] - Router override (for testing).
@@ -108,7 +110,7 @@ export function evaluateSkillRoutingSuite(cases, router = routeSkills) {
     expected_skills: expectedSkills.size,
     observed_expected_skills: observedExpectedSkills.size,
     uncovered_expected_skills: [...expectedSkills].filter((name) => !observedExpectedSkills.has(name)).sort(),
-    max_three_violations: results.filter((item) => item.selected.length > 3).length,
+    max_three_violations: results.filter((item) => item.selected.filter((skill) => skill.role !== "capability").length > 3).length,
     empty_route_violations: results.filter((item) => item.selected.length === 0).length
   };
   return {

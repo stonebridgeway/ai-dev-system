@@ -33,6 +33,7 @@ test("system dashboard is deterministic, generated, and freshness-bound", () => 
   const markdown = renderSystemDashboard(current);
   assert.match(markdown, /79 tools/);
   assert.match(markdown, /Project Context Compiler/);
+  assert.match(markdown, /Archify diagrams/);
   assert.equal(dashboardFreshness(current, current).fresh, true);
   const changed = snapshot();
   changed.tools.total = 80;

@@ -70,3 +70,22 @@ test("design-first criteria apply to Russian product work but not a narrow front
     /design-first implementation gate/i.test(item.text)
   )), false);
 });
+
+test("archify delivery criterion tracks diagram intent, not schema work", async (t) => {
+  const stateRoot = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-diagram-tasks-"));
+  t.after(() => fs.rm(stateRoot, { recursive: true, force: true }));
+  const store = new TaskStore({ stateRoot });
+  const project = { project_name: "fixture", project_path: stateRoot, project_types: ["api"], stack: ["Node.js"] };
+
+  const diagramTask = await store.begin({
+    task: "Build an architecture diagram of the payment service",
+    project, skills: [], baseline: { fingerprint: "a" }
+  });
+  assert.ok(diagramTask.acceptance_criteria.some((item) => /archify_deliver/i.test(item.text)));
+
+  const migrationTask = await store.begin({
+    task: "Добавь миграцию схемы базы данных",
+    project, skills: [], baseline: { fingerprint: "b" }
+  });
+  assert.equal(migrationTask.acceptance_criteria.some((item) => /archify_deliver/i.test(item.text)), false);
+});

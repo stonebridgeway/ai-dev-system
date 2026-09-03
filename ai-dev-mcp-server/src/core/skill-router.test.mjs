@@ -1,6 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { routeSkills } from "./skill-router.mjs";
+import { prioritizeRoutedRecommendations, routeSkills, taskRequestsDiagram } from "./skill-router.mjs";
+
+test("taskRequestsDiagram matches diagram intent but not schema/contract work", () => {
+  for (const yes of [
+    "Build an architecture diagram of the payment service",
+    "Convert this Mermaid flowchart into a polished diagram",
+    "Нарисуй схему взаимодействия сервисов",
+    "Визуализируй поток данных ETL"
+  ]) {
+    assert.equal(taskRequestsDiagram(yes), true, yes);
+  }
+  for (const no of [
+    "Добавь миграцию схемы базы данных для пользователей",
+    "Обнови схему API для нового эндпоинта",
+    "Fix the responsive form bug on mobile"
+  ]) {
+    assert.equal(taskRequestsDiagram(no), false, no);
+  }
+});
 
 test("routes Russian database migration without confusing it with generic data", () => {
   const route = routeSkills({ task: "Добавь миграцию схемы базы данных для пользователей" });
@@ -18,6 +36,37 @@ test("routes frontend bug to workflow, domain, and verification", () => {
     "beta-frontend-maintainer",
     "frontend-quality-gate"
   ]);
+});
+
+test("adds archify as a capability without displacing the normal routing triple", () => {
+  const route = routeSkills({
+    task: "Построй архитектурную карту backend API платёжного сервиса"
+  });
+
+  assert.deepEqual(route.skills.map((item) => item.name), [
+    "feature-builder",
+    "backend-api-engineer",
+    "api-contract-reviewer",
+    "archify"
+  ]);
+  assert.deepEqual(route.skills.map((item) => item.role), [
+    "workflow",
+    "domain",
+    "verification",
+    "capability"
+  ]);
+  assert.equal(route.skills.at(-1).source, "external/archify");
+  assert.equal(route.skills.at(-1).rule, "diagramming");
+});
+
+test("keeps archify when maxSkills limits only conventional routing entries", () => {
+  const route = routeSkills({
+    task: "Turn this Mermaid sequence diagram into a polished diagram",
+    maxSkills: 1
+  });
+
+  assert.deepEqual(route.skills.map((item) => item.name), ["feature-builder", "archify"]);
+  assert.deepEqual(route.skills.map((item) => item.role), ["workflow", "capability"]);
 });
 
 test("routes product UI work through the single frontend product builder", () => {
@@ -71,4 +120,47 @@ test("never returns more than three skills", () => {
   });
   assert.ok(route.skills.length <= 3);
   assert.equal(new Set(route.skills.map((item) => item.name)).size, route.skills.length);
+});
+
+test("keeps deterministic routes first and fills unused recommendation slots", () => {
+  const result = prioritizeRoutedRecommendations(
+    [
+      { name: "feature-builder", source: "custom", score: 220 },
+      { name: "devops-release-engineer", source: "custom", score: 219 },
+      { name: "archify", source: "external/archify", score: 100 }
+    ],
+    {
+      skills: [
+        { name: "feature-builder", role: "workflow", rule: "workflow", reason: "workflow" },
+        { name: "devops-release-engineer", role: "domain", rule: "devops", reason: "domain" }
+      ]
+    },
+    3
+  );
+  assert.deepEqual(result.map((item) => item.name), [
+    "feature-builder",
+    "devops-release-engineer",
+    "archify"
+  ]);
+});
+
+test("keeps routed capabilities when conventional recommendations reach maxSkills", () => {
+  const recommendations = [
+    { name: "feature-builder", score: 100 },
+    { name: "backend-api-engineer", score: 99 },
+    { name: "api-contract-reviewer", score: 98 },
+    { name: "archify", score: 97 }
+  ];
+  const route = routeSkills({
+    task: "Построй архитектурную карту backend API платёжного сервиса"
+  });
+
+  const prioritized = prioritizeRoutedRecommendations(recommendations, route);
+  assert.deepEqual(prioritized.map((item) => item.name), [
+    "feature-builder",
+    "backend-api-engineer",
+    "api-contract-reviewer",
+    "archify"
+  ]);
+  assert.equal(prioritized.at(-1).routing_role, "capability");
 });
