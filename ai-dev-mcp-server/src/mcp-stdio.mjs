@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import crypto from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -143,6 +143,13 @@ import { buildToolDefinitions } from "./tool-definitions.mjs";
 import { autoCommands } from "./auto-commands.mjs";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
+const packageVersion = (() => {
+  try {
+    return JSON.parse(readFileSync(path.join(serverDir, "..", "package.json"), "utf8")).version || "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+})();
 
 /**
  * Resolve the vault root the server reads content from.
@@ -10304,7 +10311,7 @@ async function handle(message) {
       result(id, {
         protocolVersion: params?.protocolVersion ?? "2024-11-05",
         capabilities: { tools: {} },
-        serverInfo: { name: "ai-dev-system", version: "0.1.0" }
+        serverInfo: { name: "ai-dev-system", version: packageVersion }
       });
       return;
     }

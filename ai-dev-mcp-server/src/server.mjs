@@ -24,9 +24,12 @@ import {
 } from "./mcp-stdio.mjs";
 import { isDirectExecution } from "./core/direct-execution.mjs";
 
-const VERSION = "1.0.0";
 const serverFile = fileURLToPath(import.meta.url);
 const serverRoot = path.resolve(path.dirname(serverFile), "..");
+// Single source of truth: the package version reported in the MCP handshake.
+const VERSION = JSON.parse(
+  await fs.readFile(path.join(serverRoot, "package.json"), "utf8")
+).version || "0.0.0";
 
 const READ_ONLY_TOOLS = new Set([
   "search_knowledge",
