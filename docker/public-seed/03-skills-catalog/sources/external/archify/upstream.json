@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/tt-a1i/archify",
+  "commit": "06dd052602dd9a369e4d034e24faef0917b5a60c",
+  "subdir": "archify",
+  "version": "2.17.0-dev.1",
+  "license": "MIT",
+  "imported_at": "2026-09-02",
+  "included": [
+    "bin",
+    "renderers",
+    "schemas",
+    "examples",
+    "references",
+    "recipes",
+    "delta",
+    "brand-marks",
+    "assets",
+    "migrations",
+    "scripts",
+    "package.json",
+    "package-lock.json",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "runtime": {
+    "node": ">=18",
+    "browser": "system Chrome/Edge — visual-check & preview only"
+  },
+  "notes": "Vendored from the repository's archify/ subdirectory. MCP-mediated use skips SKILL.md's self-update check; this manifest owns the pinned version."
+}

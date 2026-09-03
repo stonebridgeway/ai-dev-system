@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "policy": "explicit allowlist; no private vault zones or local runtime state",
-  "total_files": 117,
-  "total_bytes": 2213539,
-  "content_fingerprint": "1518421853678c3150a67cabca42a8068057bb0ee0d3619e7a4cda370aeefe9a",
+  "total_files": 922,
+  "total_bytes": 16886032,
+  "content_fingerprint": "0df2f5425349dafd60d9ffe6e8d1beb44f002d1a1f987e0dc11094decad8641c",
   "files": [
     {
       "path": "01-system/Agent Rules.md",
@@ -37,8 +37,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/ai-dev-orchestrator/SKILL.md",
-      "bytes": 3294,
-      "sha256": "a8d444d79f9dff9064737be76e33fa040bb17cebaff547a03d7e1ddad7f9a6b9"
+      "bytes": 3503,
+      "sha256": "21a114bd710764e03c0902fd957ebd696afbe39992846b6ba9cf1702fd46bb27"
     },
     {
       "path": "03-skills-catalog/sources/custom/api-contract-reviewer/agents/openai.yaml",
@@ -82,13 +82,13 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/bugfix-investigator/SKILL.md",
-      "bytes": 850,
-      "sha256": "59b5afd8e5295a60c6191c77e97fe97177223c3a55027793dd3d1f8747d578d6"
+      "bytes": 2225,
+      "sha256": "5d2ccc3c3c715c50b4d2f53941931a73c2112ea07db15c20761474ab7de9adb3"
     },
     {
       "path": "03-skills-catalog/sources/custom/code-reviewer/SKILL.md",
-      "bytes": 825,
-      "sha256": "76884d81f9d49ab1767de2297482b5d821d4b917d5e0fc8b5927c80f018fe927"
+      "bytes": 2151,
+      "sha256": "24145daca3f5fd5339d467035ac3e361da6a176fe7a244be4834177f5ca18b16"
     },
     {
       "path": "03-skills-catalog/sources/custom/container-deployment-reviewer/agents/openai.yaml",
@@ -132,8 +132,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/feature-builder/SKILL.md",
-      "bytes": 1227,
-      "sha256": "3b287c1f8e19e6c80047d516960e56130c7a4709a1df4cbf96fd0cf5a0a372a0"
+      "bytes": 1758,
+      "sha256": "1cf3f543b13e2c39a6cf6740685b0a0f9a72da3427cf78457f1b4ce6f6e0d752"
     },
     {
       "path": "03-skills-catalog/sources/custom/frontend-polisher/SKILL.md",
@@ -212,18 +212,18 @@
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/brandkit/SKILL.md",
-      "bytes": 16790,
-      "sha256": "a250c7b41aecacc412260de2fb429d36ada5f668388aad1770289fa3e5c4f740"
+      "bytes": 17220,
+      "sha256": "5320ff983d8a0894efef6cf4f3a7880a864ccb4c26b5886e05a9412719fb7e36"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/brutalist-skill/SKILL.md",
-      "bytes": 8548,
-      "sha256": "bd9c7fd04ae149531eb6bd0d4e8dceee57aa6877fcef3d67ced90e68e755affa"
+      "bytes": 8961,
+      "sha256": "8073e8ccc90b62e1c037f7aa52519c0235ef9d02289e4a88cdbb6e01c31fd533"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/gpt-tasteskill/SKILL.md",
-      "bytes": 7931,
-      "sha256": "6a19b70e6b53761d5788f284c615bf93a07cd9f94d5f0a452520260d9d951523"
+      "bytes": 7796,
+      "sha256": "da84f21f8f9da3fccf216b777a23bdf833e5e548e0daa71d0efb8b2f818e7c13"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/image-to-code-skill/SKILL.md",
@@ -247,8 +247,8 @@
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/minimalist-skill/SKILL.md",
-      "bytes": 7986,
-      "sha256": "1a292d1459292649dc5b422e029093259b6127e7df2f37ad8c22033174333a57"
+      "bytes": 8438,
+      "sha256": "e2fd202d3dac3a09491688a5c538e29bfc8159823af191edebdcff9472294b74"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/output-skill/SKILL.md",
@@ -257,13 +257,13 @@
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/redesign-skill/SKILL.md",
-      "bytes": 15238,
-      "sha256": "d5a62efaf36fa52ea1966e06ce74452b3466a4f179af34fbce65f2c8e5461349"
+      "bytes": 15610,
+      "sha256": "fc7b1250232560aeb3e3d8da7f9f41041f3d525bd342b51765db0e1d1be96c96"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/soft-skill/SKILL.md",
-      "bytes": 10659,
-      "sha256": "2d11cdcefc8bf319429ee17d94d69a390802e2acf7163662d1eacbcf5be3ff79"
+      "bytes": 10604,
+      "sha256": "f6528674c9791156769414a1bcf8865941b4ba023c708c91a22c0231594d9069"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/stitch-skill/DESIGN.md",
@@ -272,13 +272,13 @@
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/stitch-skill/SKILL.md",
-      "bytes": 12035,
-      "sha256": "56e41363d61ff565dbba8c8c05c3d8e6538ccd6f49180a504737edfcdbfff409"
+      "bytes": 12322,
+      "sha256": "61598a6c1d5722571989e9894f0a39fa08760f0360d79b3b4ffd4cbd119ab631"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/taste-skill-v1/SKILL.md",
-      "bytes": 21421,
-      "sha256": "b7d3715c36c93ce1ac44c60586dd7974a2c2c094aff06c3a72b736314e60d8ac"
+      "bytes": 21344,
+      "sha256": "26f2d0d09ca8049b4efecb07f8b178628542aea8aa9af3d80421a2b218a5d839"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/taste-skill/SKILL.md",
@@ -289,6 +289,4031 @@
       "path": "03-skills-catalog/sources/design/taste-skill/upstream.json",
       "bytes": 161,
       "sha256": "73ca63066846f49b362aac8aa49a54281d5a6887fd93d37cc0638ee9d2cf2e44"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-architecture.png",
+      "bytes": 166782,
+      "sha256": "ffc6e2d2c5a2c4726730b2a08a46b09469708e6351eee4f3bf1d6b952e379888"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-dark.png",
+      "bytes": 81372,
+      "sha256": "c4c95522629e9c00bd5b01c9329ab0f54de3dcae75754b56776ba19be8d98c97"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-dataflow.png",
+      "bytes": 254871,
+      "sha256": "f0bd3795c752a6e79b3b25ed97f9680f1da6a10e54bb03839af597b55d8ea11b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-demo-lens.png",
+      "bytes": 168877,
+      "sha256": "559f56819526b12d8ff198a26a012f3b1415ee229e43fc4f858d869c7571a540"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-demo-route.png",
+      "bytes": 168823,
+      "sha256": "c4b16924d9e5200bd08a8fa27fe7ed95060cc34a704a34e26a681852b6422af7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-demo-story.png",
+      "bytes": 258165,
+      "sha256": "0c8762e7e2f1493ba9d73fc3473a2f56f4876c52585e9c87a4815df25c3d2b0c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-lifecycle.png",
+      "bytes": 259270,
+      "sha256": "2879f847a3a74c669fa4f2376ade4c2c4c97c008231461389ee157ba23ae66f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-light.png",
+      "bytes": 81383,
+      "sha256": "43810203f58a42b199d7c3ef5223695c39a7bbdba50b9410213816ea1c1d4d27"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-live-proof.gif",
+      "bytes": 1542193,
+      "sha256": "e0fe704e5d230c0478bc5a48b7668815b5790eed496da87ce7a5f8e5b2416c28"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-live-proof.json",
+      "bytes": 1460,
+      "sha256": "740eafe149a28c8e0c0325d1aaf8dc95bad48c14d006c67c673b566a7988a8d3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-menu.png",
+      "bytes": 151539,
+      "sha256": "f2eed908bdc8958fb32d47b22ae201db38622c11d7901e8a297d8a70c47e90a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-readme-hero.png",
+      "bytes": 1057147,
+      "sha256": "f89421a1be332eebb239f9259e4ac1d1e0b051ab3272262fe1e5359a7b6f3618"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-route-share-card.png",
+      "bytes": 84638,
+      "sha256": "aad5461fba3ef148f050b85bd8afda84fe1a4ee0cc9c585f7ff29b0db4dcd765"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-sequence.png",
+      "bytes": 273571,
+      "sha256": "8d5555ac2ae66a586ed8bee160213d5fed663535597fb1f0706ce4f57a6133a5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-social-preview.png",
+      "bytes": 630361,
+      "sha256": "0d109819502ec36e125a52fb8f34de6fb1971742581db5e679834a3b08e03332"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/archify-workflow.png",
+      "bytes": 280967,
+      "sha256": "71b7d4b2427db2027f55bd968f43be94ad6fff36d672ea1f4000a752528c3158"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/architecture-delta-proof.jpg",
+      "bytes": 56109,
+      "sha256": "69dcc304835029d4790228b3a3dfaca6e515eed7caaa30f03914d4aaa6da4e58"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/claude-skills-settings.png",
+      "bytes": 69596,
+      "sha256": "ba5199800e9eb43c78de986fd30a988cf8c2787f4cad6d5e325a380969a1b837"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/mco-runtime-reach-share-card.png",
+      "bytes": 121252,
+      "sha256": "53c4ca5c55601c4ccdb15754ecc53e43a55a572fbae507b90640ea64e3e36692"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/mco-runtime-share-card.png",
+      "bytes": 130975,
+      "sha256": "445de75e83dec4497d3840aa842f364047381318ac747f623a8ccc438fd34617"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/site-language.js",
+      "bytes": 1573,
+      "sha256": "50da82abdae9f739291ed5b5386ca46deec6902237def8ffcdba30905b9605dc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/site-navigation.css",
+      "bytes": 2937,
+      "sha256": "463615bf737b5c2d855e6b2ab4feb6faeeca0579b95cf068eaa8a276993de4d8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/sponsors/apinebula-archify.jpg",
+      "bytes": 146459,
+      "sha256": "98ae0db91773bd6919c05fd9e0a5bde927d0e5e5a4cd95410a17bcf883580436"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/sponsors/evermind-archify-raven.png",
+      "bytes": 64249,
+      "sha256": "6863c92df2c0cdd4d533ed71c15d8d86745d4b2c3e0608fc99b3c3bad82cc2ef"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/assets/template.html",
+      "bytes": 678398,
+      "sha256": "35b2210b120c56a6c58d953ffe0cf815c2e67d0a5ff3e8b9518c45b737dd3fc3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/bin/archify.mjs",
+      "bytes": 71546,
+      "sha256": "a9e02fa9e359ff853e4852c4fa378e438e50e85c63614a4a860bf369c14be640"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/bin/open-artifact.mjs",
+      "bytes": 2225,
+      "sha256": "add1722186683c12770c575585bbb8774919c15b87361e10d2fe834623223159"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/bin/preview.mjs",
+      "bytes": 23578,
+      "sha256": "c1f470655f3d09cf1a2f6745ab3cec407e5246926237b92a67d673c74e339e02"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/bin/visual-check.mjs",
+      "bytes": 33390,
+      "sha256": "8fa8c6f233f3598f4f22e58c48a4de6f45b3b072ad8e7aee4731c49b4bfbdc52"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/brand-marks/catalog.json",
+      "bytes": 14162,
+      "sha256": "e1a6c555cbf8ea36fb8100a4a25824e7ab87bebe9871e450ba05b6dea3b036d6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/brand-marks/README.md",
+      "bytes": 1449,
+      "sha256": "8b771a16322ce9ea47fdc00b9935e33adf0f3af608f2d735235443e15ef622e2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/delta/architecture-delta.mjs",
+      "bytes": 72328,
+      "sha256": "f75aa96a22cdd640762f6f2cebdd1b89188d7d2f2cf354a764de1063c95b78ae"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/agent-run.lifecycle.json",
+      "bytes": 4417,
+      "sha256": "af939579dcafc8b4c49f09594591577994398aee57a57369d4c791dfc0d85a42"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/agent-tool-call.workflow.json",
+      "bytes": 5687,
+      "sha256": "4d3f6c23de2ca7d306e05d0041a9506833bb5a164a2bddc2d1984cf4da3ee90c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/async-job-roundtrip.sequence.json",
+      "bytes": 4370,
+      "sha256": "545f20920c89b69c2bb1f15508d5543fddbeb15cffba61e102206e04bd5a5cd9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/brand-aware-delivery.architecture.json",
+      "bytes": 3271,
+      "sha256": "d4f0df8114b3524756ffa49529c015e00757b0594a357183490c1edeb341e3c6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/cache-miss-request.sequence.json",
+      "bytes": 4345,
+      "sha256": "4bbaa6ca3cd4036002fd5d0f3a332eb922cec69d09bac3d7925f95beb4308389"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/checkout-platform.base.architecture.json",
+      "bytes": 2234,
+      "sha256": "c112195e7285e3e4aedaeab3e1f85f5891d30fccc2c260aebe4e1da12c80cf84"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/checkout-platform.head.architecture.json",
+      "bytes": 2368,
+      "sha256": "e3aaf47f77afeadafc81c6ce853dc1df68cc1e6932dec972cf478f4008fdda99"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/dataflow-product-analytics.html",
+      "bytes": 720496,
+      "sha256": "d66d70595448044a92d032738e2437980d2160462f974a1de8cfa82c5e148d54"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/deployment-release.lifecycle.json",
+      "bytes": 4274,
+      "sha256": "735c2c5819266e6ea2a71775b6eefce98b53030ce90cb721dc8e1d022ce5be71"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/event-stream.dataflow.json",
+      "bytes": 5433,
+      "sha256": "a92d6597ddbe164f395da32a7d4b33cfae08edd7d9600a6fb45a2058e5bbb43e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/incident-response.workflow.json",
+      "bytes": 5375,
+      "sha256": "5c760c82eee545dfb7da38a4e628059d7891af4cfbfc13c8a7009ea64f69aa1b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/lifecycle-agent-run.html",
+      "bytes": 714131,
+      "sha256": "d15306112803fe6ac1050c6fd5d943545a5bc6a72a0407cd0751d0d8794f6429"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/product-analytics.dataflow.json",
+      "bytes": 5627,
+      "sha256": "6fa38a7ccedf96da592d60b392783b846188eaa3ec9136c6dc06ca020e43a110"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/production-deployment.architecture.json",
+      "bytes": 5476,
+      "sha256": "ec484aa8576664fdb207b543fa49486b23273faccb7a5071e1a0becfb48c22eb"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/release-delivery.workflow.json",
+      "bytes": 5164,
+      "sha256": "e5c880417eac1623923c3dd5461e0c78acd762e1621a28bd53fc14a84cad6a91"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/sequence-cache-miss-request.html",
+      "bytes": 716842,
+      "sha256": "6bf688c8577049973ace979ac73292eda0cc8f349934c6ba4452720853ced84c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/web-app-rendered.html",
+      "bytes": 715216,
+      "sha256": "26784b847623e79727e44eb5fabfbedc2c47289bf877703eee78787a3eb5bee5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/web-app.architecture.json",
+      "bytes": 3793,
+      "sha256": "483350f5297df682aba4e4a0fa491307ce3d3abd725ae4df07fab177490752cf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/examples/workflow-agent-tool-call-rendered.html",
+      "bytes": 723038,
+      "sha256": "e083cfe2d35701472374910e922ebdf8b30fdd3d5547d0e2cabd05094d033c66"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/LICENSE",
+      "bytes": 1102,
+      "sha256": "b799ab081703e7821ae5096d2c1abdf14bbdc75e8ea1c4045998c36ed6db9706"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/migrations/workflow-v2.mjs",
+      "bytes": 9168,
+      "sha256": "77aadc38460e5e778344901f492cc00f16f74e8fe1def14b01e6d6d346b9f4c7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/.package-lock.json",
+      "bytes": 4564,
+      "sha256": "8c5298a39c9c00352729b333ae7ac6e188a49e8466e6893fd41d4d0b3bb4fe41"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/.runkit_example.js",
+      "bytes": 496,
+      "sha256": "e37e85bf1db5d53a6e4e38a9cac83db25208f28c09a2fa19e3971877c8a7b8cf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/2019.d.ts",
+      "bytes": 1241,
+      "sha256": "1e2bbd6318653c49684963a59066e621a3a142ad23b5e809e430e73946aa4223"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/2019.js",
+      "bytes": 3188,
+      "sha256": "4a1b1d479d0b946af0119f3a3960fcabfd964e1c20e87f7a9575f8f9e705d0c4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/2019.js.map",
+      "bytes": 1639,
+      "sha256": "a91b0607c55ef90f269dbefb567c975cfae953341c13761c43b7f8b78e44b91f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/2020.d.ts",
+      "bytes": 1241,
+      "sha256": "66a5ace456d19768103c1da9df2abafa9cb2e78ff61c938746527ec2524e5d11"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/2020.js",
+      "bytes": 2894,
+      "sha256": "908e9670b478b2ba126802a221b7e47006f50cf467e2c5dd7935d3dbef10a20a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/2020.js.map",
+      "bytes": 1473,
+      "sha256": "845f8c979380377abe0db2a8a8ba9c5484d88cc69dc6704db84c6fc176b330d5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/ajv.d.ts",
+      "bytes": 1211,
+      "sha256": "41b8775befd7ded7245a627e9f4de6110236688ce4c124d2d40c37bc1a3bfe05"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/ajv.js",
+      "bytes": 2841,
+      "sha256": "edaed56fc546f5551b0d6dc2ff2a9cc25c2d6c83318a086eaa8c3ad0b2479297"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/ajv.js.map",
+      "bytes": 1476,
+      "sha256": "f6a0d17a5cdb4891ab056a48c852cc6dbb5e5ef262e3fccfc9021782d3714d44"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/code.d.ts",
+      "bytes": 1638,
+      "sha256": "2d225e7bda2871c066a7079c88174340950fb604f624f2586d3ea27bb9e5f4ff"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/code.js",
+      "bytes": 4676,
+      "sha256": "1287153722f1fc3c5342647de7ae1d7b6fb68bdb3378a0776a937d273fc97e0d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/code.js.map",
+      "bytes": 5309,
+      "sha256": "6662bc0c87dfefa43cabfe916340b03c128e6b4ffe8d08d162231a337299fe60"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/index.d.ts",
+      "bytes": 3316,
+      "sha256": "c1422d016f7df2ccd3594c06f2923199acd09898f2c42f50ea8159f1f856f618"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/index.js",
+      "bytes": 23127,
+      "sha256": "f03b2b72597ef86878d1d4030580c2d0964046efad4867f3d05aa91065ba034c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/index.js.map",
+      "bytes": 23829,
+      "sha256": "081d235ee23ad618f56c6bbda22b646522cba1b20534711fddfdbcb2b075affc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/scope.d.ts",
+      "bytes": 2397,
+      "sha256": "6a785f84e63234035e511817dd48ada756d984dd8f9344e56eb8b2bdcd8fd001"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/scope.js",
+      "bytes": 5198,
+      "sha256": "d2a0a97af2faa2cad88702314fe421e235ab17f11e0d62883d58d8d4dc734286"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/codegen/scope.js.map",
+      "bytes": 5174,
+      "sha256": "a5a146bfb90c9f6cb861d91503437e230f340c410a63400530e1bf493d84b0ec"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/errors.d.ts",
+      "bytes": 826,
+      "sha256": "cd44995ee13d5d23df17a10213fed7b483fabfd5ea08f267ab52c07ce0b6b4da"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/errors.js",
+      "bytes": 5771,
+      "sha256": "53990f8f2cc05922bba410ae68231d3f869de4f8343277ede5b4834fa564c6c2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/errors.js.map",
+      "bytes": 6085,
+      "sha256": "5dfef5ea1d9707666aadcda54e93bff03e3a7f9730aec490ac31e5203eccd294"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/index.d.ts",
+      "bytes": 2914,
+      "sha256": "62d26d8ba4fa15ab425c1b57a050ed76c5b0ecbffaa53f182110aa3a02405a07"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/index.js",
+      "bytes": 10046,
+      "sha256": "05b34da22814f3787bfa3ac68dad59c9047f56e55a607e0a20719ebf5afe69ac"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/index.js.map",
+      "bytes": 9269,
+      "sha256": "ad95a3a7cce920acd10b89d06581e3e2542bd0b6a4b44320b55bd18531efe99a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/parse.d.ts",
+      "bytes": 217,
+      "sha256": "122c92735f34b67fac27fe091234cc879010acb26f67e130951a90feb68c0c49"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/parse.js",
+      "bytes": 13727,
+      "sha256": "548b7e6ee5558360945f261e092cd328662868995877140ed2ae7ff981300b7f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/parse.js.map",
+      "bytes": 15725,
+      "sha256": "90e560b9f7e4b32959b514576dbb0d3a9dc3466e0ea65e0f3ac53e7bb34ab1c0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/serialize.d.ts",
+      "bytes": 221,
+      "sha256": "173d6861b4b5265329e78219a2dc7e5b05a805337707f4de5ff4f7842a3ba0f9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/serialize.js",
+      "bytes": 9391,
+      "sha256": "1f8b1873fbd899240cd625144d3cd10630b3cf1b0c69c640566f6e25c80765c0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/serialize.js.map",
+      "bytes": 10737,
+      "sha256": "faaa5b0f5f27386d08abac9a54613bb4823fb5991b666715ab475ea85b391acd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/types.d.ts",
+      "bytes": 309,
+      "sha256": "456178f9a8feccf812324213ac362aa49fd3e7df4369e409d398ff072629cfa5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/types.js",
+      "bytes": 291,
+      "sha256": "e92a89e57c3b7d228be4e2e74c71ef3af52320bf061b411add9dccc34ddb0a78"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/jtd/types.js.map",
+      "bytes": 236,
+      "sha256": "b1c351a2a5810e00c4bbf3814fdc6b83fde3b016a79b8c5fc66cb32a0988abb5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/names.d.ts",
+      "bytes": 398,
+      "sha256": "fd8346be5f0bb7a9ea588a343420bcd88b12da1bcd40c2d09c7a0d2990b51576"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/names.js",
+      "bytes": 1440,
+      "sha256": "3cab37a2240b996b9bed92fe7a041d91689cfe3ad2e9ae4c0ab99e4146408493"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/names.js.map",
+      "bytes": 974,
+      "sha256": "2b28eacf577a5b5b2a6bade9e61097af1e84a4fb848fca153432e5c5a239e7d7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/ref_error.d.ts",
+      "bytes": 252,
+      "sha256": "3d7f9eb12aface876f7b535cc89dcd416daf77f0b3573333f16ec0a70bcf902a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/ref_error.js",
+      "bytes": 543,
+      "sha256": "81c98fdf34c3037c91bfcc02277ec32156c71e34048f36cfe4e084416e916cb7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/ref_error.js.map",
+      "bytes": 474,
+      "sha256": "3101f665a6485ffee1c377d4cc015d9bb23af186ec941907afe03386406adc4b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/resolve.d.ts",
+      "bytes": 755,
+      "sha256": "e0205f04611bea8b5b82168065b8ef1476a8e96236201494eb8c785331c43118"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/resolve.js",
+      "bytes": 5006,
+      "sha256": "df75af0e0cf03fa1c6452e8dc61019f5aec645a8a5f6f494dc4e13cb5502d2d9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/resolve.js.map",
+      "bytes": 4850,
+      "sha256": "837e46750307e91c812466a0549472678800b29c1d3c9373f41fd795cb88c5ce"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/rules.d.ts",
+      "bytes": 809,
+      "sha256": "2973b1b7857ca144251375b97f98474e9847a890331e27132d5a8b3aea9350a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/rules.js",
+      "bytes": 918,
+      "sha256": "ec1d86500f497aa8e20f9f0c1695951159d9a909669d00a261ce1bb22b3cf0a9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/rules.js.map",
+      "bytes": 1030,
+      "sha256": "d5c077c6e1149c7e92fcaae92def87cd549f9407acbbcaf5a27dd5a76fab67c6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/util.d.ts",
+      "bytes": 2210,
+      "sha256": "0eb6152d37c84d6119295493dfcc20c331c6fda1304a513d159cdaa599dcb78b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/util.js",
+      "bytes": 7103,
+      "sha256": "fa911f5631f29d4d6420adfe086cb693b94b08de2719475c78c54bcb82f831a5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/util.js.map",
+      "bytes": 7083,
+      "sha256": "9deb815ce282c61c7e68adbd649aa7efe1e58f49e0b5c18d022d2f3b3717f442"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/applicability.d.ts",
+      "bytes": 456,
+      "sha256": "b6f3050f59028cbed94bc895d15ac095d104c810a8201a01fac608c5780e7d1d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/applicability.js",
+      "bytes": 853,
+      "sha256": "50c5cba5894a7fb9874b3432355b46ec71b73c9368dafb1323ded8567cca8fc0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/applicability.js.map",
+      "bytes": 775,
+      "sha256": "399e5834d6364657feb5c799d87ca3141e8e653ef021b38489937319d7c4f2ad"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/boolSchema.d.ts",
+      "bytes": 216,
+      "sha256": "7a69c4963a745bc7e9adfc025e0d02b1f0236d1f9e36636d4f8bd0d5210a19ac"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/boolSchema.js",
+      "bytes": 1531,
+      "sha256": "c08abdbdbd3d8b1dcc0552a20fbc7d837ed44f4ca6abb2e464985590ac94377f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/boolSchema.js.map",
+      "bytes": 1380,
+      "sha256": "d2ba3c7b7cc92d4f4488e5dd785ded04ad4a42cdc69c68c45f929566edcf7ab9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/dataType.d.ts",
+      "bytes": 884,
+      "sha256": "7557d4d7f19f94341f4413575a3453ba7f6039c9591015bcf4282a8e75414043"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/dataType.js",
+      "bytes": 8409,
+      "sha256": "697bd7005361ec7066a23c18830a10b0ef28aec1a33138b4e3098bf78c4fae52"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/dataType.js.map",
+      "bytes": 7776,
+      "sha256": "5ddbd0361b1a521ba2e822ed40a7156d9d6211c68ef2c4677f6496c151ce9e08"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/defaults.d.ts",
+      "bytes": 117,
+      "sha256": "0dfaa8ce667fa1388c2959200efab6337063a3e773930ae3e25dbd59d197018e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/defaults.js",
+      "bytes": 1448,
+      "sha256": "05721971df94faa57b09c8cfd60c2eef81b6d14910a7dea5f539d693a029c428"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/defaults.js.map",
+      "bytes": 1342,
+      "sha256": "dd09145eaed811c656aeb2e9bf74d7aaafb4dc986a158cb20c017bdbde53d5b5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/index.d.ts",
+      "bytes": 2073,
+      "sha256": "58ce1486f851942bd2d3056b399079bc9cb978ec933fe9833ea417e33eab676e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/index.js",
+      "bytes": 20552,
+      "sha256": "cb2103e5f890e04592c10d24b45857dad91155bae9f9460138a2459bdaaea2cd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/index.js.map",
+      "bytes": 21391,
+      "sha256": "fc7822f544bb4db6d457c858c53ba2e6be77a55d35a192e67011e1c8dd4d9c5c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/keyword.d.ts",
+      "bytes": 679,
+      "sha256": "ce0682a5e73f166fb6e80ad8a46a26af187b524f1f5f5fcc54e4c33c0b36b131"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/keyword.js",
+      "bytes": 5695,
+      "sha256": "ab8f070c75c25eee9be5c837f364748909b58f5db66149a2beccbd2f66afeb76"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/keyword.js.map",
+      "bytes": 6011,
+      "sha256": "3051e66f0a88cfb62ce8de46e2ca85780e2f0b64f62fc1fa091e77af47a51b4e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/subschema.d.ts",
+      "bytes": 1722,
+      "sha256": "237df26f8c326ca00cd9d2deb40214a079749062156386b6d75bdcecc6988a6b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/subschema.js",
+      "bytes": 3858,
+      "sha256": "ca783d6052af91e65ebb59a5b48b47fb459a2241d37ca6a042f767d4ce451bdc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/compile/validate/subschema.js.map",
+      "bytes": 3148,
+      "sha256": "9a6beb742ae31a368004b444fb9ecaa49899eefe05e747e36c11b82e6a2c288a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/core.d.ts",
+      "bytes": 8325,
+      "sha256": "4304f640f7cb4724ea82441accb7c7607fa7207541182470d625adda99b2900b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/core.js",
+      "bytes": 25202,
+      "sha256": "51be29c7ed7288622f755c0f1bebd3da4a9907d77aa2c33b0f2a0a5b6b339603"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/core.js.map",
+      "bytes": 21608,
+      "sha256": "0357910e20ce75d511ca46f838803be796d605fcddecbc325131a82fcfc04472"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/jtd.d.ts",
+      "bytes": 2223,
+      "sha256": "88dfdb2a44912a28aea3ebb657dc7fcec6ba59f7233005e3405824995b713dac"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/jtd.js",
+      "bytes": 3360,
+      "sha256": "9554827c19abbb10694cafb71edd72a8303ea71e56b9eb7253200f5395610e44"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/jtd.js.map",
+      "bytes": 2036,
+      "sha256": "b8d25a9ac802a23e0e008abcbe4a9684a1bad31fd36b5e977e677527d6087f51"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/data.json",
+      "bytes": 409,
+      "sha256": "d24ab8a97c18b3f5afdde7d7024a0e0ac1df0614a16a41cb88f81379edcc2db3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/index.d.ts",
+      "bytes": 111,
+      "sha256": "2a181e3ce12d234dc189bc5d8ec5a7977eeb3fdbbdd0551290d18da23a0afcec"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/index.js",
+      "bytes": 938,
+      "sha256": "ec400bdf35a0f290266811503cdbfffd7c18c4a690379988b8062c57b48f946d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/index.js.map",
+      "bytes": 726,
+      "sha256": "3ba84273c35f49642ee68ddf2ea561e8ecbaf00329e323e210c8b6f6cc580e01"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/meta/applicator.json",
+      "bytes": 1566,
+      "sha256": "9c356a52b0ad5da7d4c1b69f61dff5277c2af46221bc0b0521bbdbf3a12d3a2a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/meta/content.json",
+      "bytes": 477,
+      "sha256": "cf4792ae93f4a4580ec9523640945f7756f75fd624935ebf15194b0ac3909267"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/meta/core.json",
+      "bytes": 1273,
+      "sha256": "629c017994ffaa33f573a96cf01b9dac6cae80c7d5d17dad5e823a3afa18d5fe"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/meta/format.json",
+      "bytes": 375,
+      "sha256": "018ef7c81bcca9e40a4a02ed236e7cabb3a630f2b1ea01fbdeed2f882c15ddc8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "e038593d36bf1855875a13b8812469d6a2d62ed309436b9c9a2fa5a4ba59085e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "aaba7f2d6fcbdfa6ca97fdc3d3da1ae7d66ca3322b7e90cf5a98b067555d06e6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2019-09/schema.json",
+      "bytes": 1579,
+      "sha256": "264720afa0dd61919e21bbe9bc1312121b70e43019ac696240e069adc72cce15"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/index.d.ts",
+      "bytes": 111,
+      "sha256": "7d2eaeb15b579ef0682c2a88dcd2b4b13b653a31239fdc0096201024b1d9d87d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/index.js",
+      "bytes": 1026,
+      "sha256": "2e39089b0aaa14efa7901ecf5384622ec3d5897b206e1d589d2420f17b9fa6e1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/index.js.map",
+      "bytes": 751,
+      "sha256": "79fed7d771c96ee134e413a39cac77f0e670228a684e1cbb58cfb0603a8f9877"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json",
+      "bytes": 1441,
+      "sha256": "f1e465ff0c0cc86bee5c0cc4b51d2734c532e6ea12c75b60a2ac093a4577b2d4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json",
+      "bytes": 479,
+      "sha256": "7ede86f2c48d646202bf1332aefaf46db268c943d59752727db7247dc2920516"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json",
+      "bytes": 1344,
+      "sha256": "c3a5947992d4fe67c95cda7910911207376bbae41c0a124ec9e7e699172e7a49"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json",
+      "bytes": 420,
+      "sha256": "1e31131b1ed21f98c007f04deb501343b8c4dd77f1c5a8494a9c2085f68d769d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "eb008c756b29bdaa237c1f06d32ea4a21f6ef22148b03c6372cea5e4c0782273"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json",
+      "bytes": 472,
+      "sha256": "8f7f75f4274745faa32e4abdba12de99f49b21df225f52f723b5c62043b0edca"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "3cae7069843679429e4ada7df261bb8961fa34cac15be89296026e69af312092"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-2020-12/schema.json",
+      "bytes": 2166,
+      "sha256": "5333c7df76bceee098e865881d0808238dea836126c6c60b49299ec85c6c7a56"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-draft-06.json",
+      "bytes": 3449,
+      "sha256": "a9b6a00af20105009f0924cd7c02d811bbf70c579a96f1552579c3457111f687"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-draft-07.json",
+      "bytes": 3811,
+      "sha256": "f7e8b13cad4fecff9771f3626fef33e20e59027b90938a28fd9d2f6c17cd0773"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/json-schema-secure.json",
+      "bytes": 2521,
+      "sha256": "b7840b4f1526eee47ac19780906a436d0c39df2aa3d505388caf18864085a421"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/jtd-schema.d.ts",
+      "bytes": 114,
+      "sha256": "3a4c2bcb267c132400e8193819dd07eda7055e5a9c997ad62e1c38dd6fb2e922"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/jtd-schema.js",
+      "bytes": 2882,
+      "sha256": "ed529445bf027885182bbed71e5458baecec2d356a788b636ed9f0c7cdaccd92"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/refs/jtd-schema.js.map",
+      "bytes": 2824,
+      "sha256": "732b58ce3fbd6aaac7a2423daa1f8dc134ff07a2336dbb2c5d13efd91a94a11b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/equal.d.ts",
+      "bytes": 149,
+      "sha256": "0beb32fbffe3dd6f079b3460c125d7577c49a525dd81b3bd771c94aa0081aecc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/equal.js",
+      "bytes": 286,
+      "sha256": "c94467da09ee94e5d194483a7ab821b9bb3bf1c04397270f2ab53dea9de59274"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/equal.js.map",
+      "bytes": 199,
+      "sha256": "addc8498c8bf12ce8d2dc33c34805d0940eca3692c66105d99e270793c85fcae"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/parseJson.d.ts",
+      "bytes": 642,
+      "sha256": "daaf1281de5547ccaa34f77fd4800c97bdf6f2533424bb9f5d82e11300d48e24"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/parseJson.js",
+      "bytes": 5401,
+      "sha256": "1bc006064c98afbbb4fc03bef49db7e85dd9493fb54a7dc647d4344ad043848e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/parseJson.js.map",
+      "bytes": 5339,
+      "sha256": "cd9de6145208c3b595ccab1a800d1b492c89ddf41f8b682909e8c96d6d6b5bc7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/quote.d.ts",
+      "bytes": 115,
+      "sha256": "7821d3f015198f3c0b8e817b5038dce921c2330614743f69c8062fda6a96ca7f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/quote.js",
+      "bytes": 943,
+      "sha256": "1061132b1475fce15821d2b41c74b9ac710f278a33f5dae3385458715cc962b2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/quote.js.map",
+      "bytes": 877,
+      "sha256": "299ec640699b8c7601d58d6446fa0f3c639b307166971226950c845a819a7dc9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/re2.d.ts",
+      "bytes": 129,
+      "sha256": "ed8fd507cffed16f39d0ae3f2dd2ec46d9fd5e7b00d4e2579bb559243597c435"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/re2.js",
+      "bytes": 213,
+      "sha256": "e1a6849652ae9a099c36c9aee9d2efc7412c8f83c4b285142413af99a7238361"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/re2.js.map",
+      "bytes": 182,
+      "sha256": "891ce3a6e69c7c08f3e13ab0a950c2def22137c1bcd1f3dff54391f796e122cc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/timestamp.d.ts",
+      "bytes": 165,
+      "sha256": "a52bc6a407b585e49fe61fba28db84066c96961709a4095ff20ff1fe7430f678"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/timestamp.js",
+      "bytes": 1536,
+      "sha256": "05cd4fc283b82af25a2a71ee5e587640c1d42945c74cea790627135fff338bef"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/timestamp.js.map",
+      "bytes": 1994,
+      "sha256": "4e4eb1e7923ca19f3935fdfb76dfa7ee88d2914be490b1d702ffab13bfce07fe"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/ucs2length.d.ts",
+      "bytes": 132,
+      "sha256": "2423ad491126a769f9973dc3687b86286c5ea2cd52d3a1dd25604fa03f1da2f4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/ucs2length.js",
+      "bytes": 808,
+      "sha256": "1df012dd3d23fced07255a7204798004509687cb1f431ae0ab976db436bbd890"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/ucs2length.js.map",
+      "bytes": 728,
+      "sha256": "5ad0a6c09c26dd193c807813a9a22304d7c4534af6f13361032ecedaf58e8a7d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/uri.d.ts",
+      "bytes": 134,
+      "sha256": "d2dfc80c21db9f151f6ccd49e3b6dc50e23476e7e4f475a1e3497f86c464dd65"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/uri.js",
+      "bytes": 218,
+      "sha256": "d1d61baf97ed87d7310df847a78ed73d19c8cc003207bf5aaec977500bdb1578"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/uri.js.map",
+      "bytes": 182,
+      "sha256": "7751d10beb734802801b650c3e934553f2b26ba26bc68b20796734b7f9fd9955"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/validation_error.d.ts",
+      "bytes": 249,
+      "sha256": "cde493e09daad4bb29922fe633f760be9f0e8e2f39cdca999cce3b8690b5e13a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/validation_error.js",
+      "bytes": 337,
+      "sha256": "11bf5b4affc8114e5e7cdf65b93006c2d997ab60ada1152c22e136f9b828b815"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/runtime/validation_error.js.map",
+      "bytes": 332,
+      "sha256": "833d51e4ffee8e2e21c53b6aca02bdf70349233e8620b36d093bfb6b0157bff2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/standalone/index.d.ts",
+      "bytes": 243,
+      "sha256": "dd753d8a80fbc019d9001e148b14cdc21c8e503e7afe747632ba87878ab05487"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/standalone/index.js",
+      "bytes": 4480,
+      "sha256": "361d58a7523548bb1b9c782135fae27e76d93c8feaba8c4d613331dbcd3b888f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/standalone/index.js.map",
+      "bytes": 4078,
+      "sha256": "a1afc5f1e9166c87da0c8e96b39560ba7c2df532adb495ad2b39c2ebfce68860"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/standalone/instance.d.ts",
+      "bytes": 633,
+      "sha256": "974948bdf0935ed1da8ec1aa9d71bebe07bfa4b67e1532b841831d053cc9d86b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/standalone/instance.js",
+      "bytes": 1015,
+      "sha256": "4e14aa01e0cb8288fbb75deeb2e738950b0560bd02e1ad8974f391af4c9fc6f3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/standalone/instance.js.map",
+      "bytes": 1091,
+      "sha256": "7f59241ec6792fa719f3151610ef417552e986f45eb7c2f368a5c19a9b6261f7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/index.d.ts",
+      "bytes": 6383,
+      "sha256": "9941cbf7ca695e95d588f5f1692ab040b078d44a95d231fa9a8f828186b7b77d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/index.js",
+      "bytes": 110,
+      "sha256": "fc9c6096246805c2075c83ab1b96082eda2fc98c240a2502caa82f1966096b71"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/index.js.map",
+      "bytes": 111,
+      "sha256": "dc7dd6ae1631a9726121bba97c02b42640360d3667f8650f78242d078693c4e6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/json-schema.d.ts",
+      "bytes": 5029,
+      "sha256": "feeb73d48cc41c6dd23d17473521b0af877751504c30c18dc84267c8eeea429a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/json-schema.js",
+      "bytes": 116,
+      "sha256": "2e30aa0c0789b5af8248b081ddc14b439b48937730eb1be0ab28de2ca2353b28"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/json-schema.js.map",
+      "bytes": 123,
+      "sha256": "c33ce191e73eead1689338837205402bb586032b089eafc83210e4e1f1a5b221"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/jtd-schema.d.ts",
+      "bytes": 7072,
+      "sha256": "25f1159094dc0bf3a71313a74e0885426af21c5d6564a254004f2cadf9c5b052"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/jtd-schema.js",
+      "bytes": 115,
+      "sha256": "6755d0ec5a09cc74205d46089f814c88c1ce4363e56a55486c12a0a86942bd8d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/types/jtd-schema.js.map",
+      "bytes": 121,
+      "sha256": "c2840f14191be8435778a2a64a8e0600500dde376910b05c52865e2deafb09c9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/additionalItems.d.ts",
+      "bytes": 396,
+      "sha256": "a3b2cc16f3ce2d882eca44e1066f57a24751545f2a5e4a153d4de31b4cac9bb5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/additionalItems.js",
+      "bytes": 1931,
+      "sha256": "7beb0fbda5e349907067c8398bb8cc3260a6267b6e5dff9793a5ab2171934099"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/additionalItems.js.map",
+      "bytes": 2093,
+      "sha256": "f8d4898f0f5a507cf88a43dbcffb4ae82e7bb600d56602513085151032aac571"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/additionalProperties.d.ts",
+      "bytes": 318,
+      "sha256": "1fce9ecb87a2d3898941c60df617e52e50fb0c03c9b7b2ba8381972448327285"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js",
+      "bytes": 4309,
+      "sha256": "e237cb180cd2e3f2e676feb714d7dcc6a42116640f9db2ad830cd20d9dfc540a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js.map",
+      "bytes": 3762,
+      "sha256": "90cae7b84831914a0513d8db46fbe45e39cceba6c8ab3b39d853bd6439edc95a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/allOf.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/allOf.js",
+      "bytes": 756,
+      "sha256": "98f46a6434ebe5f851b406480e18b776dd7f1bcc275e28c16a13bfef3cc067c7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/allOf.js.map",
+      "bytes": 812,
+      "sha256": "bc57edbf872aa33f295435a714b3612f887c29abf411aa114d2b92a89461ee5b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/anyOf.d.ts",
+      "bytes": 208,
+      "sha256": "ac52b775a80badff5f4ac329c5725a26bd5aaadd57afa7ad9e98b4844767312a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/anyOf.js",
+      "bytes": 343,
+      "sha256": "8d7368d4aebad0514b713191b934993b4f0bf570e1bab93b07dc69712db2cec5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/anyOf.js.map",
+      "bytes": 327,
+      "sha256": "c05bb310be6b4e46482835cfe8978d34a8591a57722661d039f685d6e1ebd2d3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/contains.d.ts",
+      "bytes": 264,
+      "sha256": "8deb39d89095469957f73bd194d11f01d9894b8c1f1e27fbf3f6e8122576b336"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/contains.js",
+      "bytes": 3680,
+      "sha256": "56165dc93cd8b0b4611db50a97f1e7d7f9af6c5ffe95a7a5b054d6eeaa7f6a8c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/contains.js.map",
+      "bytes": 3843,
+      "sha256": "b6136d502d30985c5f9367214191e1a15f7ffffa7e66d38b5d90ce97c5fb3069"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/dependencies.d.ts",
+      "bytes": 839,
+      "sha256": "a38a9c41f433b608a0d37e645a31eecf7233ef3d3fffeb626988d3219f80e32f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/dependencies.js",
+      "bytes": 3198,
+      "sha256": "c1a83bf484b6fde4d268935f079ddba5e74a2f589dfc6d15ca2e20ba4d06ee5b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/dependencies.js.map",
+      "bytes": 3172,
+      "sha256": "58bd7453681e4e1f067f12ee46b0963fbb7b3dd91d5635146e892021541ea0af"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js",
+      "bytes": 354,
+      "sha256": "d17d23755b0cf8699c180dd98b8b7270b688d2e4fe5a4c4fcc53ffdcc18ee58e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js.map",
+      "bytes": 353,
+      "sha256": "acf03cc2df2951050a845f391f71d74a82cf2448b628a791cfc37a1ef12cdc69"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/if.d.ts",
+      "bytes": 236,
+      "sha256": "dd7109c49f416f218915921d44f0f28975df78e04e437c62e1e1eb3be5e18a35"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/if.js",
+      "bytes": 2438,
+      "sha256": "42374ee5dc681433579cc689b0c4ae5343f5bf78d4d6a561722b9277c5335ec4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/if.js.map",
+      "bytes": 2455,
+      "sha256": "ecf2c80d9856d1678e643d6f4c77a36cd7bec448594ec6034fb72b558fce8939"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/index.d.ts",
+      "bytes": 858,
+      "sha256": "eee181112e420b345fc78422a6cc32385ede3d27e2eaf8b8c4ad8b2c29e3e52e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/index.js",
+      "bytes": 1529,
+      "sha256": "5a61978f6d81bbabfa8b9ccb71d7de816ed6dd1fd7de5c72657439a76c2a7cb3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/index.js.map",
+      "bytes": 766,
+      "sha256": "0b98845a246a8859fa44824daf69b40fe465f65075e2db2121aace15214dcf50"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/items.d.ts",
+      "bytes": 293,
+      "sha256": "65f1d4dd1e542c949d9ef11825c9d568e16affad2d5c0cf5d39c386e3b09d791"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/items.js",
+      "bytes": 1993,
+      "sha256": "fa87f74adc3aac1f1b5e3e7dddf73294e6850e1dd49ed131fca4352e9645c54e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/items.js.map",
+      "bytes": 2052,
+      "sha256": "a20b4a4a1802ca7708a0e8bcbb69b3b604522eeab131008bae7e8490b87c434f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/items2020.d.ts",
+      "bytes": 226,
+      "sha256": "ac2b3b377d3068bfb6e1cb8889c99098f2c875955e2325315991882a74d92cc8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/items2020.js",
+      "bytes": 1037,
+      "sha256": "c449ef64aec16263c7935293ed450cfc2da3ba66f6df5f99c3198c05f169838f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/items2020.js.map",
+      "bytes": 947,
+      "sha256": "8f28ef13b54491f634fbd00c89b87dab96f0e490e0065d5aeac3853345e906dc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/not.d.ts",
+      "bytes": 209,
+      "sha256": "5ef0597b8238443908b2c4bf69149ed3894ac0ddd0515ac583d38c7595b151f1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/not.js",
+      "bytes": 773,
+      "sha256": "ab2f2758d4ea97ac8763fe5540dd0f4d877859676fe5d6c750a18deca387f718"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/not.js.map",
+      "bytes": 831,
+      "sha256": "c5b821f2b5cee147a5dbc645470a3528d1e87f3f9faa9f5a41cd353a075d60db"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/oneOf.d.ts",
+      "bytes": 254,
+      "sha256": "6ae5b4a63010c82bf2522b4ecfc29ffe6a8b0c5eea6b2b35120077e9ac54d7a1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/oneOf.js",
+      "bytes": 2257,
+      "sha256": "e2aeb6c22d49fd5f348bedcf7f5c4d7b31f5a05dd7ff1a0c531374c6968792a2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/oneOf.js.map",
+      "bytes": 2046,
+      "sha256": "ebab3ad34f13bc50265cb5ef9943beeef9f4e65c97a64533081da51d765dd526"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/patternProperties.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/patternProperties.js",
+      "bytes": 3236,
+      "sha256": "0d43da49a82452c439ba990de7372ad5cedb663717918a5f6dae07025abff655"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/patternProperties.js.map",
+      "bytes": 2734,
+      "sha256": "a8103db59a1c72cd5fea553943b386d21f5544f40202cb1b1af7ef465142c8d1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/prefixItems.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/prefixItems.js",
+      "bytes": 354,
+      "sha256": "16264f7b3233a6dcb98b48700643efbd3ebc4d11e27b3eacffc83ccb5f44fb23"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/prefixItems.js.map",
+      "bytes": 381,
+      "sha256": "1f3562cac09a9442410a3b01bdf1930bf4cbb3fc4840704c6c6327be37aec33c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/properties.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/properties.js",
+      "bytes": 2153,
+      "sha256": "c896873ae7251093a2c8880545b69b6e8cb55c44817a53ec830a49818d74104f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/properties.js.map",
+      "bytes": 2054,
+      "sha256": "33599345842c02b84401f6abc5b8df58023ffa180c148430a0e62d8eb2198ba3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/propertyNames.d.ts",
+      "bytes": 249,
+      "sha256": "8e1428dcba6a984489863935049893631170a37f9584c0479f06e1a5b1f04332"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/propertyNames.js",
+      "bytes": 1221,
+      "sha256": "b3411cfeaff8efd5e6de12971bb5dc339e64b61fbe62d3b950794c077315c2e7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/propertyNames.js.map",
+      "bytes": 1230,
+      "sha256": "a606f571bd198bcc4d9414887a57650669989bd0795181d07310e08a46aaec64"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/thenElse.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/thenElse.js",
+      "bytes": 446,
+      "sha256": "9bc42eb8699d57188a7ec2a710d3f38052f92bd78c5d4d0442cf98cf2ebbe22d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/applicator/thenElse.js.map",
+      "bytes": 442,
+      "sha256": "474cff337e6d5c8ac35258cfc1b98d82367934b6d6a31bc261da7058e1008e4e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/code.d.ts",
+      "bytes": 1462,
+      "sha256": "83ca5b45121b732612f3bfb090ed559fc701e69f385d48597f3ae7f54c535076"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/code.js",
+      "bytes": 6216,
+      "sha256": "9212ddf8bd0a4c3b1c4b44cdadd141183b2b36f561b91d13df53c83911e3bf63"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/code.js.map",
+      "bytes": 6030,
+      "sha256": "1db25a8b2b7a34ad9d348246d6f849f61d4e29538a16ad6498d77b1c3497d534"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/id.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/id.js",
+      "bytes": 267,
+      "sha256": "49c8eff694ce4371450c1f9986e934fcbf4bd143311caef5332113f29175bc11"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/id.js.map",
+      "bytes": 257,
+      "sha256": "fdeedb6446a7ddac6fc0dc0094bd70af32d00dc908ae2564f5519c45f6cd0897"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/index.d.ts",
+      "bytes": 100,
+      "sha256": "817911706e04e79b7ac726cf166ee8d833db6e132693c6a88936713f89551010"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/index.js",
+      "bytes": 357,
+      "sha256": "f420e1011b95e27b54c58323a7ed4ffbd0a88cdb4496f771bb6782c2aa22d23e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/index.js.map",
+      "bytes": 306,
+      "sha256": "47810777e556d4dfd64ed64eea5a9553e2c2ad632bac15944c8aafb75da4236d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/ref.d.ts",
+      "bytes": 443,
+      "sha256": "22caaec568a45c8d7abc8abdfbe2acbe23dfc8137c143e6c6348bfdc640decd4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/ref.js",
+      "bytes": 5234,
+      "sha256": "1422c1454b3621d890066042048f37746fe1cf213088307099816199889bbfd1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/core/ref.js.map",
+      "bytes": 5094,
+      "sha256": "102a133a0c29f09af757ac3715b3fe8d98b60d3651a8c288fc8aec35c51e4745"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/discriminator/index.d.ts",
+      "bytes": 288,
+      "sha256": "423d2ccc38e369a7527988d682fafc40267bcd6688a7473e59c5eea20a29b64f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/discriminator/index.js",
+      "bytes": 4845,
+      "sha256": "b58b58025d2dbe5a6967376faec9295b860a338664c47037e9a1035c1e8fb88e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/discriminator/index.js.map",
+      "bytes": 4243,
+      "sha256": "5dd1b53a8e69c78a9e4eaf155e5e6f9e3856814a529632403d6deecda6efc1b2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/discriminator/types.d.ts",
+      "bytes": 271,
+      "sha256": "3be71f4ce8988a01e2f5368bdd58e1d60236baf511e4510ee9291c7b3729a27e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/discriminator/types.js",
+      "bytes": 308,
+      "sha256": "2365341d1f30dc72cece7703e908e47aacb8f904b9f66ec4019fe889ae1e57fa"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/discriminator/types.js.map",
+      "bytes": 239,
+      "sha256": "4ab17ff95b7fec251f810c0d2c7bf2d9814b9ec733134195b91df6cf11821eaa"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/draft2020.d.ts",
+      "bytes": 133,
+      "sha256": "3ea35fd2f7b15955306658465892b2ff6e4bebb342b1a55baa65cbb9d3e5d62a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/draft2020.js",
+      "bytes": 762,
+      "sha256": "2d0dc3a14abd48a45ad1407a97f23a0f943fa5244923037f86e95a7de04a7445"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/draft2020.js.map",
+      "bytes": 419,
+      "sha256": "a45cb9b26d482a3a9018d4815ba277e409b83571c09c3a1065b9ba3390a7f891"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/draft7.d.ts",
+      "bytes": 127,
+      "sha256": "9218319bc0e9c5e5bd7ebf676273928785813f41ec5501c59bdc2c36dfaba8b1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/draft7.js",
+      "bytes": 557,
+      "sha256": "8c62022c6c3aa302c3ea6f6709a697fc9eb6385d243fa7c2156dbe9f02228170"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/draft7.js.map",
+      "bytes": 328,
+      "sha256": "e556fccd950796d8b708fe1fa2aa8bcdc37ef037be9e3234be5297085d90cb62"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.d.ts",
+      "bytes": 256,
+      "sha256": "ac1d23564824d637da12dca9543b75a4f104407450469d004783d317c48cb293"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js",
+      "bytes": 1261,
+      "sha256": "78222a5b42bab186253d880f9af4b012394ae5988bfab78e79f2510caed0ccf7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js.map",
+      "bytes": 1351,
+      "sha256": "a1a2f8ca7533601839749c902345c3001c95af3566eb30636eb6994d6bcfc0e7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.d.ts",
+      "bytes": 250,
+      "sha256": "3d51d2dc8af506a0345db97741b398cb386a0f8a3c3f3075a9a602158182a73f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js",
+      "bytes": 1985,
+      "sha256": "acc2913c91d11ff57150dde1751cdd5d9f486a0cb156037870ede203273af917"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js.map",
+      "bytes": 1679,
+      "sha256": "4050eb882360e99c6a92d89a3c4f83e84f7f9df4d8e5c235ff9da9805d721a8f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/index.d.ts",
+      "bytes": 106,
+      "sha256": "4bca8e262b63afb07fc894cc4139df757fbabe511c6e47b99b99e9f6c3331d14"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/index.js",
+      "bytes": 457,
+      "sha256": "8c05d09948653957427f351d9c6172965b932a5663f7dcb63014a491a533cc0b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/index.js.map",
+      "bytes": 278,
+      "sha256": "cae8a099e83300e7e71269dcbd1918b399d9fe4e11d82ca1ddb59547ab962c14"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js",
+      "bytes": 522,
+      "sha256": "9f6cb7e509f9deada1b884010f08c52876f8eace32dcf0e7da28f6d0d91f3f76"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js.map",
+      "bytes": 435,
+      "sha256": "14cfed1db7bb14734fd2d0d9dd4be341f16ef368d7890a90424e6646c1d0115f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js",
+      "bytes": 325,
+      "sha256": "7b0c651e2c5b5218639cd3ad7e5162f1e226fc9814107a85f4c3e47f5138670d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js.map",
+      "bytes": 339,
+      "sha256": "aa22a9e7bdfce86b5eb802e6d806dc7d835d58a0dbc9165d72777206380ed7f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/errors.d.ts",
+      "bytes": 737,
+      "sha256": "2f9fde0868ed030277c678b435f63fcf03d27c04301299580a4017963cc04ce6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/errors.js",
+      "bytes": 111,
+      "sha256": "7758b311e7cba27a8ff8b99a5fcd8db6804265cbc48d2867b72bfe56823d36bc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/errors.js.map",
+      "bytes": 120,
+      "sha256": "d551cb2d686656a44924038afa1c337933a1e5f953a8e5f09837dc3895332675"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/format/format.d.ts",
+      "bytes": 240,
+      "sha256": "596e5b88b6ca8399076afcc22af6e6e0c4700c7cd1f420a78d637c3fb44a885e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/format/format.js",
+      "bytes": 4317,
+      "sha256": "6fae0d5124fd821b1a9959492f7d6d7b528bee8830d49a7a4759fc9a9ab81d5f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/format/format.js.map",
+      "bytes": 3832,
+      "sha256": "35575d56b5d5b5140b5575388d6e8ab5cdc097123eabe8c1e1e2f6d742fffcc5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/format/index.d.ts",
+      "bytes": 104,
+      "sha256": "f5144b57a017760ef277fe7cdeb1707af63498721918b80650824ab23b75d791"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/format/index.js",
+      "bytes": 209,
+      "sha256": "d5dad5f95c9c5f48f8ca956cdbb927aafc7b56baabfca8c0b0403d92c5ebeb67"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/format/index.js.map",
+      "bytes": 205,
+      "sha256": "ad27029bd96489edc361684b818651562c0ba5eb6a0484bc52bcbb178e16e68d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/discriminator.d.ts",
+      "bytes": 383,
+      "sha256": "b91034069e217212d8dda6c92669ee9f180b4c36273b5244c3be2c657f9286c7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/discriminator.js",
+      "bytes": 2785,
+      "sha256": "14df845b5ef760d96a3c62db8d4446840e3d408a248d1b92ba6db2260fca4da2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/discriminator.js.map",
+      "bytes": 2701,
+      "sha256": "c3b235680e571d21f99900ac5be4ce3457399b6881926dea7b1f36978e3ec848"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/elements.d.ts",
+      "bytes": 256,
+      "sha256": "c9b5632d6665177030428d02603aeac3e920d31ec83ac500b55d44c7da74bd84"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/elements.js",
+      "bytes": 949,
+      "sha256": "b2cad5c59d7c8ce936cea240d70beb41404c729901a60f32013c4facdcacfd5b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/elements.js.map",
+      "bytes": 908,
+      "sha256": "2cfe04080ae8f1ff3a86805676dd57cb6e55134325d473fa36f57837d72eca05"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/enum.d.ts",
+      "bytes": 225,
+      "sha256": "ac3bcb82d7280fc313a967f311764258d18caf33db6d2b1a0243cde607ff01a0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/enum.js",
+      "bytes": 1745,
+      "sha256": "4a8b7fa05f94b2e67275445c6e8437c337b92f709d243ed30a48ba6a08a9a154"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/enum.js.map",
+      "bytes": 1708,
+      "sha256": "87baba23c330e61539325d324acb2697c83a94e86e2902d2da3a08bc606230ff"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/error.d.ts",
+      "bytes": 521,
+      "sha256": "a6613ee552418429af38391e37389036654a882c342a1b81f2711e8ddac597f2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/error.js",
+      "bytes": 893,
+      "sha256": "d6896337eedc9b71a742912f776580918cb4de58a90b434cd39f152896da16f9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/error.js.map",
+      "bytes": 716,
+      "sha256": "4737604dbfbcf18ad231ff4188391cf349fc0238baa89062956fc56fa1703a6f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/index.d.ts",
+      "bytes": 533,
+      "sha256": "b0d06dbb409369169143ede5df1fb58b2fca8d44588e199bd624b6f6d966bf08"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/index.js",
+      "bytes": 962,
+      "sha256": "c57d340cd0709479d8ea9f102549a8fd2a47a2c1f2e6fe7f0e14067fe6385d7d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/index.js.map",
+      "bytes": 530,
+      "sha256": "31b17824ebfbdb2d2e7f5ae6835627153d57e8ebe801ba93988e4df2fea6f028"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/metadata.d.ts",
+      "bytes": 254,
+      "sha256": "74dbbaddae5c3d5fdea9df3c53cb0b4ac8a18a2098370dee6393c152ff8b6025"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/metadata.js",
+      "bytes": 810,
+      "sha256": "237a4bcc04f1a59628ba35aab9bd7c02fa19a007bf026f75c562c20c7a63ab68"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/metadata.js.map",
+      "bytes": 797,
+      "sha256": "b4815c6a53d59294b48ae16adb6bfa3f36a1052b2a23b3763124a8b27747c538"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/nullable.d.ts",
+      "bytes": 305,
+      "sha256": "06aeb5ecbfc278df2941e3226dedecb838e64e02a6fab7518531854543ecb543"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/nullable.js",
+      "bytes": 859,
+      "sha256": "ba6494ac04fb1c2654951e8c8a57861e324fafa0f6c3bd2e1716bea8eb5c823a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/nullable.js.map",
+      "bytes": 821,
+      "sha256": "4d28df1f7dbde477e3501ab0d049b5643b5e7911d59603ebb24161ba8ef00f08"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/optionalProperties.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/optionalProperties.js",
+      "bytes": 436,
+      "sha256": "82b67841649a948b069c8e0cfab712eb883579690065a05658b7df7e4eddcc62"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/optionalProperties.js.map",
+      "bytes": 398,
+      "sha256": "58c1f7d7f168abe67793982f655adaef8b76937875373a26552c840c3812b898"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/properties.d.ts",
+      "bytes": 879,
+      "sha256": "46456824df16d60f243a7e386562b27bac838aaba66050b9bc0f31e1ab34c1f2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/properties.js",
+      "bytes": 6320,
+      "sha256": "4a392193b708f69c25511ed059e80a70ea084585731817ad8e459364f479eb35"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/properties.js.map",
+      "bytes": 5884,
+      "sha256": "7323488a259181201748b81e3c70628ef17842fdcc9ff917859240369d7f5380"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/ref.d.ts",
+      "bytes": 203,
+      "sha256": "e875ca9fddf2b2ba80afe86316bc19b2982a6da3482b29a5cf7cfb35e3d07a2e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/ref.js",
+      "bytes": 2648,
+      "sha256": "4736880c610f3664a8c714fdb5cf4e9db9fcda1721691dcacad2e9796e937460"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/ref.js.map",
+      "bytes": 2476,
+      "sha256": "1f76ab8797ae96dadfb9f03bb0c170d822417224ec2e395431cd0d0a51922001"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/type.d.ts",
+      "bytes": 485,
+      "sha256": "da47cb979ae4a849f9b983f43ef34365b7050c4f5ae2ebf818195858774e1d67"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/type.js",
+      "bytes": 2706,
+      "sha256": "f97e19f2c3042938f433cfad0c4500b3342d869719550246bd4fced479db8e1c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/type.js.map",
+      "bytes": 2614,
+      "sha256": "8956607890334c9fd8eb242e2ae900c64e0c7ccc6879ce5f283fedadaa5e1fc2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/union.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/union.js",
+      "bytes": 343,
+      "sha256": "f8404ab539ecfc5f6eb1bc489cc541aad6bf79cf58beecfcfe671226678c3280"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/union.js.map",
+      "bytes": 320,
+      "sha256": "53c59966c45cc6fb1276f8f933ea2f9fa79be5a91c2595a79d940c147abf5519"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/values.d.ts",
+      "bytes": 253,
+      "sha256": "0697277dd829ac2610d68fe1b457c9e758105bb52d40e149d9c15e5e2fe6dca4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/values.js",
+      "bytes": 1838,
+      "sha256": "6b98eb1fbe2686a7f26fbf1e8860f61bdc81fe47117c4f5a79d5ca1fc92138f2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/jtd/values.js.map",
+      "bytes": 1783,
+      "sha256": "0dc547866a1329dbe62fb89f961c74611069ad797639acce2def6a185e657c6a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/metadata.d.ts",
+      "bytes": 149,
+      "sha256": "a63efeef4b2f74a79a7729d6d362a98e3c647a7a439711f3a43372e16c6223aa"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/metadata.js",
+      "bytes": 427,
+      "sha256": "45c178744a7ec57e20c85ceeaea8d9f36b5663636ab7e495ea2c3c1bf4a58609"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/metadata.js.map",
+      "bytes": 299,
+      "sha256": "7d888e73dee29bee063f1e98884e6a40386f5ee653a8ed6208e43b973a3542cd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/next.d.ts",
+      "bytes": 97,
+      "sha256": "0aa6d6107f533bac5f47e8ef5d7fcc39503e0cd547e16b6348d063a24b30a137"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/next.js",
+      "bytes": 433,
+      "sha256": "491c4d9738e50a6c22b3090cb1df49911b4bb7c3b7dcafc2f2dd4c074c4d82e7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/next.js.map",
+      "bytes": 243,
+      "sha256": "79890db3838840ab79e117248e523f9d3c97742b042b02382326fb2bf14f0918"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/index.d.ts",
+      "bytes": 114,
+      "sha256": "87d4054133a5812f28e73373903c8ed8cc4929fd2ed0aa14695e7140e12d24ed"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/index.js",
+      "bytes": 350,
+      "sha256": "4e7936d1a55051e70e2ebbbfc8de94fbe7f1e7b055252df5a984481ea7c156a4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/index.js.map",
+      "bytes": 236,
+      "sha256": "8a4aff71617048ad134ff9d6773270168595b0268c5330d8450b90e71496f8be"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.d.ts",
+      "bytes": 248,
+      "sha256": "d4cad9dc13e9c5348637170ddd5d95f7ed5fdfc856ddca40234fa55518bc99a6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js",
+      "bytes": 1588,
+      "sha256": "4d7010c39f1b7af4a2fe1a62e5b65c8f763d4e58ac3d710099d367659f5e4fda"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js.map",
+      "bytes": 1813,
+      "sha256": "03ade2a02a69c0b0bad0dbe74d70964daab47a65f5d4796cdb927edd00c06ec8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.d.ts",
+      "bytes": 272,
+      "sha256": "adddf736e08132c7059ee572b128fdacb1c2650ace80d0f582e93d097ed4fbaf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js",
+      "bytes": 2608,
+      "sha256": "665029a99612ec32e9bef99c9c4b09a4dc0be6c71d7b920594d414d404806ebe"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js.map",
+      "bytes": 2518,
+      "sha256": "7eea70788f708b843fa81cecb7c90aef4ae473b2cb5f5cf9f3229d1025fcffc0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/const.d.ts",
+      "bytes": 208,
+      "sha256": "1cf0d15e6ab1ecabbf329b906ae8543e6b8955133b7f6655f04d433e3a0597ab"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/const.js",
+      "bytes": 852,
+      "sha256": "ace994e9ab97a70899a9484794794f4be5ee03bfb3cf32242d3f091d77f0329a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/const.js.map",
+      "bytes": 819,
+      "sha256": "5f9e6e0702178bf1ce990751be7fb9369403af96e7f724bc361da8c27b16d8ea"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/dependentRequired.d.ts",
+      "bytes": 343,
+      "sha256": "d70675ba7ba7d02e52b7070a369957a70827e4b2bca2c1680c38a832e87b61fd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/dependentRequired.js",
+      "bytes": 403,
+      "sha256": "cd69a90089328b24d2232c12edae57858c14f66aaa56923c12929eb3d673e8fa"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/dependentRequired.js.map",
+      "bytes": 376,
+      "sha256": "62fd57bce66b2b2cffa208b30e7dab00011936f05ae2a5b075c04461663e06a4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/enum.d.ts",
+      "bytes": 241,
+      "sha256": "7c9f98fe812643141502b30fb2b5ec56d16aaf94f98580276ae37b7924dd44a4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/enum.js",
+      "bytes": 1901,
+      "sha256": "61062b318a40eb52fc5a8283e7f4781db98349841744961ef4fe04a4722ebf22"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/enum.js.map",
+      "bytes": 1999,
+      "sha256": "3d74c4a70ce905cb4c07c75fededfb51d7124e683cf4ce394e89835fad8b1a2b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/index.d.ts",
+      "bytes": 771,
+      "sha256": "b3547893f24f59d0a644c52f55901b15a3fa1a115bc5ea9a582911469b9348b7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/index.js",
+      "bytes": 1036,
+      "sha256": "4a1839832de5f10ff423c1c0c6cb232b5b6e1b34980a28862cf56b2763136de4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/index.js.map",
+      "bytes": 595,
+      "sha256": "42fce077fc1751290cef9a3b2e48546262724d61f91d44751e6e4075ce159ed4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitContains.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitContains.js",
+      "bytes": 495,
+      "sha256": "0ea6f2e43359add298e1ed9306fe5020c62e086392f2915f10226b01394b200d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitContains.js.map",
+      "bytes": 473,
+      "sha256": "56076461ebadbfbbd25cf53a8eaf5e61368f325443f6fe8e6ed9bea5d7b24445"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitItems.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitItems.js",
+      "bytes": 852,
+      "sha256": "49f0427d29b38aef2fa8aead26e68bda12deb9a2da22f7a7804ba0fed44e1fec"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitItems.js.map",
+      "bytes": 905,
+      "sha256": "4d8e8e8f64bd85fab47be9c03276d23d52421b18cdabe2962c8cac38d5109459"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitLength.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitLength.js",
+      "bytes": 1130,
+      "sha256": "379c28317faaf7784680b6049c3562692d3df6d65cce33f48e6c6c723beeeec2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitLength.js.map",
+      "bytes": 1145,
+      "sha256": "bc33ca19aa1613710c361b334d5387a178441fb79f368898dcdce1d8075f54f5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitNumber.d.ts",
+      "bytes": 386,
+      "sha256": "25fbe57c8ee3079e2201fe580578fab4f3a78881c98865b7c96233af00bf9624"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitNumber.js",
+      "bytes": 1036,
+      "sha256": "3dd4bd41dbfc76c522078ff54b6479683485c4e97faa04cfcfaf2d8cb0fb8e65"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitNumber.js.map",
+      "bytes": 1300,
+      "sha256": "8fb0880eb5eba874c7424e9b5f4c6f14a436330a471e0c791b39248e1abf2d9f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitProperties.d.ts",
+      "bytes": 120,
+      "sha256": "e99ba2bf1ceb28ce6a3e60093bd8cb09e05eca71d0004254d3baf97c02152564"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitProperties.js",
+      "bytes": 896,
+      "sha256": "8523a3f7b36c34882ca32b0ec71a2157d7930907cb86b778a97c1514fa6258ac"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/limitProperties.js.map",
+      "bytes": 915,
+      "sha256": "0d819ad8104004b82be28bb3e86c96eefbff850e0fc1bd21bf43678a17a2ebfa"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/multipleOf.d.ts",
+      "bytes": 252,
+      "sha256": "62cc8477858487b4c4de7d7ae5e745a8ce0015c1592f398b63ee05d6e64ca295"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/multipleOf.js",
+      "bytes": 1023,
+      "sha256": "df128c2a6ca74ae57c65fbfe3aea8a101447a3ae8c41fd53cfc5693fa23cc8bd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/multipleOf.js.map",
+      "bytes": 986,
+      "sha256": "ff3ca557d3ed080cc3397829b9641b11764118afa8ce3c97ec2f6f47ae0c8c69"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/pattern.d.ts",
+      "bytes": 243,
+      "sha256": "cc2a9ec3cb10e4c0b8738b02c31798fad312d21ef20b6a2f5be1d077e9f5409d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/pattern.js",
+      "bytes": 1323,
+      "sha256": "86e84206bfc6a66ef18bf1fe43fbc56ebe7f7f4d57841197b6d044c529e0c195"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/pattern.js.map",
+      "bytes": 1449,
+      "sha256": "87277c96cf32b25da6e01a4ef46f202f741872a43f360af2838d209e114f5d77"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/required.d.ts",
+      "bytes": 255,
+      "sha256": "4b4fadcda7d34034737598c07e2dca5d7e1e633cb3ba8dd4d2e6a7782b30b296"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/required.js",
+      "bytes": 3188,
+      "sha256": "b953bc18d94274bd73374dd5b4282d7a21159cec8c0e7a357e1eaf3f326b9054"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/required.js.map",
+      "bytes": 2994,
+      "sha256": "93e4965462fa0e78f52e96498550ce19eca50f70872ffae95baeb4b59e66b1bd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/uniqueItems.d.ts",
+      "bytes": 261,
+      "sha256": "360fdc8829a51c5428636f1f83e7db36fef6c5a15ed4411b582d00a1c2bd6e97"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/uniqueItems.js",
+      "bytes": 3037,
+      "sha256": "666d1a2aa25c0dfe3cf41312d0f9d40e9f99eb2c19be7469134ad89005aadd52"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/dist/vocabularies/validation/uniqueItems.js.map",
+      "bytes": 3354,
+      "sha256": "ca96cb4269f0665b48201bbd3bf767583b2d337cc6bfd1f8e3135c54c09780b5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/2019.ts",
+      "bytes": 2502,
+      "sha256": "d56766ac02c001a4f808c99281e466c4ed004118169e1d93b1b383dbe8ebfdbc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/2020.ts",
+      "bytes": 2217,
+      "sha256": "0172fbdd0f09d7cec4243374ef3148da91ac504b436c1b058bbb482fdb1ad603"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/ajv.ts",
+      "bytes": 2229,
+      "sha256": "db86e7216e623df616513e1191e428b8d73c9f2cb1a36720fff0f12003d22a85"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/codegen/code.ts",
+      "bytes": 4474,
+      "sha256": "3e088cc949e98ccef11611d64f11b3035182c257dd055587f3cc3081b59b8f85"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/codegen/index.ts",
+      "bytes": 23051,
+      "sha256": "5d36911057430b7beedd1acf8026afb6529a09bf8b974c47d68d9a72be252ea6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/codegen/scope.ts",
+      "bytes": 5981,
+      "sha256": "a4cc6bc51633c0a67e09d61926a769a4d805f13931fd3541957a8e80d2b86a16"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/errors.ts",
+      "bytes": 5269,
+      "sha256": "088cd10b6fb1e7ee6fde64d791f17d06f9b79cb126c35f98ae02cffafec44480"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/index.ts",
+      "bytes": 12299,
+      "sha256": "fd39c4872a98fd27d899345d92da8b5e9c92a3b311a9f91e156080349f85c869"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/jtd/parse.ts",
+      "bytes": 12345,
+      "sha256": "3f987db29f450b9463fc64a2d594325d21155d3e7934a143ab1a744ce0d7ecd6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/jtd/serialize.ts",
+      "bytes": 8573,
+      "sha256": "f523467687cad8197f51828d97dba711087fd7fb7447626a672823fcc227f6b7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/jtd/types.ts",
+      "bytes": 311,
+      "sha256": "4f9a151d6cb7028d5eb483a2f0aab17a2f8a411b0af6b48108712cf6448b0822"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/names.ts",
+      "bytes": 1116,
+      "sha256": "7e985cf51593c03cfac0317c9cceecddc70ab630673a3f5af739885255b2be64"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/ref_error.ts",
+      "bytes": 513,
+      "sha256": "1a3246eb3a9a09e185099600b550185a5fe84b22e27d854ddc7273d5e35315ac"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/resolve.ts",
+      "bytes": 4674,
+      "sha256": "83fa181288f15f4be781fe8baa6735fcfee169efbf3f7710a86a50c6cac5acb5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/rules.ts",
+      "bytes": 1456,
+      "sha256": "d736019109db360c5bb5d5fb12132a0d518ff3c01238c93b8f317a2879cbdf85"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/util.ts",
+      "bytes": 6639,
+      "sha256": "2f9441df72d2d7996f90403f5f31d6d156036a9e8e39a773a3e52812462dbcad"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/validate/applicability.ts",
+      "bytes": 739,
+      "sha256": "22a43ed9cc6d17524013990d049d96494db39c95f1122e103c01dfc87a820497"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/validate/boolSchema.ts",
+      "bytes": 1298,
+      "sha256": "e5c41cd20170d246d1d40ac54bf7df4cbef084238d27f2a8d69faa2d597600cf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/validate/dataType.ts",
+      "bytes": 7094,
+      "sha256": "37adffaf46b9648699ea8b08a3caf6d5d031de027b955dd5f69ad2a72e7f03e3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/validate/defaults.ts",
+      "bytes": 1215,
+      "sha256": "8ae3dec515bbf81721af940ed1ca3ff1edbbb5e2c24187f441822c89e3925c27"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/validate/index.ts",
+      "bytes": 19445,
+      "sha256": "841338dea0ff90d44bde71f0651879edad186fd50d7bb6d03243b0085e557c48"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/validate/keyword.ts",
+      "bytes": 5337,
+      "sha256": "83e14ccb96fb8e24bb81af1c0d12a724472f713faf5ff2af2a8fd1be43da273f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/compile/validate/subschema.ts",
+      "bytes": 4366,
+      "sha256": "79eb0fbb091074cdbc7149f3fe6bf0c174f76f53f82cf90f346285505eb4113e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/core.ts",
+      "bytes": 30790,
+      "sha256": "c9a2785949f4ba6dbe26c536a95437f38cf688cf74301666c8a33a816ae5030d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/jtd.ts",
+      "bytes": 4172,
+      "sha256": "e7157f96fc310c1488fdc78d12c6c33f3064d23859049e5d1fffa0a21d57f262"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/data.json",
+      "bytes": 409,
+      "sha256": "d24ab8a97c18b3f5afdde7d7024a0e0ac1df0614a16a41cb88f81379edcc2db3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/index.ts",
+      "bytes": 899,
+      "sha256": "b0650c20759d7c19f624f1a7c8f3688eb7833a9ff964598dc0d4513e685d6b8d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/meta/applicator.json",
+      "bytes": 1566,
+      "sha256": "9c356a52b0ad5da7d4c1b69f61dff5277c2af46221bc0b0521bbdbf3a12d3a2a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/meta/content.json",
+      "bytes": 477,
+      "sha256": "cf4792ae93f4a4580ec9523640945f7756f75fd624935ebf15194b0ac3909267"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/meta/core.json",
+      "bytes": 1273,
+      "sha256": "629c017994ffaa33f573a96cf01b9dac6cae80c7d5d17dad5e823a3afa18d5fe"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/meta/format.json",
+      "bytes": 375,
+      "sha256": "018ef7c81bcca9e40a4a02ed236e7cabb3a630f2b1ea01fbdeed2f882c15ddc8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "e038593d36bf1855875a13b8812469d6a2d62ed309436b9c9a2fa5a4ba59085e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "aaba7f2d6fcbdfa6ca97fdc3d3da1ae7d66ca3322b7e90cf5a98b067555d06e6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2019-09/schema.json",
+      "bytes": 1579,
+      "sha256": "264720afa0dd61919e21bbe9bc1312121b70e43019ac696240e069adc72cce15"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/index.ts",
+      "bytes": 982,
+      "sha256": "9c4f608142c423538ffee89094935d3dede32664a1fc47c3cb4b248550946000"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/meta/applicator.json",
+      "bytes": 1441,
+      "sha256": "f1e465ff0c0cc86bee5c0cc4b51d2734c532e6ea12c75b60a2ac093a4577b2d4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/meta/content.json",
+      "bytes": 479,
+      "sha256": "7ede86f2c48d646202bf1332aefaf46db268c943d59752727db7247dc2920516"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/meta/core.json",
+      "bytes": 1344,
+      "sha256": "c3a5947992d4fe67c95cda7910911207376bbae41c0a124ec9e7e699172e7a49"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/meta/format-annotation.json",
+      "bytes": 420,
+      "sha256": "1e31131b1ed21f98c007f04deb501343b8c4dd77f1c5a8494a9c2085f68d769d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/meta/meta-data.json",
+      "bytes": 758,
+      "sha256": "eb008c756b29bdaa237c1f06d32ea4a21f6ef22148b03c6372cea5e4c0782273"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/meta/unevaluated.json",
+      "bytes": 472,
+      "sha256": "8f7f75f4274745faa32e4abdba12de99f49b21df225f52f723b5c62043b0edca"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/meta/validation.json",
+      "bytes": 2264,
+      "sha256": "3cae7069843679429e4ada7df261bb8961fa34cac15be89296026e69af312092"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-2020-12/schema.json",
+      "bytes": 2166,
+      "sha256": "5333c7df76bceee098e865881d0808238dea836126c6c60b49299ec85c6c7a56"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-draft-06.json",
+      "bytes": 3449,
+      "sha256": "a9b6a00af20105009f0924cd7c02d811bbf70c579a96f1552579c3457111f687"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-draft-07.json",
+      "bytes": 3811,
+      "sha256": "f7e8b13cad4fecff9771f3626fef33e20e59027b90938a28fd9d2f6c17cd0773"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/json-schema-secure.json",
+      "bytes": 2521,
+      "sha256": "b7840b4f1526eee47ac19780906a436d0c39df2aa3d505388caf18864085a421"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/refs/jtd-schema.ts",
+      "bytes": 2586,
+      "sha256": "76b788839e3f26ccbb073309b452595482714f2105295d009145d7b79e336003"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/equal.ts",
+      "bytes": 236,
+      "sha256": "013de4ec7e4006015ef49ec787737636dc048a913aad0922295fc8b0eb15aa10"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/parseJson.ts",
+      "bytes": 4553,
+      "sha256": "79d1f9a5ae035324c73d85f146c00c19714f73a61d822470a12d28edd6be0fd5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/quote.ts",
+      "bytes": 802,
+      "sha256": "b87b625e0ca6a17d96c7af7999b7eaacc956c4265a49b54877d8fa9de295c1e3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/re2.ts",
+      "bytes": 157,
+      "sha256": "10841997f170df64628a12998362f97dec5052d06495a20ad72f725bd1bac2e7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/timestamp.ts",
+      "bytes": 1492,
+      "sha256": "08509863a735667f2b8c5fb68d92f318947bd975cdf2a230ede606af96a8fbd4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/ucs2length.ts",
+      "bytes": 629,
+      "sha256": "a001c95dd2e835b9c61080254c117f02d425eb6760bd2c1d682ab63ed00d12f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/uri.ts",
+      "bytes": 162,
+      "sha256": "4723aa43822e1cf2291029fe9038f317cca49ee685f59b2e48eb154f716a8edb"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/runtime/validation_error.ts",
+      "bytes": 336,
+      "sha256": "abf8375d3a5d74512cc4d229e4839cf03b84d2e3904804401ca83cf7639e0a64"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/standalone/index.ts",
+      "bytes": 4151,
+      "sha256": "3509ccea2b4677c04074ccb9f6335ef63d36f183349d4c026dacc95928d096ed"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/standalone/instance.ts",
+      "bytes": 1272,
+      "sha256": "9fa1decae4056176ce7104da136af90419078307baafaeee947740e02eb4fc82"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/types/index.ts",
+      "bytes": 7289,
+      "sha256": "3cf1bd15564b691784b1bce4c6fa4223c0a3a8bde7b10d98270d7c66146aefa8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/types/json-schema.ts",
+      "bytes": 6380,
+      "sha256": "4ccc0e648873df7580bb66a9d2e908604ddd96c69a88246dda60f5539e10bed8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/types/jtd-schema.ts",
+      "bytes": 9321,
+      "sha256": "1c537a703005dbdf394539f58432861dae5135fddae6f54cebb28ae0f26f3d42"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/additionalItems.ts",
+      "bytes": 1824,
+      "sha256": "0593c60f31db5cea9022a353e56fd3066a8dac4e35607affb4e556d4d84c3f2a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/additionalProperties.ts",
+      "bytes": 3782,
+      "sha256": "1ea5e25fd12131cae2278b7fc4fda354dad5a60d65234b67aaa09adf10268f55"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/allOf.ts",
+      "bytes": 717,
+      "sha256": "cce43c2f5c51e2c1f40d9e773d052fc9e73beb775c5d6c0ae93e0bdb5a2a32fa"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/anyOf.ts",
+      "bytes": 380,
+      "sha256": "2449024f686a1d8d51dc414849ae039465406adcf7ba04565d8ad2ba7448f594"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/contains.ts",
+      "bytes": 3278,
+      "sha256": "731c74710381d5484725d7e2bfa97e1f809a495ddae9bd0226a7c91578aeef05"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/dependencies.ts",
+      "bytes": 3391,
+      "sha256": "d2e648e8fe45621558c8f14ff5684954a91f6d800d1b2bf3d90f43941c84df65"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/dependentSchemas.ts",
+      "bytes": 280,
+      "sha256": "ba8f82eb99b70d5e128c69719a15a703f3b5b95844923487fd8d12c5015200cc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/if.ts",
+      "bytes": 2395,
+      "sha256": "676949dae0592465efcfdb3f15c8700fcc5e0b95bf0674c3b8723acbf2c3285f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/index.ts",
+      "bytes": 1592,
+      "sha256": "85f01326e6589c9b0a8cc38939ac0520c5d213d55f6fefe2a9c23c7bdea680f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/items.ts",
+      "bytes": 1892,
+      "sha256": "9ccc7f93f03988881f366885fd3cc1a1490f36712b7932f3735f2f72136990e3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/items2020.ts",
+      "bytes": 1053,
+      "sha256": "939a853b1f7b3a1ba3907453435dac558d11ba5c059ffc02c87107871ed2a668"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/not.ts",
+      "bytes": 859,
+      "sha256": "a458fd0c8a2386906e5e55a2095c6176dc02dcfa19e13ec4ba775b51e2b56971"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/oneOf.ts",
+      "bytes": 2197,
+      "sha256": "ec3681fffbe66ae13befecacc4a400b3986b7819846b8e264320c189eff31ad0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/patternProperties.ts",
+      "bytes": 2870,
+      "sha256": "80cb5e80c22228e2ce276b0703627f9057e40993b431a063a93abad5f92c3f75"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/prefixItems.ts",
+      "bytes": 292,
+      "sha256": "ddddd4d635a17c56713d8938e78a7dc0c7688044ce1a5de033a6fd8e8ff96b0b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/properties.ts",
+      "bytes": 1845,
+      "sha256": "76cd23a45c08a679f196d61e5b937e2a4361c92d9fc958a72d47ebc7efdba1f1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/propertyNames.ts",
+      "bytes": 1247,
+      "sha256": "ab1b80a1a99dbf16578091b96b1347fda8f0177bfdee7ddbec161af54d01fa8f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/applicator/thenElse.ts",
+      "bytes": 441,
+      "sha256": "29a4fc78180fa88c422b01d2168c29087235238a2516d4c1800542503b5060e4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/code.ts",
+      "bytes": 5247,
+      "sha256": "f4bf46f24e44512addfc8b34e8ef1cd6320025236839e176deb59ee8b20c7ee7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/core/id.ts",
+      "bytes": 224,
+      "sha256": "241606f9c18746cb35cb74c728c6d972bd6100edad70692bb27f841ac8b1b4b1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/core/index.ts",
+      "bytes": 274,
+      "sha256": "43e089e25baac37f7665f0451e51956ec154f60a058b83f86cc3e577ab800f62"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/core/ref.ts",
+      "bytes": 4384,
+      "sha256": "0d932d49ef57d32449923e5687e57715f4d08252f749d34d1d9410e8f88711f8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/discriminator/index.ts",
+      "bytes": 4304,
+      "sha256": "9b89f8b9ab15e49b326bb3505424a1c0cd234397bf7db13a80e74e627fc381a3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/discriminator/types.ts",
+      "bytes": 251,
+      "sha256": "537bcd41ac270d1a43417d742a1f9f55b319e6f213323f6b00edfbe38e88e7da"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/draft2020.ts",
+      "bytes": 698,
+      "sha256": "840c49657713cbbd6467274f270c77bf16a7ed8b3aedbee6bb5c587550282aea"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/draft7.ts",
+      "bytes": 496,
+      "sha256": "9f8fd4fa8b2084b4cae951badc68de3a361e01eea06a158d530c4d55e92b5fb4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/dynamic/dynamicAnchor.ts",
+      "bytes": 1122,
+      "sha256": "bc8bb7636e8fff1add5d8c36577978f357731c2877fd4d4c59b620d6a8af1d8f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/dynamic/dynamicRef.ts",
+      "bytes": 1797,
+      "sha256": "92884e9923f4053155e5c1f13d5e176c17b47f0db65616bf031a4bb93faf969d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/dynamic/index.ts",
+      "bytes": 328,
+      "sha256": "c5188cd455c45b486350ed74bb08b6fb47db13bea6f218cce9d2cbf88044352b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/dynamic/recursiveAnchor.ts",
+      "bytes": 401,
+      "sha256": "7d9e31d581249212f5c831d30d5398c43b6d7ce4d3dcb735880524016b3e8d6a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/dynamic/recursiveRef.ts",
+      "bytes": 253,
+      "sha256": "6202321b7ce13fb3aec6d0180c3e78b6f91d768be57afef6b1693bd143577ee3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/errors.ts",
+      "bytes": 731,
+      "sha256": "ccf58af574cd4a8475346998967fa6229b163b6b52af2e9b0b30fa37338b8e2b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/format/format.ts",
+      "bytes": 3987,
+      "sha256": "5cd796fed502ebe7f2c650b47daae97c28967dd17fa020df56ec861986d30148"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/format/index.ts",
+      "bytes": 148,
+      "sha256": "804a833df34f93e7cd1a1809782f65c1ac89610ac736045308d27b659264a40a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/discriminator.ts",
+      "bytes": 2656,
+      "sha256": "9dd6dd40e98239c10d6771c0a0d107e238c12af4b3c5932fe623de649588de1d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/elements.ts",
+      "bytes": 976,
+      "sha256": "54c00bc71c6bc0f5055c49fa0b6803db07832e5f77aadb1e55e5e045b3a4ad33"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/enum.ts",
+      "bytes": 1627,
+      "sha256": "a55ae1c6b7d9ac0e9053e71da407efe41b3156cc0db7091bcd20a9d8897844dd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/error.ts",
+      "bytes": 746,
+      "sha256": "e1bdb9dfada76ee42308e134f2e74027ea8398997961a3bae08cd10c792272c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/index.ts",
+      "bytes": 1007,
+      "sha256": "4ca3295374abddb3c03ada3fdc52b9b7cb175046769a3eef60605bef8a6ef85a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/metadata.ts",
+      "bytes": 716,
+      "sha256": "558fcb3d3b5e39a9a967326ea6a35160bd485755d587c5faafb644e25d0c0f01"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/nullable.ts",
+      "bytes": 649,
+      "sha256": "75b370cb5ad4c36ff85a57fb9305a8018b5363666f0a5ac21c8de99d984b6bb8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/optionalProperties.ts",
+      "bytes": 394,
+      "sha256": "03fdaf041fd433857e78c3b867ad1e6c1f0a964c0292498981e238b40a2a4e77"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/properties.ts",
+      "bytes": 6244,
+      "sha256": "930071681288045214e10af6065f5d6c7f6ea599d07c607f345b609bac4bf8e5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/ref.ts",
+      "bytes": 2346,
+      "sha256": "f7dc8a31ad5764cc0c44725713130d5b656ead77483429226507da4dfd24ad2d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/type.ts",
+      "bytes": 2547,
+      "sha256": "0e6c6bb43fa81bff1cb4ba3f4d6d73379f3e013efaa01b790768fa0a5095cd45"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/union.ts",
+      "bytes": 292,
+      "sha256": "1dd265ce69eebbd46cd395b0b9d98ca22d8e681d0ab787e6409cb126450c9536"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/jtd/values.ts",
+      "bytes": 1681,
+      "sha256": "86236891ca9a9f77f7df5d399be026406d0f375c0a5d8f6d0749859dea245cdd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/metadata.ts",
+      "bytes": 304,
+      "sha256": "a0b32538e6d2c93c7fd10aef9963d990d24d9579d2494350a23f3501300817d1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/next.ts",
+      "bytes": 320,
+      "sha256": "b953c63e395e4e0c95e048ae8778473a744e1d7a7b5fa8c57733c1bfbf7ce443"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/unevaluated/index.ts",
+      "bytes": 257,
+      "sha256": "0d44afd298469f01304d72a5cf7da11303367fa506200c46785cee4bd3350f40"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/unevaluated/unevaluatedItems.ts",
+      "bytes": 1524,
+      "sha256": "c19c3d3e0b290171f674d3dbacc52d946f9e4325f2223355a055e741c5dbbbb2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/unevaluated/unevaluatedProperties.ts",
+      "bytes": 2440,
+      "sha256": "7d725ffb348774d31cc697cc6b632a43431b3d2d92edb819fd7341902340c6de"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/const.ts",
+      "bytes": 863,
+      "sha256": "9dc3c40d6260158b2ee34dadadbc0e738cad939fc725cc1d2f5120bd43768ed5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/dependentRequired.ts",
+      "bytes": 510,
+      "sha256": "082d569e899aca88dbe28bdf6a0c6c2efa120e107fe4d1244ecf3a0b17fef45b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/enum.ts",
+      "bytes": 1837,
+      "sha256": "f62f760dda52c2dbc053ef7b7012aa9db10d3af65e8b1dc5defcaf2ba9c25911"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/index.ts",
+      "bytes": 1271,
+      "sha256": "72a7be83642b3da6317dc9661bfbc8a8f521773812ac6e5c58ddee1c4386a86c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/limitContains.ts",
+      "bytes": 485,
+      "sha256": "3097c6f451ff7a527cbce136a08817114ee615f1b29221195cee45dfc89675e5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/limitItems.ts",
+      "bytes": 812,
+      "sha256": "32098cc56bcd9ff44bfa83b1015a3bc2bb7d2f8f7eecb3113929df732faa8176"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/limitLength.ts",
+      "bytes": 1025,
+      "sha256": "72afbaaa2718abe23156d8bb4af09fdc98a12054fe3c559b82e22718dbedb7de"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/limitNumber.ts",
+      "bytes": 1350,
+      "sha256": "61bedba4a12924a84924b096f3b401356805cc24593f4b800bab4ad05be06298"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/limitProperties.ts",
+      "bytes": 851,
+      "sha256": "d55088c19cd829be5ff23dc7bb98dde9bb0bc9fb3baa2a4a141797044a668048"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/multipleOf.ts",
+      "bytes": 1072,
+      "sha256": "5130cb4147d60dbec590b1e153f0f69b3c7ab552da9dd12eb2e1c22ca36daf7c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/pattern.ts",
+      "bytes": 1299,
+      "sha256": "7de916ef56aba5ef4d0b03e69b0e206224d1226728700afc7ccd76d216ff7829"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/required.ts",
+      "bytes": 2961,
+      "sha256": "73f26a08d78ace7a164eca526843086bfbb986799d9a7ecc02fb67a87d2456aa"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/lib/vocabularies/validation/uniqueItems.ts",
+      "bytes": 2690,
+      "sha256": "9d978fd6b3dc81c07c60f5067253490b54962571a4b510e18f4e257508809ee0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/LICENSE",
+      "bytes": 1090,
+      "sha256": "a05350a88e318e4f5f2c2a1ff1e2e88daa4dd38e6e78b71cccae422bdc762cc3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/.gitattributes",
+      "bytes": 80,
+      "sha256": "e173bffc6cde613d3e6d06e49f2b1d05385cb02aa68c4931656b5b051ab649dd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/.github/dependabot.yml",
+      "bytes": 274,
+      "sha256": "60ffc0c7159ff6af5e36ad3ecc56fe63782e4defaabafa94a13df7150d9a84c6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/.github/workflows/ci.yml",
+      "bytes": 2592,
+      "sha256": "a5f799b1fd846548bd97adc494f1e0bc13919215b683235f5d3a30d2ad472736"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/.github/workflows/lock-threads.yml",
+      "bytes": 293,
+      "sha256": "618dc46b9d589d991d97f4c9dd8b24c4f21edae32cdfd6c1ddc299dcab3d21d7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/.github/workflows/package-manager-ci.yml",
+      "bytes": 370,
+      "sha256": "7b086b40b64203092ce43638296c235ceba118d7b942fac7398ff476167876de"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/benchmark/benchmark.mjs",
+      "bytes": 4421,
+      "sha256": "45ba9783c3258e448b05bd371161ef9fcbeed332ba1e9455ca9c98edb24e1f33"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/benchmark/equal.mjs",
+      "bytes": 1305,
+      "sha256": "36eb5b2acea9c4e969ab8fe028e88b781aa948e597368655a13528c3a93f1d39"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/benchmark/non-simple-domain.mjs",
+      "bytes": 838,
+      "sha256": "303eb41faa6c2489b5086f3d2764bf6ecaf3b937b385647c6e8b14aaf2582524"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/benchmark/package.json",
+      "bytes": 293,
+      "sha256": "463a034d344b042e495841b770ca69a812693087ee2053d7c18cc8497e020b58"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/benchmark/string-array-to-hex-stripped.mjs",
+      "bytes": 819,
+      "sha256": "693d4a312b0e275e02ef5531d707ff7df6cddf14cd83bc09a79909ea2008bfd4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/benchmark/ws-is-secure.mjs",
+      "bytes": 1891,
+      "sha256": "6f105dc633aadd4bd4b8362765f4a1d44fb31fe0c8754cb11d73f27ff7d6527b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/eslint.config.js",
+      "bytes": 135,
+      "sha256": "52e3a2601a98f23c954d664ab8de95fddb390789f8b067815e484b010d3da2d0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/index.js",
+      "bytes": 15326,
+      "sha256": "79945eb0b513058251bd1c3b518b86c5c549bb73b8c37c77d717133d66277a97"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/lib/schemes.js",
+      "bytes": 7122,
+      "sha256": "0f9497f8e43c9b002d79c8a916709daa4ae8a6462735b1b5dc6ad587a28a5064"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/lib/utils.js",
+      "bytes": 10762,
+      "sha256": "3394986f9670b821493943faafe5d83ccc15109aba908f1b5dd017e27b0d0ea7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/LICENSE",
+      "bytes": 1813,
+      "sha256": "b010b0dfdfdb23d7396e03b82cd4621fc9bb8f95d6b0aea70b9c24e12074c786"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/package.json",
+      "bytes": 1983,
+      "sha256": "3b01e17f5de289a0905ad894187235c8a8bb284a1fd285b40227b1d862f86b4d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/README.md",
+      "bytes": 11726,
+      "sha256": "55449f95eb4b7b69f7a97eca943de1e30d7ebcad2e323753e44cf44669133c5f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/ajv.test.js",
+      "bytes": 752,
+      "sha256": "75892faa0e01df30856f2a87eb50dcd4a4aa9a3ec1c7aa4e290ff936b0789f72"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/equal.test.js",
+      "bytes": 3649,
+      "sha256": "fa84d7b6849680df2acaa440deca9b38136474d04fef7eabfce3e48a00e53967"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/fixtures/uri-js-parse.json",
+      "bytes": 9806,
+      "sha256": "da2ac8219f62193bd0c3eb09a0f00b2fdffbf613eeadb7911a3808583c78ae79"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/fixtures/uri-js-serialize.json",
+      "bytes": 1688,
+      "sha256": "c10203102fee328d6c8aedbd03319b8eeb364417c3b1137d714537fcd3102d69"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/parse.test.js",
+      "bytes": 14260,
+      "sha256": "0ce9da8a9a8773c78f224def6f0fb63d35a4428e4b4b626d2ebf36bd1a832c95"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/resolve.test.js",
+      "bytes": 4480,
+      "sha256": "5f44df0de389cfb13848595184fd73a309ef7a702f55ebf5fc3cf0490ff7709c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/rfc-3986.test.js",
+      "bytes": 5279,
+      "sha256": "b753dd115304e6cc567d2cb1169dd4d23641148274956fde0fabfdc612c65e27"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/security-normalization.test.js",
+      "bytes": 931,
+      "sha256": "4b9dbd4d9abb067dd843b54c5989eb30c809678daa0168a0d23aaa27ccae46d9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/security.test.js",
+      "bytes": 12054,
+      "sha256": "8441804a2f794fe8400f322d1cc5d289857eacd20a377e074dfb7d94435e92b2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/serialize.test.js",
+      "bytes": 6283,
+      "sha256": "abb8f831a5ebcfe6d76d8d9abb2220bfe2d255892cab1f2b43d8ef3364f21ab4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/uri-js-compatibility.test.js",
+      "bytes": 1019,
+      "sha256": "ca79aa1a3917c2bb237ab7e64235e4f1036a6ddacb66a5319845e8926cc89b28"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/uri-js.test.js",
+      "bytes": 42039,
+      "sha256": "dc3a3b9d0a532f6483bc2c11d13b865273afb7c74224e401ce6005a7fa0a834a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/test/util.test.js",
+      "bytes": 1147,
+      "sha256": "fa0595a97c1f948e641ea4696828a4d81c3389a986a45ac0a16feeffc73f8cad"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/tsconfig.json",
+      "bytes": 166,
+      "sha256": "6bbba68684f6d6f1613d9ae79de617c25d8d749f30942307faee46a6d2fd721f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/types/index.d.ts",
+      "bytes": 1608,
+      "sha256": "84bcc7c6b06f4d643a55dc63b56be0c81d990f8d549b66ea615c553268774dc3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/node_modules/fast-uri/types/index.test-d.ts",
+      "bytes": 479,
+      "sha256": "ad36147194c3ecfaecf55d75dd22f0b2c6b4ca476d6450cd307dceaf39012b46"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/package.json",
+      "bytes": 4405,
+      "sha256": "1f9033ee5a6515e7d76938b7072941862d1ed228a6879cc7fe10cdeb75107989"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/ajv/README.md",
+      "bytes": 13781,
+      "sha256": "38d924524762b917dd9dd341ac28837df51a474bf198ac4c26ba69d8f59a27c3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/decode.d.ts",
+      "bytes": 43,
+      "sha256": "9462ab013df86c16a2a69ca0a3b6f31d4fd86dd29a947e14b590eb20806f220b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/decode.js",
+      "bytes": 149,
+      "sha256": "5addfac4416dc1dea7c9e43db24ba02618c7bc35d6fdf1bccef012ae5a3ce26d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode-codepoint.d.ts",
+      "bytes": 765,
+      "sha256": "e9c96f08c7909362d5ee343d5ea9c0f315b585626545ed7b96ed6dd272e9e847"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode-codepoint.d.ts.map",
+      "bytes": 348,
+      "sha256": "6174d597e35699263b4ff68b0e6595f3cadf6a6e2aea2fd0e7d33c6d459718d1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode-codepoint.js",
+      "bytes": 2289,
+      "sha256": "f917de312a0e1dbc20cfc28423549760dc5245b2fdd7a1ee5f42946c3369c01e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode-codepoint.js.map",
+      "bytes": 1849,
+      "sha256": "93211fa7bec08466c217177e7c5815f17ca22a4078a8b1031c9fe0e2b6180752"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode.d.ts",
+      "bytes": 8087,
+      "sha256": "565902cb0755fa703d1dff0e50714ff40c26f786fc98606c10b8ff0662b261db"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode.d.ts.map",
+      "bytes": 2097,
+      "sha256": "df3672b541b0195d84766529e6ea189def13b8d3cf0272843e2a6a7d90a710c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode.js",
+      "bytes": 21464,
+      "sha256": "ee09bff7def49f3d806df7cc7434c0dab047bf780ab537698d52086d91c3debc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/decode.js.map",
+      "bytes": 11836,
+      "sha256": "771aa77918aeb7f9c7e2faf79feee95f0ac3c5f6116200b4c6e2b0835c2e78af"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/encode.d.ts",
+      "bytes": 951,
+      "sha256": "1dbe94040113537101b340704d52482bd0f0bc2c53cffd370f1a5e3627c39c99"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/encode.d.ts.map",
+      "bytes": 251,
+      "sha256": "a8094b6c286e847fbd0eada93b3a41f698241e0a73f48aa27c89dcf462afe01f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/encode.js",
+      "bytes": 2867,
+      "sha256": "1bcf88772f2149bc138ba882260c1849ba642ba48b5771516e843a5d69a85a77"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/encode.js.map",
+      "bytes": 1813,
+      "sha256": "871603b8877cf88324e50c2652ca8e596d7494c7c9699a6aec267b81192ffafb"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/escape.d.ts",
+      "bytes": 1543,
+      "sha256": "b8d98fccf8370b0df611693b21e7c80a700ee2f63a1f5831542a990795d7f90a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/escape.d.ts.map",
+      "bytes": 582,
+      "sha256": "67629ba928fb8c60160bcef8c5f096cdcd314abcd01db1b81cbd30dee20b09a2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/escape.js",
+      "bytes": 4287,
+      "sha256": "59feaa8c468b1ac2ab6917134a1cad5a66fef1bb8e6f4e22539c31e5a095fa37"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/escape.js.map",
+      "bytes": 2837,
+      "sha256": "4e275b5d638ce2048b252cdb777a42061b730981e95b32b32fe2861392341fd4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-html.d.ts",
+      "bytes": 96,
+      "sha256": "700e175233fc5158e9d2e02268dcbc2709c8487936a6f292cb97ede32549ab3a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-html.d.ts.map",
+      "bytes": 177,
+      "sha256": "f93bf682563dbec84d18aafd510b47f07966852f49370a1214a11f5f5c9091fc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-html.js",
+      "bytes": 47860,
+      "sha256": "8e23a640258c070f67ef1dafe6cff86ccd392527487db5e7da3a1889205e4811"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-html.js.map",
+      "bytes": 340,
+      "sha256": "aae77848acda60ef5d0c546efc5a1baaf8583f5356221e44ccca47209e6dee49"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-xml.d.ts",
+      "bytes": 94,
+      "sha256": "b77b94b224dc00977a2b7cb66e52832d3b2dec7097b2ca10ef3b7e7c751f37a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-xml.d.ts.map",
+      "bytes": 175,
+      "sha256": "90ba3ace650ba0122a9539f8921dd912b86c266285135c26bcf3650be92773a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-xml.js",
+      "bytes": 413,
+      "sha256": "a16665dd828b79acd603644b203802eb9cdc0f75d585b05a68c99a665e130fbe"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/decode-data-xml.js.map",
+      "bytes": 332,
+      "sha256": "e0933fe227d108db7371896dbd778de2121b387bbc699ae67c534b4f975618b6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/encode-html.d.ts",
+      "bytes": 225,
+      "sha256": "4cb53da48815f6c0dec0bf1611cde38904b1264ca447204e87039f513d2fe0a2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/encode-html.d.ts.map",
+      "bytes": 355,
+      "sha256": "fe015c626e1c962cdd3e785ab901a77586125db177c9526c8599e3b6cb57d8df"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/encode-html.js",
+      "bytes": 27225,
+      "sha256": "888069d7f8454d2aae9a44c0d5e5150bebfb85c8820076dc85763a54f826761d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/generated/encode-html.js.map",
+      "bytes": 48199,
+      "sha256": "8b38ded365f42456d741120d59e821db0510e946010af035c10c38f0546b92e9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/index.d.ts",
+      "bytes": 3338,
+      "sha256": "d0cab503b591631b6272c92ea8a2bf58abdf877b35b0a927dd6956a0657b9d01"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/index.d.ts.map",
+      "bytes": 1334,
+      "sha256": "5d4e636c48a783a11977d53a560ce00d9193c424aa43653f1cefc5d8590e8237"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/index.js",
+      "bytes": 7249,
+      "sha256": "d8e3ad00f7e9014e2ce4c7136d708362617b7958ca3279d2482079aa5647532b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/index.js.map",
+      "bytes": 2723,
+      "sha256": "9b180572ee52be1ffc9e021083243f414449efb964ab9416156832d8710542b8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/commonjs/package.json",
+      "bytes": 25,
+      "sha256": "8005a3491db7d92f36ac66369861589f9c47123d3a7c71e643fc2c06168cd45a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode-codepoint.d.ts",
+      "bytes": 765,
+      "sha256": "e9c96f08c7909362d5ee343d5ea9c0f315b585626545ed7b96ed6dd272e9e847"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode-codepoint.d.ts.map",
+      "bytes": 348,
+      "sha256": "6174d597e35699263b4ff68b0e6595f3cadf6a6e2aea2fd0e7d33c6d459718d1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode-codepoint.js",
+      "bytes": 2098,
+      "sha256": "5d8ee93923d609724c69c8c356147176af5226585d4f343c87a5eec6590ebca9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode-codepoint.js.map",
+      "bytes": 1834,
+      "sha256": "c0f49b23a41368c6173560704d38a3f40324926b2b983ffee5208f957f43ba01"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode.d.ts",
+      "bytes": 8087,
+      "sha256": "565902cb0755fa703d1dff0e50714ff40c26f786fc98606c10b8ff0662b261db"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode.d.ts.map",
+      "bytes": 2097,
+      "sha256": "df3672b541b0195d84766529e6ea189def13b8d3cf0272843e2a6a7d90a710c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode.js",
+      "bytes": 20168,
+      "sha256": "8af227bae5682a686bf9e9a6547af8c388274f41cb857ff39592fe74fc848d25"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/decode.js.map",
+      "bytes": 11895,
+      "sha256": "8a9de4c9c55b1499d8ea9e78458478dccd42d74d414dfb054985a6f3d1f597d7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/encode.d.ts",
+      "bytes": 951,
+      "sha256": "1dbe94040113537101b340704d52482bd0f0bc2c53cffd370f1a5e3627c39c99"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/encode.d.ts.map",
+      "bytes": 251,
+      "sha256": "a8094b6c286e847fbd0eada93b3a41f698241e0a73f48aa27c89dcf462afe01f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/encode.js",
+      "bytes": 2680,
+      "sha256": "4f13bade5f8f34c7fd4723d15f91793e5c1b56acaba1a218b9f89c9c6ecad715"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/encode.js.map",
+      "bytes": 1855,
+      "sha256": "7d658123a54699506c452264eccc51c21330db52c2f73031b12b9a415380830b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/escape.d.ts",
+      "bytes": 1543,
+      "sha256": "b8d98fccf8370b0df611693b21e7c80a700ee2f63a1f5831542a990795d7f90a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/escape.d.ts.map",
+      "bytes": 582,
+      "sha256": "67629ba928fb8c60160bcef8c5f096cdcd314abcd01db1b81cbd30dee20b09a2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/escape.js",
+      "bytes": 4081,
+      "sha256": "50528d67b2fb87687f0658cfab58eb640ebbcd7e3bcfe8e5e2863e8293ae65b7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/escape.js.map",
+      "bytes": 2896,
+      "sha256": "36aa615f7438435d05b534d027e126eb407c6d668852835b56a2e4aea733bb03"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-html.d.ts",
+      "bytes": 96,
+      "sha256": "700e175233fc5158e9d2e02268dcbc2709c8487936a6f292cb97ede32549ab3a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-html.d.ts.map",
+      "bytes": 177,
+      "sha256": "f93bf682563dbec84d18aafd510b47f07966852f49370a1214a11f5f5c9091fc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-html.js",
+      "bytes": 47771,
+      "sha256": "b035b71d6969983297e39df1a06d760f2a8000a0f98444c4fe845fe1155da451"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-html.js.map",
+      "bytes": 357,
+      "sha256": "94c5e37d11ee47fbb7e75c994b56e8e43d12d415c36a3f42e713153105afda26"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-xml.d.ts",
+      "bytes": 94,
+      "sha256": "b77b94b224dc00977a2b7cb66e52832d3b2dec7097b2ca10ef3b7e7c751f37a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-xml.d.ts.map",
+      "bytes": 175,
+      "sha256": "90ba3ace650ba0122a9539f8921dd912b86c266285135c26bcf3650be92773a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-xml.js",
+      "bytes": 325,
+      "sha256": "e28599f48fddd869435e44e6ae8644e70a610450d97562e33c869c056e3b129f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/decode-data-xml.js.map",
+      "bytes": 349,
+      "sha256": "9e2860430dc81ca8eae7d7278e132aacbb64c02aa683a70b065cf80caf208294"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/encode-html.d.ts",
+      "bytes": 225,
+      "sha256": "4cb53da48815f6c0dec0bf1611cde38904b1264ca447204e87039f513d2fe0a2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/encode-html.d.ts.map",
+      "bytes": 355,
+      "sha256": "fe015c626e1c962cdd3e785ab901a77586125db177c9526c8599e3b6cb57d8df"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/encode-html.js",
+      "bytes": 27142,
+      "sha256": "e41e86f13d6c5072a518eca9d24d74a75c36d6a4521750286b9b8965913af2df"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/generated/encode-html.js.map",
+      "bytes": 48217,
+      "sha256": "95385706d760d2cea5eb3e66ee00cd1a9a26dfc9914efdd7f1a8def4dbc43b09"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/index.d.ts",
+      "bytes": 3338,
+      "sha256": "d0cab503b591631b6272c92ea8a2bf58abdf877b35b0a927dd6956a0657b9d01"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/index.d.ts.map",
+      "bytes": 1334,
+      "sha256": "5d4e636c48a783a11977d53a560ce00d9193c424aa43653f1cefc5d8590e8237"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/index.js",
+      "bytes": 4344,
+      "sha256": "5e8978a4fee7c71ed9d5440424d6a08ad727693739c821c3fd65dc29cede7241"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/index.js.map",
+      "bytes": 2710,
+      "sha256": "137a406cc05e0d3af6279f28797c02f4d53936a22bbcb10c02191d94d4af0bfd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/dist/esm/package.json",
+      "bytes": 23,
+      "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/escape.d.ts",
+      "bytes": 43,
+      "sha256": "41dac80e4888a6e16df7a3d81c9ca8b705df444f1bc040f041e5fd155c899b16"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/escape.js",
+      "bytes": 149,
+      "sha256": "84cb164e1bf5f7572a3a1ab4af383d2ddcce2366cffd3347fcdd45bec5e21609"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/LICENSE",
+      "bytes": 1260,
+      "sha256": "cb992345949ccd6e8394b2cd6c465f7b897c864f845937dbf64e8997f389e164"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/package.json",
+      "bytes": 3659,
+      "sha256": "2b110e5a5a7a7bcbc843b885105a952630299cb1a7817b4b321d69479cfa7086"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/readme.md",
+      "bytes": 5036,
+      "sha256": "cb67cf2e1ff9c1f9fe66c00c900419e5834aefca5567a9c0402e5781b04097ee"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/decode-codepoint.ts",
+      "bytes": 2168,
+      "sha256": "5f8b87fe74e01f0dc397efe763adba15d6e497f98d16ff15a1c21ddb22e08070"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/decode.spec.ts",
+      "bytes": 11680,
+      "sha256": "ff87591fcfbe606d0dbbc186e9165ef8ccdcd84167212184b4bf7a7a52433c8a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/decode.ts",
+      "bytes": 20299,
+      "sha256": "12884a35533ff650a24f16a49c5079f4f01437b8bbb72246a80c1dbe51eb0ef8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/encode.spec.ts",
+      "bytes": 3314,
+      "sha256": "0db67d8a3357128404df19f5d5fc98d2e9a7fc5341ee0a3dc81d9e70e3aa9c2f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/encode.ts",
+      "bytes": 2739,
+      "sha256": "94a674a72ee09a3a83894f3eb0ee0d7110b8475e2651445444533b9b9f4c7362"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/escape.spec.ts",
+      "bytes": 497,
+      "sha256": "15bf91cc608e03310bc9a4b5c372327df28711d1a679d64fe37c267fbb0ee485"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/escape.ts",
+      "bytes": 4615,
+      "sha256": "d02a0d7f1f934bd364190d263acd59f220bb95969417015b36f066f417ba7aa2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/generated/.eslintrc.json",
+      "bytes": 250,
+      "sha256": "7c47c2ebaea755703ea80ceb132ffd681cf8274e9b29abc206be3f193422e35a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/generated/decode-data-html.ts",
+      "bytes": 47759,
+      "sha256": "d8a6b5721b0435c063a3b7ac95aaf3fd4aa9946d112e58454b2f3f56aca765a6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/generated/decode-data-xml.ts",
+      "bytes": 314,
+      "sha256": "98669dfb7aa7a0fb7c61d8f81bb59522ecb9185e677cfdd31ecf99647cbeeb05"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/generated/encode-html.ts",
+      "bytes": 24034,
+      "sha256": "f8760d51d17d444c1b6c10d3f58b128cb81aaaab7d2793b3bbc71075564184f3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/index.spec.ts",
+      "bytes": 4367,
+      "sha256": "b742a84df2ba49778b8c97530e413d6be9ee769912a6fd1ebc061b4036ab5cc0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/entities/src/index.ts",
+      "bytes": 4987,
+      "sha256": "73b95b0a8a708a8b8a66a0810478a4a58516e9cb0ae46db012f4f64a476cf2cf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/es6/index.d.ts",
+      "bytes": 66,
+      "sha256": "d979def17dea97ee491c975f3d3cb31957b7970a791c1d5a3854ea6cd4cce91e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/es6/index.js",
+      "bytes": 1935,
+      "sha256": "d7f027497048c75e17268dbc66b670579d4f70f2dc0e019cdc9edf5078c247d6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/es6/react.d.ts",
+      "bytes": 66,
+      "sha256": "d979def17dea97ee491c975f3d3cb31957b7970a791c1d5a3854ea6cd4cce91e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/es6/react.js",
+      "bytes": 2209,
+      "sha256": "366779cbb7821d26d18b9eaa12b6788cbb101cdbbabcae36f2919a5f48534ef0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/index.d.ts",
+      "bytes": 103,
+      "sha256": "37ffe3c12813b6a6d512f7c27b71f3388d03dafa10555ad5094cea393ed3d1f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/index.js",
+      "bytes": 1177,
+      "sha256": "eb469e206280321a3878f2335ec98aa2104a155079d8ed83a23029098dccd215"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/LICENSE",
+      "bytes": 1074,
+      "sha256": "7bf9b2de73a6b356761c948d0e9eeb4be6c1270bd04c79cd489c1e400ffdfc1a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/package.json",
+      "bytes": 1496,
+      "sha256": "a5c63940db0260739be9e2ac67f3aac268df4db5770420ee4e34e493152f97d2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/react.d.ts",
+      "bytes": 66,
+      "sha256": "d979def17dea97ee491c975f3d3cb31957b7970a791c1d5a3854ea6cd4cce91e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/react.js",
+      "bytes": 1451,
+      "sha256": "37cbd168dbd42c73119ce7326556bddef40b3a5fbd2e215cf81a7c78fb73ff9a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/fast-deep-equal/README.md",
+      "bytes": 3323,
+      "sha256": "ada32c1b53bd74640a22806e99b25c2b8ab2946eed338f325114be87bd5b9fce"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/.eslintrc.yml",
+      "bytes": 630,
+      "sha256": "b1ea981e2461f053646b08a616efcaba0d3b278b223957e9eb931bcbc3971ccc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/.github/FUNDING.yml",
+      "bytes": 57,
+      "sha256": "83e77adf3dbe6261917b160553f75cbb96de8e99c3259f4f1de85e1c6e4bd156"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/.github/workflows/build.yml",
+      "bytes": 582,
+      "sha256": "f0f23bb3b380800e214b19abfd69c1b093131bb030c056fabdd9cddec7e785c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/.github/workflows/publish.yml",
+      "bytes": 678,
+      "sha256": "56cbec53748d486f04b5c37bec8ea5e5588e02fb2882db8ce36c6e9689bfd2fc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/index.d.ts",
+      "bytes": 740,
+      "sha256": "a76003875cf31f09428a535df140f122f580b5bf811f996273d5aa2733feeadd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/index.js",
+      "bytes": 2428,
+      "sha256": "024191b747afac01b28ff11d744e9f82720bbad5f716163ba5c962eb62aa2350"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/LICENSE",
+      "bytes": 1074,
+      "sha256": "7bf9b2de73a6b356761c948d0e9eeb4be6c1270bd04c79cd489c1e400ffdfc1a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/package.json",
+      "bytes": 1004,
+      "sha256": "156fb24af02845c190701360d06dfda35ef04282e34a734289ea9535ad9819ae"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/README.md",
+      "bytes": 3350,
+      "sha256": "e6137660d373bc510f4d41789d7fea74e0ed9f94c99d4892dee22292ac2a39a7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/spec/.eslintrc.yml",
+      "bytes": 91,
+      "sha256": "8df0cb64273b71c11db4f99be49c92e6f80f10a13de4599743e4372c8a0be82c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/spec/fixtures/schema.js",
+      "bytes": 5544,
+      "sha256": "0262591e321bc88b22dc33ec78bcded5ab664e2fce2c10b9e0c35d3eb6030d27"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/json-schema-traverse/spec/index.spec.js",
+      "bytes": 6042,
+      "sha256": "40e6986bda700387e2d397971087a3977d6801bf954591505229691a267c5f69"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/doctype.d.ts",
+      "bytes": 236,
+      "sha256": "c1b8c6b45e12993a18bf4936c0bb15a05d31fa504f03c284d9e3a0d025b73cd2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/doctype.js",
+      "bytes": 4861,
+      "sha256": "dec89870f895809fe6218dbbf8ad9cff37022f08c1a5ea6f6d871dc650e0a52b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/error-codes.d.ts",
+      "bytes": 4468,
+      "sha256": "66995b0c991b5c5d42eff1d950733f85482c7419f7296ab8952e03718169e379"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/error-codes.js",
+      "bytes": 4852,
+      "sha256": "e7d80ffd892f6862ab5810ac745b85bf95addfd7ef31279d3f9be5677929f1b1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/foreign-content.d.ts",
+      "bytes": 623,
+      "sha256": "927955a3de5857e0a1c575ced5a4245e74e6821d720ed213141347dd1870197f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/foreign-content.js",
+      "bytes": 7683,
+      "sha256": "d602e9fa1a43cd6e671ef0d14f1ac50d617a882ac134cf18b07c07cd97847321"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/html.d.ts",
+      "bytes": 5687,
+      "sha256": "19990350fca066265b2c190c9b6cde1229f35002ea2d4df8c9e397e9942f6c89"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/html.js",
+      "bytes": 17888,
+      "sha256": "5fde09fb7c94e30a013f99386954b724105b33504e3f505ffc370f7c21074d1e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/token.d.ts",
+      "bytes": 2690,
+      "sha256": "8fb8fdda477cd7382477ffda92c2bb7d9f7ef583b1aa531eb6b2dc2f0a206c10"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/token.js",
+      "bytes": 982,
+      "sha256": "294877dbb8f11cfd790b93488dc3baa8be5f5390204e471cb5d486f984981fbb"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/unicode.d.ts",
+      "bytes": 1167,
+      "sha256": "19e02a7ba0b88ea7cdfc447c6b0ffecb7f65ce4d260dec7ffce86b3d2aa9e5a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/common/unicode.js",
+      "bytes": 3361,
+      "sha256": "0f4ca9d0f95735a952dbd0eee5741f6a09194724d5df3ab1e31a6fcc80aa0ea8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/index.d.ts",
+      "bytes": 3308,
+      "sha256": "fec804d54cd97dd77e956232fc37dc13f53e160d4bbeeb5489e86eeaa91f7ebd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/index.js",
+      "bytes": 2538,
+      "sha256": "78db255973138b7c9293ace340b700a9a557e0ada14b5eda7cde56017bf78480"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/package.json",
+      "bytes": 20,
+      "sha256": "dbf8353f77358bc12169b7bb7301e1978d5b503e002ee927229a8993672818fc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/parser/formatting-element-list.d.ts",
+      "bytes": 1390,
+      "sha256": "a77be6fc44c876bc10c897107f84eaba10790913ebdcad40fcda7e47469b2160"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/parser/formatting-element-list.js",
+      "bytes": 4499,
+      "sha256": "ba8b4f9634694b26e20ca9deb2b4d07ba9086915ea3063bc4cb612698ea3b290"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/parser/index.d.ts",
+      "bytes": 8354,
+      "sha256": "06cf55b6da5cef54eaaf51cdc3d4e5ebf16adfdd9ebd20cec7fe719be9ced017"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/parser/index.js",
+      "bytes": 116660,
+      "sha256": "4b9db3083a0173743fa0334444accdc4f1e6ad8f6988c2efa1abdcb908b7ef94"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/parser/open-element-stack.d.ts",
+      "bytes": 2287,
+      "sha256": "62a3ad1ddd1f5974b3bf105680b3e09420f2230711d6520a521fab2be1a32838"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/parser/open-element-stack.js",
+      "bytes": 12200,
+      "sha256": "30a2ba83eb1fb68e23c9db5b6adb0827834558483d60a7b3a2c1bc5a9a60c56d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/serializer/index.d.ts",
+      "bytes": 1947,
+      "sha256": "052ba354bab8fb943e0bc05a0769f7b81d7c3b3c6cd0f5cfa53c7b2da2a525c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/serializer/index.js",
+      "bytes": 5861,
+      "sha256": "f06518c16058cec5413e495ea69f6921a03c9d60fd0c367dd0ca8b942a6341f0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tokenizer/index.d.ts",
+      "bytes": 11324,
+      "sha256": "b4c6184d78303b0816e779a48bef779b15aea4a66028eb819aac0abee8407dea"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tokenizer/index.js",
+      "bytes": 107434,
+      "sha256": "9163923509c176a98804f2ed56592b7741dcc77e7d117f833aa7c878128cbd6a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tokenizer/preprocessor.d.ts",
+      "bytes": 1211,
+      "sha256": "9863f888da357e35e013ca3465b794a490a198226bd8232c2f81fb44e16ff323"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tokenizer/preprocessor.js",
+      "bytes": 7441,
+      "sha256": "4fd0f415ea391eabd05acd7069ebe8c61b11e8e9c3d141cc1aafe25c67af4496"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tree-adapters/default.d.ts",
+      "bytes": 3139,
+      "sha256": "91f5dbcdb25d145a56cffe957ec665256827892d779ef108eb2f3864faff523b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tree-adapters/default.js",
+      "bytes": 5428,
+      "sha256": "b2ac880ea08ee723a47e1bd00e0a144e4ecb185405709327d60abe46558020f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tree-adapters/interface.d.ts",
+      "bytes": 9299,
+      "sha256": "db085d2171d48938a99e851dafe0e486dce9859e5dfa73c21de5ed3d4d6fb0c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/cjs/tree-adapters/interface.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/doctype.d.ts",
+      "bytes": 236,
+      "sha256": "c1b8c6b45e12993a18bf4936c0bb15a05d31fa504f03c284d9e3a0d025b73cd2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/doctype.js",
+      "bytes": 4661,
+      "sha256": "855d8cd764782cdc73003a9847d03ed261c5158f6a6901e563ccd4d3b92c8b16"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/error-codes.d.ts",
+      "bytes": 4468,
+      "sha256": "66995b0c991b5c5d42eff1d950733f85482c7419f7296ab8952e03718169e379"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/error-codes.js",
+      "bytes": 4746,
+      "sha256": "b38ae5ac4f2a31ce2e1cfeca35cf7b89cc66736cd5be068cc433a3ccaca78be2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/foreign-content.d.ts",
+      "bytes": 623,
+      "sha256": "927955a3de5857e0a1c575ced5a4245e74e6821d720ed213141347dd1870197f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/foreign-content.js",
+      "bytes": 6299,
+      "sha256": "129a84a9d04b6050b6896de45a70e1ee468434e19bdd6486e3aef3405d137cac"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/html.d.ts",
+      "bytes": 5687,
+      "sha256": "19990350fca066265b2c190c9b6cde1229f35002ea2d4df8c9e397e9942f6c89"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/html.js",
+      "bytes": 17554,
+      "sha256": "e6cf93f387be70ddcd4f2bec67fbeb53161094f6306d834de461ec888a9dab76"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/token.d.ts",
+      "bytes": 2690,
+      "sha256": "8fb8fdda477cd7382477ffda92c2bb7d9f7ef583b1aa531eb6b2dc2f0a206c10"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/token.js",
+      "bytes": 834,
+      "sha256": "52dac9efba3a637771818d633a5cf1df30c7913d05ff23235150c88319ea035a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/unicode.d.ts",
+      "bytes": 1167,
+      "sha256": "19e02a7ba0b88ea7cdfc447c6b0ffecb7f65ce4d260dec7ffce86b3d2aa9e5a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/common/unicode.js",
+      "bytes": 2989,
+      "sha256": "69a0a52be895d2bcf88850beead4a098c5305c0b5669d1e8a0fe26f621ea25c6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/index.d.ts",
+      "bytes": 3308,
+      "sha256": "fec804d54cd97dd77e956232fc37dc13f53e160d4bbeeb5489e86eeaa91f7ebd"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/index.js",
+      "bytes": 1355,
+      "sha256": "b825162aced2e79be8d68d45efb1f89ec34ed4189467195a071a0d7b694a19d4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/parser/formatting-element-list.d.ts",
+      "bytes": 1390,
+      "sha256": "a77be6fc44c876bc10c897107f84eaba10790913ebdcad40fcda7e47469b2160"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/parser/formatting-element-list.js",
+      "bytes": 4301,
+      "sha256": "a6e04b000b228a0bf7eba4e5462b343ec1e13dbfbe40bce913ade646bbde4461"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/parser/index.d.ts",
+      "bytes": 8354,
+      "sha256": "06cf55b6da5cef54eaaf51cdc3d4e5ebf16adfdd9ebd20cec7fe719be9ced017"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/parser/index.js",
+      "bytes": 107124,
+      "sha256": "23eb8e0f6b45abc36132c08f067899e0e615acbe9069762ba7780a66db78e65d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/parser/open-element-stack.d.ts",
+      "bytes": 2287,
+      "sha256": "62a3ad1ddd1f5974b3bf105680b3e09420f2230711d6520a521fab2be1a32838"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/parser/open-element-stack.js",
+      "bytes": 10918,
+      "sha256": "fe4b609a572c9aa06fbd45ac53632b3ad565168903f4126a6f98d5a9d1f42999"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/serializer/index.d.ts",
+      "bytes": 1947,
+      "sha256": "052ba354bab8fb943e0bc05a0769f7b81d7c3b3c6cd0f5cfa53c7b2da2a525c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/serializer/index.js",
+      "bytes": 5269,
+      "sha256": "bb11a62d05d463bf756814d89227ea889733d3808fe7ebe27cb4f607ed85a4c7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tokenizer/index.d.ts",
+      "bytes": 11324,
+      "sha256": "b4c6184d78303b0816e779a48bef779b15aea4a66028eb819aac0abee8407dea"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tokenizer/index.js",
+      "bytes": 98124,
+      "sha256": "738969a05c4e7d3c0ce566225e742d730d248db82972a84e517828cd97bc3bb4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tokenizer/preprocessor.d.ts",
+      "bytes": 1211,
+      "sha256": "9863f888da357e35e013ca3465b794a490a198226bd8232c2f81fb44e16ff323"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tokenizer/preprocessor.js",
+      "bytes": 7021,
+      "sha256": "12199175a31eb461dcecefa10ce2536c69ab92cdd2a1f67da3ea20b214599ac1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tree-adapters/default.d.ts",
+      "bytes": 3139,
+      "sha256": "91f5dbcdb25d145a56cffe957ec665256827892d779ef108eb2f3864faff523b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tree-adapters/default.js",
+      "bytes": 5232,
+      "sha256": "14b6408b0abb1c041e645644f977db34da280239be8a59a2eb3c9e282e89b7c4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tree-adapters/interface.d.ts",
+      "bytes": 9299,
+      "sha256": "db085d2171d48938a99e851dafe0e486dce9859e5dfa73c21de5ed3d4d6fb0c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/dist/tree-adapters/interface.js",
+      "bytes": 11,
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/LICENSE",
+      "bytes": 1109,
+      "sha256": "8c535800331e1e4439835555b3f9edc7fe9dee2fab0d8bbbd5a982e8b8343d4d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/package.json",
+      "bytes": 1396,
+      "sha256": "8196284780fe95c3245a40e3c17b45fc85ef709f1211775987d037e5e873fe95"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/parse5/README.md",
+      "bytes": 885,
+      "sha256": "ba4e9702964c97d16212ae3cd9b448b3292a31522e1bd3c86fcfc9cc767fd77c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/require-from-string/index.js",
+      "bytes": 866,
+      "sha256": "cb059342a762b955997bf780f3693add176922727f2fa9f11fcaf1b3fc323239"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/require-from-string/license",
+      "bytes": 1128,
+      "sha256": "6ee0feb1f6ef996ff5a68600f8cf98909cf412d39ef3cdceaefd87d636fa1b7f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/require-from-string/package.json",
+      "bytes": 511,
+      "sha256": "c0002f7d4c7d7e2a885cf0f97226344902417c3a0980f2beca41962d2bc1f6d8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/require-from-string/readme.md",
+      "bytes": 917,
+      "sha256": "969286b710026d911ed5e09e5bdca2dbf1c921662defa2ad3a1b3760a0bdb213"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/saxes/package.json",
+      "bytes": 2845,
+      "sha256": "32052572b41c2a890ed0854798c48454cc5991dcaafe5fb1718a4253046acfd3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/saxes/README.md",
+      "bytes": 15118,
+      "sha256": "ade6061f7c778cdd868d9b0f711530e4c1ec1f33767222ce33bb05e295bf6f0c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/saxes/saxes.d.ts",
+      "bytes": 20250,
+      "sha256": "a795d722f71f114bbb73ad6fbde87c11e3b64af808f91183e1db601ff456d37f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/saxes/saxes.js",
+      "bytes": 73792,
+      "sha256": "d00e2ba27ed7d6ac961d03ff14d6b8c0eb5bf063ed2c996c22c6df06ac121423"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/saxes/saxes.js.map",
+      "bytes": 51769,
+      "sha256": "bf0ebc4bc6bec1a50bf91fab8b5460212e753becea10409082edac58fa8c7d6c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/LICENSE",
+      "bytes": 1086,
+      "sha256": "45d196313c2647d313cc65ca9b093d2d6974b64d35ee7346f2c60c9d518dff2c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/package.json",
+      "bytes": 2064,
+      "sha256": "a91c0b20003ff9399dde1de8c59681f1b6901c6fb1aac71780a3a876dc548583"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/README.md",
+      "bytes": 1373,
+      "sha256": "eb05246b228f24bd82f40d1c80ac8d56afc6bc96731d188e013a41564e445bda"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.0/ed4.d.ts",
+      "bytes": 4761,
+      "sha256": "31a482a4cb8b5bfa0a0fa9cf21a405a2f510704c99fa9c492265facda534bca4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.0/ed4.js",
+      "bytes": 5496,
+      "sha256": "7ae981a2801658ff2eb92d418c000376381044a5caed40392fea9ad38c9d08c8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.0/ed4.js.map",
+      "bytes": 1395,
+      "sha256": "ae07b2d2592ddb2bad17126cfc6f40e11b5d085d4d51cdc796a626d9e3bf2c9e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.0/ed5.d.ts",
+      "bytes": 1796,
+      "sha256": "a8d1920a105bb364d37f471ac777e9d8972df98c5487bf9b0fab7043eb49e4d4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.0/ed5.js",
+      "bytes": 3342,
+      "sha256": "ea350479ab6f6553c0c3395c30ec440fb39821f6902081939831ddf1b5e8fd0f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.0/ed5.js.map",
+      "bytes": 2608,
+      "sha256": "458e372d99ae5c62cf95320f1df61ec4843a355bfd2e36f3bf8e67384ee5aa12"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.1/ed2.d.ts",
+      "bytes": 2669,
+      "sha256": "764391775fc90a5904c833a9538f44012c83baf81116f2bb6c4cce2a182eca4d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.1/ed2.js",
+      "bytes": 4737,
+      "sha256": "461d5c71cc6076dc16aebbfd2d3c506481df5a74f43631d82372a6ffdc239d69"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xml/1.1/ed2.js.map",
+      "bytes": 3391,
+      "sha256": "4dc036dc6f13bb07581fe268d6858f89074ed8ce971c38a1b630938100a6b19b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xmlchars.d.ts",
+      "bytes": 9336,
+      "sha256": "72dfe9bac2276537ab273ef47e017f3cd488d6df075ff7224903a80d37ba66f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xmlchars.js",
+      "bytes": 6911,
+      "sha256": "d5024cfd86dc4624feda301419bb56f5f3bd2b63963c2bdf88aff7c6afb6bdf2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xmlchars.js.map",
+      "bytes": 3077,
+      "sha256": "7a1358ab44707d1d8a68d13453c01547ffe158a4929a56849bfc5f411ebed8cc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xmlns/1.0/ed3.d.ts",
+      "bytes": 981,
+      "sha256": "8514561762de5684298a79453ea83e515af0d061710e64b2851ec89f3a4221d9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xmlns/1.0/ed3.js",
+      "bytes": 2253,
+      "sha256": "ff14ffa3a2cdfdd1b6077c4a8443dc949f53d5bb56de5ed89d4dbc5d9fdf08f7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/node_modules/xmlchars/xmlns/1.0/ed3.js.map",
+      "bytes": 1681,
+      "sha256": "2dabf94f8ae6eb305ed5c1b432f7a49dcd91f29b29cde05375d5c9f5dfa7e300"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/package-lock.json",
+      "bytes": 4923,
+      "sha256": "f875c29b190f6f5dc14bea7e56879ad2282c0a5212253b24937f77b4f6198054"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/package.json",
+      "bytes": 1478,
+      "sha256": "7fe2a96f0d6730b2d35811d7d4f5e7e969c166a47a0c87543cdf667a221815be"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/recipes/scenarios.mjs",
+      "bytes": 32073,
+      "sha256": "e77d31d5b65b921799f4f560287fbac24feb3cd683bee8cabe49ed1ddde1a8ac"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/references/authoring-contract.md",
+      "bytes": 11309,
+      "sha256": "8f2b583d0d84fb315e4c4dfa685bbcb93343bf7673b92ea0e70d361f8ffca4d7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/references/brand-marks.md",
+      "bytes": 2179,
+      "sha256": "8010869da70677e686ecb312d9c3eec2d20723a44f817ab2bbf5525361c8a136"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/references/delivery-contract.md",
+      "bytes": 8070,
+      "sha256": "c0af94e227c5617c7c290065a0404d0fc769b7e4ef26f187f51a19e3640fa176"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/references/viewer-runtime.md",
+      "bytes": 4243,
+      "sha256": "dc0d9ffe6b9987d73d2d48710fce5ab4c120bbf1940ff1eb9355259c5d4f32b6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/architecture/grid.mjs",
+      "bytes": 2071,
+      "sha256": "f6de99c32436feed3378b0ddef516bb4732ff27a89c543b50635d4d14a15a55a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/architecture/render-architecture.mjs",
+      "bytes": 45546,
+      "sha256": "f57077cb9fa64a8412ab0af705cb31e2e7a920114b31852882c04a76840365dc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/dataflow/README.md",
+      "bytes": 4202,
+      "sha256": "18c4f86ba62fcee371d9fe38094625b3a68cc76231c36ab8c8124acb4c1ffa42"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/dataflow/render-dataflow.mjs",
+      "bytes": 21194,
+      "sha256": "5a5da505e5c68041990de92847f53a38215efb9212bc36fc911774e8829335c9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/lifecycle/README.md",
+      "bytes": 5197,
+      "sha256": "f8ef88dc859189bb18bad7bb2e27d997cbc9d30936cf20f8bf401bae7f57deec"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/lifecycle/render-lifecycle.mjs",
+      "bytes": 24285,
+      "sha256": "23720729a14495b4085839653ec0622f2465be3b1e8c9eb556b602ab3f4a8cda"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/sequence/README.md",
+      "bytes": 4828,
+      "sha256": "a442335dcf44b1587d3ad88809e31b001a4fafdf7a134040e8b1927455af4206"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/sequence/render-sequence.mjs",
+      "bytes": 21146,
+      "sha256": "20954ef721ff725c8693e2d87f993074dda5af0e3f6a9a1d29d7a39362efeed8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/brand-marks.mjs",
+      "bytes": 22582,
+      "sha256": "4557b7f3eec25a3dba66a0f5da1c5dca6ec607e2a68e9be51cd697cefe9e6425"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/cli.mjs",
+      "bytes": 10188,
+      "sha256": "2a6b8fa11234451627a70bca71985d80362a4c52401a90a21840d6e2ae3012d9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/desktop-readability.mjs",
+      "bytes": 1089,
+      "sha256": "b36203a11df348706e541f309266a0f9b914dac6a7eb8ba804e3abe8f8d6c710"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/diagnostics.mjs",
+      "bytes": 4561,
+      "sha256": "855fea15daf2beb5be7fad0d54b72a63a4af8595f227facf845ba1852b3b365a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/engineering-profiles.mjs",
+      "bytes": 6936,
+      "sha256": "7e99f9d5423f66cc9ab6224da56dc2d5aa6c6faec29178034794e9db6b5b2889"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/generated-brand-marks.mjs",
+      "bytes": 163612,
+      "sha256": "0f157d229c12df6f53763a3b88684baa5803a52484c49c4d34ec40b8743beea2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/generated-validators.mjs",
+      "bytes": 430844,
+      "sha256": "b32d852053a2159477393c38df55f4759633bd3d36d829bd307b9389611e06b8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/geometry.mjs",
+      "bytes": 57175,
+      "sha256": "161785af32241fc96df051c9be4f2bb9c3b897418d708f4a051b63f1c44952cf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/i18n.mjs",
+      "bytes": 48260,
+      "sha256": "da0320ac6c002f421c516cb4921e9b806a4ba5b3e9a4f6cbcdef0b16e2917d47"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/layout-report.mjs",
+      "bytes": 1015,
+      "sha256": "44c2f74a20e483dd37dae6791ede39284ce3bac1a2a13872d2912999e8504df5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/legend.mjs",
+      "bytes": 8652,
+      "sha256": "4c8b37f10fb5c783a28bff6aa35bc3966155213ee32f64a8252eab5b9e64a747"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/output-path.mjs",
+      "bytes": 10618,
+      "sha256": "9c61692cf9debc99f5cb86e0df8c474d0665921345fecdfc13ded3828c94f0a8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/repository-evidence.mjs",
+      "bytes": 11445,
+      "sha256": "e36c109c84b338ea77d2ae74e9fa9ffe4317e7780a2be8d4d78e588ddb387677"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/text-fit.mjs",
+      "bytes": 2191,
+      "sha256": "35b6ef2c64d88c1ea4e5aab2af7c4e8a2c2e1be62db71263787d39a9797e7dea"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/utils.mjs",
+      "bytes": 11603,
+      "sha256": "20124265300eb286db184a053561005cc32b6128dc1bc1b3f9520ffa8d43a241"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/shared/validator.mjs",
+      "bytes": 3508,
+      "sha256": "7460d7fcbcdf710649256c5e96142ae26d807a655d3296ee8caf7f5e158622cc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/workflow/README.md",
+      "bytes": 10386,
+      "sha256": "7e1bd65cc5cc38206304ae2f61f4f0f493da98d71a111a61d0754c9da362c5c9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/workflow/render-workflow.mjs",
+      "bytes": 1153,
+      "sha256": "83be05d1efd1816c527fccdf3ebbd4a0f1454c6cb0c9f7554c6702eb40d9c540"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/workflow/workflow-compiler.mjs",
+      "bytes": 171396,
+      "sha256": "06dc97f67041037d71fd8731934d4833ece95ac1a4278e3ef875b0e51e516104"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/renderers/workflow/workflow-migration-geometry.mjs",
+      "bytes": 5299,
+      "sha256": "ebfc5085dd008ae63802f500402fb7bf8ca0ae28460997d867f45e5493b8fbe6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/schemas/architecture.schema.json",
+      "bytes": 6702,
+      "sha256": "8c96140b6af8d93fb825a3c63e46b74176c9485185c978074ffe89e0f614576c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/schemas/common.schema.json",
+      "bytes": 3096,
+      "sha256": "2630c958314eeebb92e0f6f6330475f1a2bc48f8c1b53201ba3b58889b319c80"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/schemas/dataflow.schema.json",
+      "bytes": 5907,
+      "sha256": "09d238a6a18f2e074ec69c8f905f58a44d3a0b68fc6a925b8346c484a912af90"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/schemas/lifecycle.schema.json",
+      "bytes": 6597,
+      "sha256": "05b46c0db95ee7ed44305b61496a96bb4f69342b20f9903d6534d952ebc65083"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/schemas/README.md",
+      "bytes": 11462,
+      "sha256": "f4ca94ec18cf60ad02211f2c5bb64e9c26a87467a22215e06db34dbfc5d6145f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/schemas/sequence.schema.json",
+      "bytes": 5642,
+      "sha256": "c9fec3fad087f14d55c0bb2d34446246e3405f0238c292c1cb6bef28d1120fcb"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/schemas/workflow.schema.json",
+      "bytes": 9752,
+      "sha256": "2128e82afd2b971fcb7d80ada86fa836bb4a5035b504053b87d3aeefec380e3c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/scripts/check-render-output.mjs",
+      "bytes": 32413,
+      "sha256": "5b86f60bd6607c580e1d2daaf181a129d81c3293310b3c7f38eda6435b8520b5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/scripts/check-update.mjs",
+      "bytes": 56369,
+      "sha256": "7c7f47b35a55754fd85468c5e1cfc467bb2e1b9dd5c683dd60172844882b1970"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/scripts/generate-brand-marks.mjs",
+      "bytes": 5136,
+      "sha256": "0434c31903b831382a91e85a329bcbcb39b32f29c656273a273f896b3b0a42e7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/scripts/generate-validators.mjs",
+      "bytes": 2400,
+      "sha256": "a5f5f67d3cd4675b16fa620043a5463f3c15aad89afb1b0c7cf42cf35e883f9a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/scripts/render-examples.mjs",
+      "bytes": 1178,
+      "sha256": "a173a053fb26c0ac3cd72eb9b4e50411e67ca8c50bec57f05d4ca8ba79db2c0b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/scripts/update-contract.mjs",
+      "bytes": 6750,
+      "sha256": "7c5d34c5fa2e08fcd0b42e33a0f3b4685fcecf3ac88f1ed820528df8fdc46cbc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/SKILL.md",
+      "bytes": 16396,
+      "sha256": "10094272d6d1b4ad0f2c2e0880cb646fe4991454a2dc3d854aecb27e7407ee1f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/THIRD_PARTY_NOTICES.md",
+      "bytes": 4543,
+      "sha256": "f8dec2a3a8c977069f07a370b5580757191202a805c19d3cad2c5bcaf9e3a8b3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/archify/upstream.json",
+      "bytes": 787,
+      "sha256": "c08a94779a42bdba5b88a369b00bf484ec36f2501b5d359cd73f50b8ceb9e897"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/.gitignore",

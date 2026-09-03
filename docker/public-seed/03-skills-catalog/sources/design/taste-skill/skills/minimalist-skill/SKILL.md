@@ -1,6 +1,6 @@
 ---
 name: minimalist-ui
-description: Clean editorial-style interfaces. Warm monochrome palette, typographic contrast, flat bento grids, muted pastels. No gradients, no heavy shadows.
+description: Use when designing or implementing clean editorial interfaces with warm monochrome surfaces, typographic contrast, flat bento grids, and restrained pastel accents.
 ---
 
 # Protocol: Premium Utilitarian Minimalism UI Architect
@@ -83,3 +83,9 @@ When tasked with writing frontend code (HTML, React, Tailwind, Vue) or designing
 5. Add scroll-entry animations to all major content blocks.
 6. Ensure sections have visual depth through imagery, ambient gradients, or subtle textures — no empty flat backgrounds.
 7. Provide code that reflects this high-end, uncluttered, editorial aesthetic natively without requiring manual adjustments.
+
+## 9. Verification and Output
+
+- Verify desktop and mobile layouts, keyboard focus, touch targets, text overflow, and the loading, empty, and error states affected by the work.
+- Confirm every animation uses only `transform` and `opacity`, respects reduced-motion preferences, and does not create horizontal overflow.
+- Report the selected typography and palette, the components changed, the checks run, and any remaining constraints.

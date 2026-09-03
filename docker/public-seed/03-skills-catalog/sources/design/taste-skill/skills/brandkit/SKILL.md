@@ -796,3 +796,9 @@ The final result should be:
 - art-directed
 - implementation-friendly
 - stronger than normal AI-generated brand visuals
+
+## Verification and Output
+
+- Verify that the logo is consistent across panels, remains legible at icon scale, and clearly reflects the chosen brand metaphor.
+- Check grid alignment, gutters, typography readability, palette consistency, and the absence of copied marks, clutter, and unreadable filler text.
+- Deliver the final board with a concise note naming the concept, layout, palette, applications shown, and checks completed.
