@@ -1,3 +1,5 @@
+import { ARCHIFY_TYPES } from "./core/archify.mjs";
+
 export function buildToolDefinitions({
   CONCEPT_JURY_DIMENSIONS,
   FRONTEND_PRODUCT_MODES,
@@ -9,6 +11,28 @@ export function buildToolDefinitions({
   UI_UX_PRO_MAX_DOMAINS,
   UI_UX_PRO_MAX_STACKS
 }) {
+  const ARCHIFY_EVIDENCE_SCHEMA = {
+    type: "array",
+    default: [],
+    description: "Archify deliverables backing acceptance criteria. Pass the `evidence` object returned by archify_deliver / archify_visual_check verbatim.",
+    items: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: ["archify_deliver", "archify_visual_check"] },
+        html_path: { type: "string" },
+        spec_sha256: { type: "string" },
+        artifact_sha256: { type: "string" },
+        quality: { type: "string" },
+        errors: { type: "number" },
+        warnings: { type: "number" },
+        checks_passed: { type: "number" },
+        check_count: { type: "number" },
+        status: { type: "string" },
+        containment_status: { type: "string" }
+      },
+      required: ["kind", "html_path"]
+    }
+  };
   return [
   {
     name: "search_knowledge",
@@ -1305,6 +1329,7 @@ export function buildToolDefinitions({
         dry_run: { type: "boolean", default: false },
         timeout_ms: { type: "number", default: 120000 },
         max_commands: { type: "number", default: 6 },
+        diagram_specs: { type: "string", description: "Optional project-relative glob for Archify diagram specs; disabled when omitted." },
         continue_on_failure: { type: "boolean", default: true },
         update_registry: { type: "boolean", default: true },
         register_if_missing: { type: "boolean", default: false }
@@ -1663,7 +1688,8 @@ export function buildToolDefinitions({
         run_quality: { type: "boolean", default: true },
         quality_labels: { type: "array", items: { type: "string" }, default: [] },
         run_frontend: { type: "boolean", default: false },
-        frontend_options: { type: "object", additionalProperties: true, default: {} }
+        frontend_options: { type: "object", additionalProperties: true, default: {} },
+        evidence: ARCHIFY_EVIDENCE_SCHEMA
       },
       required: ["task_id"]
     }
@@ -1677,7 +1703,8 @@ export function buildToolDefinitions({
         task_id: { type: "string" },
         summary: { type: "string" },
         allow_waived: { type: "boolean", default: false },
-        write_report: { type: "boolean", default: true }
+        write_report: { type: "boolean", default: true },
+        evidence: ARCHIFY_EVIDENCE_SCHEMA
       },
       required: ["task_id", "summary"]
     }
@@ -1707,6 +1734,96 @@ export function buildToolDefinitions({
       },
       required: ["path", "content"]
     }
+  },
+  {
+    name: "archify_doctor",
+    description: "Check the vendored Archify CLI, Node runtime, and browser configuration.",
+    inputSchema: { type: "object", properties: {} }
+  },
+  {
+    name: "archify_guide",
+    description: "Recommend an Archify diagram type and authoring recipe for a scenario.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        scenario: { type: "string" },
+        lang: { type: "string", enum: ["en", "zh"] }
+      },
+      required: ["scenario"]
+    }
+  },
+  {
+    name: "archify_validate",
+    description: "Validate an Archify JSON specification and return structured diagnostics without delivering an artifact.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        diagram_type: { type: "string", enum: [...ARCHIFY_TYPES] },
+        spec: { type: "object", description: "Inline Archify JSON IR — provide this or spec_path." },
+        spec_path: { type: "string", description: "Absolute or project-relative .json specification." },
+        quality: { type: "string", enum: ["standard", "showcase"], default: "showcase" },
+        project_path: { type: "string", description: "Repository root used for evidence-aware architecture diagrams." },
+        artifact_location: { type: "string", enum: ["system", "project"], default: "system" },
+        layout_json: { type: "boolean", default: false }
+      },
+      required: ["diagram_type"]
+    }
+  },
+  {
+    name: "archify_render",
+    description: "Render an Archify specification to HTML without the delivery quality gate.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        diagram_type: { type: "string", enum: [...ARCHIFY_TYPES] },
+        spec: { type: "object" }, spec_path: { type: "string" },
+        quality: { type: "string", enum: ["standard", "showcase"], default: "showcase" },
+        project_path: { type: "string" }, artifact_location: { type: "string", enum: ["system", "project"], default: "system" },
+        output_path: { type: "string", description: "Project-relative output path when artifact_location is project." }
+      }, required: ["diagram_type"]
+    }
+  },
+  {
+    name: "archify_deliver",
+    description: "Render, validate, and deliver a self-contained Archify HTML artifact with SHA-256 receipt.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        diagram_type: { type: "string", enum: [...ARCHIFY_TYPES] },
+        spec: { type: "object" }, spec_path: { type: "string" },
+        quality: { type: "string", enum: ["standard", "showcase"], default: "showcase" },
+        project_path: { type: "string" }, artifact_location: { type: "string", enum: ["system", "project"], default: "system" },
+        output_path: { type: "string", description: "Project-relative output path when artifact_location is project." },
+        open: { type: "boolean", default: false }
+      }, required: ["diagram_type"]
+    }
+  },
+  {
+    name: "archify_visual_check",
+    description: "Run Archify's bounded automated browser checks. Perceptual visual review remains separate.",
+    inputSchema: { type: "object", properties: { artifact_path: { type: "string" }, project_path: { type: "string" } }, required: ["artifact_path"] }
+  },
+  {
+    name: "archify_compare",
+    description: "Create a validated architecture delta HTML artifact and receipt from base and head specifications.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        base_path: { type: "string" }, head_path: { type: "string" }, output_path: { type: "string" },
+        quality: { type: "string", enum: ["standard", "showcase"], default: "showcase" }, project_path: { type: "string" },
+        artifact_location: { type: "string", enum: ["system", "project"], default: "system" }
+      }, required: ["base_path", "head_path"]
+    }
+  },
+  {
+    name: "archify_migrate",
+    description: "Migrate an Archify workflow specification to schema v2 and return its change summary.",
+    inputSchema: { type: "object", properties: { old_path: { type: "string" }, new_path: { type: "string" }, project_path: { type: "string" } }, required: ["old_path", "new_path"] }
+  },
+  {
+    name: "archify_brands",
+    description: "Search built-in Archify brand marks or capture a digest-pinned brand reference from an explicit URL.",
+    inputSchema: { type: "object", properties: { query: { type: "string", default: "" }, capture_url: { type: "string" } } }
   }
   ];
 }

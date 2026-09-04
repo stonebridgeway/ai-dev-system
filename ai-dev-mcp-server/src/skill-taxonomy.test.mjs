@@ -69,6 +69,17 @@ test("keeps the curated UI UX intelligence skill in the frontend domain", () => 
   assert.ok(classified.related_skills.includes("frontend-quality-gate"));
 });
 
+test("pins Archify as a knowledge-productivity diagram skill", () => {
+  const classified = classifySkill({
+    name: "archify",
+    source: "external/archify",
+    type: "external-skill",
+    description: "Create validated architecture, workflow, sequence, data-flow, and lifecycle diagrams.",
+    categories: ["external", "diagram", "architecture", "visualization", "documentation"]
+  });
+  assert.equal(classified.primary_group, "knowledge-productivity");
+});
+
 test("classifies common integrations into useful subgroups", () => {
   const github = classifySkill(item("github", {
     source: "membrane/application-skills",

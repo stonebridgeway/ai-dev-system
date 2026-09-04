@@ -11,6 +11,25 @@ const FRONTEND_PRODUCT_PATTERN = /(frontend product|product interface|design[- ]
 const FRONTEND_REFERENCE_PATTERN = /(reference factory|generate.{0,32}(?:frontend|visual|design|interface|website).{0,24}reference|create.{0,32}(?:visual|interface).{0,24}reference|no reference|without reference|\u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0441\u043e\u0437\u0434\u0430\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0441\u0434\u0435\u043b\u0430\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441[^\n]{0,24}\u043d\u0435\u0442)/i;
 
 /**
+ * Single source of truth for "this task asks for a technical diagram".
+ * Used by the `diagramming` routing rule, `recommend_skills`, and the
+ * task-lifecycle acceptance criteria so the three never diverge. The negative
+ * lookahead keeps database / API schema work from being read as a diagram.
+ */
+export const DIAGRAM_REQUEST_PATTERN = /(diagram|flow ?chart|\u0434\u0438\u0430\u0433\u0440\u0430\u043c\u043c[\u0430-\u044f]*|\u0431\u043b\u043e\u043a-\u0441\u0445\u0435\u043c|\u0441\u0445\u0435\u043c[\u0430\u0443\u044b](?!\s+(?:\u0431\u0430\u0437|\u0434\u0430\u043d\u043d|api|\u0430\u043f\u0438|\u0431\u0434|\u0431\u044d\u043a\u0435\u043d\u0434|\u043a\u043e\u043d\u0442\u0440\u0430\u043a\u0442))|\u0432\u0438\u0437\u0443\u0430\u043b\u0438\u0437\u0438\u0440|visuali[sz]e|architecture map|system architecture|workflow map|\u0430\u0440\u0445\u0438\u0442\u0435\u043a\u0442\u0443\u0440\u043d[\u0430-\u044f]*\s+\u043a\u0430\u0440\u0442|mermaid|sequence diagram|data\s?flow|state machine|\u043d\u0430\u0440\u0438\u0441\u0443\u0439\s+(?:\u0441\u0445\u0435\u043c\u0443|\u0434\u0438\u0430\u0433\u0440\u0430\u043c\u043c|\u0430\u0440\u0445\u0438\u0442\u0435\u043a\u0442\u0443\u0440))/i;
+
+/**
+ * True when the task text (RU/EN) asks for a technical diagram that Archify
+ * can produce.
+ *
+ * @param {string} value - Task or request text.
+ * @returns {boolean}
+ */
+export function taskRequestsDiagram(value) {
+  return DIAGRAM_REQUEST_PATTERN.test(normalized(value));
+}
+
+/**
  * True when the task text (RU/EN) implies frontend-product or design-first work
  * that must go through the visual-direction workflow.
  *
@@ -45,6 +64,12 @@ const RULES = [
     id: "knowledge",
     pattern: /(obsidian|knowledge|баз[а-я]*\s+знан|заметк|памят[а-я]*\s+проект|project[- ]?(brief|map)|handoff)/i,
     workflow: "knowledge-curator"
+  },
+  {
+    id: "diagramming",
+    pattern: DIAGRAM_REQUEST_PATTERN,
+    capability: "archify",
+    source: "external/archify"
   },
   {
     id: "repository",
@@ -144,11 +169,22 @@ function workflowFor(text) {
   return { name: "feature-builder", role: "workflow", reason: "scoped implementation workflow" };
 }
 
+function capabilityEntries(rules, selected) {
+  return rules
+    .filter((rule) => rule.capability && !selected.some((item) => item.name === rule.capability))
+    .map((rule) => ({
+      name: rule.capability,
+      source: rule.source || "external/archify",
+      role: "capability",
+      reason: `${rule.id} capability`,
+      rule: rule.id
+    }));
+}
+
 /**
- * Deterministically route a task to at most three skills — one workflow, plus
- * domain and verification skills chosen from priority-ordered keyword rules and
- * the project's own type/stack. Reference-factory tasks short-circuit to the
- * design-first triple.
+ * Deterministically route a task to at most three conventional skills — one
+ * workflow plus domain and verification skills — and any matched capability
+ * add-ons. Capabilities do not consume the conventional routing limit.
  *
  * @param {{ task: string, projectTypes?: string[], stack?: string[], maxSkills?: number }} input
  * @returns {{ normalized_intent: string, matched_rules: string[], skills: Array<{ name: string, source: string, role: string, reason: string, rule: string }> }}
@@ -156,6 +192,8 @@ function workflowFor(text) {
 export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3 }) {
   const text = normalized([task, ...projectTypes, ...stack].join(" "));
   const selected = [];
+  const safeLimit = Math.max(1, Math.min(Number(maxSkills) || 3, 3));
+  const matchedCapabilities = RULES.filter((rule) => rule.capability && rule.pattern.test(text));
   const add = (name, role, reason, rule, source = "custom") => {
     if (!name || selected.some((item) => item.name === name)) return;
     selected.push({ name, source, role, reason, rule });
@@ -186,7 +224,10 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
     return {
       normalized_intent: text,
       matched_rules: ["frontend-reference-factory"],
-      skills: selected.slice(0, Math.max(1, Math.min(Number(maxSkills) || 3, 3)))
+      skills: [
+        ...selected.slice(0, safeLimit),
+        ...capabilityEntries(matchedCapabilities, selected)
+      ]
     };
   }
 
@@ -196,7 +237,8 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
   const matched = RULES
     .filter((rule) => rule.pattern.test(text))
     .sort((left, right) => (RULE_PRIORITY[right.id] || 50) - (RULE_PRIORITY[left.id] || 50));
-  const primary = matched[0];
+  const routingRules = matched.filter((rule) => !rule.capability);
+  const primary = routingRules[0];
   if (primary?.workflow) {
     selected.splice(0, selected.length);
     add(primary.workflow, "workflow", `${primary.id} workflow`, primary.id);
@@ -204,7 +246,7 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
   if (primary?.domain) add(primary.domain, "domain", `${primary.id} domain`, primary.id);
   if (primary?.verification) add(primary.verification, "verification", `${primary.id} verification`, primary.id);
 
-  for (const rule of matched.slice(1)) {
+  for (const rule of routingRules.slice(1)) {
     if (selected.length >= maxSkills) break;
     add(rule.domain, "domain", `${rule.id} domain`, rule.id);
     if (selected.length >= maxSkills) break;
@@ -224,14 +266,18 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
   return {
     normalized_intent: text,
     matched_rules: matched.map((item) => item.id),
-    skills: selected.slice(0, Math.max(1, Math.min(Number(maxSkills) || 3, 3)))
+    skills: [
+      ...selected.slice(0, safeLimit),
+      ...capabilityEntries(matchedCapabilities, selected)
+    ]
   };
 }
 
 /**
  * Merge routed skills into a scored recommendation list: routed entries come
  * first (keeping registry metadata when found, otherwise synthesised as a
- * high-score custom skill) and the result is capped at `maxSkills` (≤ 3).
+ * high-score custom skill). Capability entries do not consume the `maxSkills`
+ * (≤ 3) allowance for conventional workflow/domain/verification skills.
  *
  * @param {Array<{ name: string }>} recommendations - Registry recommendations.
  * @param {{ skills: Array<{ name: string, role: string, rule: string, reason: string }> }} route - Result of {@link routeSkills}.
@@ -240,12 +286,26 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
  */
 export function prioritizeRoutedRecommendations(recommendations, route, maxSkills = 3) {
   const byName = new Map(recommendations.map((item) => [item.name, item]));
-  const output = [];
+  const conventional = [];
+  const capabilities = [];
+  const seen = new Set();
+  const safeLimit = Math.max(1, Math.min(Number(maxSkills) || 3, 3));
   for (const routed of route.skills) {
     const existing = byName.get(routed.name);
-    output.push(existing
+    const candidate = existing
       ? { ...existing, routing_role: routed.role, routing_rule: routed.rule, reason: routed.reason }
-      : { ...routed, type: "custom-skill", score: 200 });
+      : { ...routed, type: "custom-skill", score: 200 };
+    if (!seen.has(candidate.name)) {
+      seen.add(candidate.name);
+      if (routed.role === "capability") capabilities.push(candidate);
+      else if (conventional.length < safeLimit) conventional.push(candidate);
+    }
   }
-  return output.slice(0, Math.max(1, Math.min(Number(maxSkills) || 3, 3)));
+  for (const recommendation of recommendations) {
+    if (conventional.length >= safeLimit) break;
+    if (seen.has(recommendation.name)) continue;
+    seen.add(recommendation.name);
+    conventional.push(recommendation);
+  }
+  return [...conventional, ...capabilities];
 }

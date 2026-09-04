@@ -37,6 +37,16 @@ test("SDK runtime exposes tools, resources, prompts, and structured results", as
   assert.equal(tools.tools.find((item) => item.name === "frontend_product_gate")?.annotations?.readOnlyHint, true);
   assert.equal(tools.tools.find((item) => item.name === "run_visual_reference_qa")?.annotations?.readOnlyHint, false);
   assert.ok(tools.tools.some((item) => item.name === "record_visual_review"));
+  for (const name of [
+    "archify_doctor", "archify_guide", "archify_validate", "archify_render", "archify_deliver",
+    "archify_visual_check", "archify_compare", "archify_migrate", "archify_brands"
+  ]) assert.ok(tools.tools.some((item) => item.name === name));
+  for (const name of ["archify_doctor", "archify_guide", "archify_validate", "archify_brands"]) {
+    assert.equal(tools.tools.find((item) => item.name === name)?.annotations?.readOnlyHint, true);
+  }
+  for (const name of ["archify_render", "archify_deliver", "archify_visual_check", "archify_compare", "archify_migrate"]) {
+    assert.equal(tools.tools.find((item) => item.name === name)?.annotations?.readOnlyHint, false);
+  }
 
   const resources = await client.listResources();
   assert.ok(resources.resources.some((item) => item.uri === "ai-dev://system/control-center"));
@@ -47,6 +57,7 @@ test("SDK runtime exposes tools, resources, prompts, and structured results", as
   assert.ok(prompts.prompts.some((item) => item.name === "format_project_for_ai"));
   assert.ok(prompts.prompts.some((item) => item.name === "build_frontend_product"));
   assert.ok(prompts.prompts.some((item) => item.name === "generate_frontend_references"));
+  assert.ok(prompts.prompts.some((item) => item.name === "build_architecture_diagram"));
   const referencePrompt = await client.getPrompt({
     name: "generate_frontend_references",
     arguments: {
@@ -70,6 +81,11 @@ test("SDK runtime exposes tools, resources, prompts, and structured results", as
     arguments: { project_path: "C:\\repo", task: "Исправить форму" }
   });
   assert.match(prompt.messages[0].content.text, /begin_task/);
+  const diagramPrompt = await client.getPrompt({
+    name: "build_architecture_diagram",
+    arguments: { project_path: "C:\\repo", scenario: "Payment architecture", output_path: "docs/diagrams/architecture.html" }
+  });
+  assert.match(diagramPrompt.messages[0].content.text, /archify_deliver/);
 
   const presets = await client.callTool({ name: "list_search_presets", arguments: {} });
   assert.equal(presets.isError, false);

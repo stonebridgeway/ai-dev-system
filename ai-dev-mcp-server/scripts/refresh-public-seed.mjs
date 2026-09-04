@@ -124,6 +124,32 @@ async function copySkillSources(vaultRoot, stage) {
     path.join(catalogTarget, "external", "ui-ux-pro-max"),
     { exclude: excludedSource }
   );
+
+  // Archify is a locally executed CLI, so the clean seed must carry its pinned
+  // runtime dependencies. This is the sole approved node_modules exception in
+  // the distribution policy; copying an arbitrary source tree would weaken the
+  // privacy boundary and make offline behavior less predictable.
+  const archifySource = path.join(vaultRoot, "03-skills-catalog", "sources", "external", "archify");
+  const archifyTarget = path.join(catalogTarget, "external", "archify");
+  for (const directory of [
+    "assets", "bin", "brand-marks", "delta", "examples", "migrations",
+    "recipes", "references", "renderers", "schemas", "scripts", "node_modules"
+  ]) {
+    await copyDistributionTree(
+      path.join(archifySource, directory),
+      path.join(archifyTarget, directory),
+      {
+        exclude: directory === "node_modules"
+          // `simple-icons` (~23 MB) is only used by the brand-mark generator,
+          // never at runtime, so the clean seed omits it.
+          ? (relative, entry) => entry.name === ".DS_Store" || entry.name === "simple-icons"
+          : excludedSource
+      }
+    );
+  }
+  for (const file of ["LICENSE", "SKILL.md", "THIRD_PARTY_NOTICES.md", "package.json", "package-lock.json", "upstream.json"]) {
+    await copyDistributionFile(path.join(archifySource, file), path.join(archifyTarget, file));
+  }
 }
 
 async function writeCleanSeedDocuments(stage) {

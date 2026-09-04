@@ -1,6 +1,6 @@
 ---
 name: redesign-existing-projects
-description: Upgrades existing websites and apps to premium quality. Audits current design, identifies generic AI patterns, and applies high-end design standards without breaking functionality. Works with any CSS framework or vanilla CSS.
+description: Use when upgrading an existing website or app to premium visual quality while preserving its functionality, framework, and established implementation patterns.
 ---
 
 # Redesign Skill
@@ -176,3 +176,9 @@ Apply changes in this order for maximum visual impact with minimum risk:
 - If the project uses Tailwind, check the version (v3 vs v4) before modifying config.
 - If the project has no framework, use vanilla CSS.
 - Keep changes reviewable and focused. Small, targeted improvements over big rewrites.
+
+## Verification and Output
+
+- Verify the changed views at desktop and mobile widths, including loading, empty, error, hover, focus, active, and disabled states that were touched.
+- Run the repository's narrowest relevant checks and inspect the rendered interface for overflow, regressions, and broken interactions.
+- Report the audit findings addressed, files changed, visual checks performed, automated checks run, and any residual risks.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import crypto from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -37,13 +37,22 @@ import {
   resolveWithinSync
 } from "./core/path-policy.mjs";
 import { runPolicyCommand } from "./core/process-runner.mjs";
+import { createArchifyTools } from "./core/archify-tools.mjs";
+import { validateArchifyDiagramSpecs } from "./core/archify-quality-gate.mjs";
+import {
+  archifyDeliveryReceiptMarkdown,
+  validateArchifyDeliveryReceipt,
+  validateArchifyVisualCheckEvidence
+} from "./core/archify-receipt.mjs";
 import { analyzeProject } from "./core/project-intelligence.mjs";
-import { resolveProjectIdentity } from "./core/project-identity.mjs";
+import { configureRuntimeStateRoot, resolveProjectIdentity } from "./core/project-identity.mjs";
+import { resolveRuntimeHome } from "./core/runtime-home.mjs";
 import {
   compileContextPack,
   contextPackFreshness
 } from "./core/context-compiler.mjs";
 import {
+  DIAGRAM_REQUEST_PATTERN,
   prioritizeRoutedRecommendations,
   routeSkills,
   taskRequiresFrontendProductWorkflow
@@ -134,6 +143,13 @@ import { buildToolDefinitions } from "./tool-definitions.mjs";
 import { autoCommands } from "./auto-commands.mjs";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
+const packageVersion = (() => {
+  try {
+    return JSON.parse(readFileSync(path.join(serverDir, "..", "package.json"), "utf8")).version || "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+})();
 
 /**
  * Resolve the vault root the server reads content from.
@@ -168,10 +184,8 @@ const vaultRoot = resolveVaultRoot();
 // artifacts). Agent-neutral: defaults to ~/.ai-dev, overridable per directory
 // with the AI_DEV_* env vars, and falls back to a pre-existing ~/.codex/<...>
 // layout so installs migrated from the Codex-only runtime keep their history.
-const userHome = process.env.AI_DEV_HOME
-  || process.env.USERPROFILE
-  || process.env.HOME
-  || path.dirname(vaultRoot);
+const userHome = resolveRuntimeHome(vaultRoot);
+configureRuntimeStateRoot(path.join(userHome, ".ai-dev"));
 function aiDevRuntimePath(envVar, segments, legacySegments = segments) {
   if (process.env[envVar]) return path.resolve(process.env[envVar]);
   const next = path.join(userHome, ".ai-dev", ...segments);
@@ -234,6 +248,9 @@ const uiUxProMaxSearchPath = path.join(uiUxProMaxRoot, "scripts", "search.py");
 const uiUxProMaxProvenancePath = path.join(uiUxProMaxRoot, "upstream.json");
 const frontendQaArtifactsRoot = path.resolve(
   aiDevRuntimePath("AI_DEV_FRONTEND_QA_ARTIFACT_ROOT", ["artifacts", "frontend-qa"])
+);
+const archifyArtifactsRoot = path.resolve(
+  aiDevRuntimePath("AI_DEV_ARCHIFY_ARTIFACT_ROOT", ["artifacts", "archify"])
 );
 const taskStateRoot = path.resolve(
   aiDevRuntimePath("AI_DEV_STATE_ROOT", ["state"], ["state", "ai-dev-system"])
@@ -584,6 +601,7 @@ async function collectExternalSkills() {
 
     for (const { folderName, filePath } of files) {
       const provisional = parseFrontmatter(stripBom(await fs.readFile(filePath, "utf8")), folderName);
+      const isArchify = folderName === "archify";
       const isDesignSkill = /\b(ui|ux|design|frontend)\b/i.test(
         `${provisional.name} ${provisional.description}`
       );
@@ -592,11 +610,18 @@ async function collectExternalSkills() {
         folderName,
         source: `external/${repo.name}`,
         type: "external-skill",
-        categories: isDesignSkill
+        categories: isArchify
+          ? ["external", "diagram", "architecture", "visualization", "documentation"]
+          : isDesignSkill
           ? ["external", "frontend", "design", "ui", "ux"]
           : ["external"],
-        requires: isDesignSkill ? ["frontend/design task", "Python 3"] : [],
-        compatibility: "Curated, provenance-pinned local Markdown skill",
+        requires: isArchify
+          ? ["Node >=18", "system Chrome/Edge (visual-check only)"]
+          : isDesignSkill ? ["frontend/design task", "Python 3"] : [],
+        compatibility: isArchify
+          ? "Local Node CLI skill; provenance-pinned"
+          : "Curated, provenance-pinned local Markdown skill",
+        homepage: isArchify ? "https://github.com/tt-a1i/archify" : "",
         repository,
         commit,
         version: cleanDescription(provenance.version),
@@ -7292,6 +7317,12 @@ function qualityGateReportMarkdown(result) {
     }
   }
 
+  if (result.diagram_specs?.enabled) {
+    lines.push("", "## Diagram Specifications", "", `Pattern: \`${result.diagram_specs.pattern}\``, "");
+    for (const item of result.diagram_specs.files) lines.push(`- ${item.status}: \`${item.path}\` (${item.type}; ${item.warnings || 0} warning(s))`);
+    if (!result.diagram_specs.files.length) lines.push("- No matching diagram specifications.");
+  }
+
   return lines.join("\n");
 }
 
@@ -7301,6 +7332,7 @@ async function runQualityGate({
   dry_run = false,
   timeout_ms = 120000,
   max_commands = 6,
+  diagram_specs = "",
   continue_on_failure = true,
   allow_unsafe_commands = false,
   update_registry = true,
@@ -7365,11 +7397,19 @@ async function runQualityGate({
     if (!continue_on_failure && status !== "passed") break;
   }
 
+  let diagramSpecs = { enabled: false };
+  if (diagram_specs) {
+    diagramSpecs = dry_run ? { enabled: true, pattern: String(diagram_specs), files: [], status: "dry_run" } : await validateArchifyDiagramSpecs({ vaultRoot, projectRoot, pattern: String(diagram_specs), timeoutMs: Math.max(1000, Math.min(Number(timeout_ms) || 120000, 30 * 60 * 1000)) });
+  }
+
+  const commandsFailed = results.some((item) => item.status === "failed" || item.status === "timed_out");
   let status = "passed";
   if (dry_run) status = "dry_run";
-  else if (!parsed.length) status = "no_commands";
+  // A real command failure always outranks a diagram-spec warning.
+  else if (commandsFailed || diagramSpecs.status === "block") status = "failed";
+  else if (!parsed.length && !diagramSpecs.enabled) status = "no_commands";
   else if (blocked.length && !results.length) status = "blocked";
-  else if (results.some((item) => item.status === "failed" || item.status === "timed_out")) status = "failed";
+  else if (diagramSpecs.status === "warn") status = "warn";
   else if (blocked.length) status = "passed_with_blocked";
   else if (!results.length) status = "no_commands_run";
 
@@ -7384,6 +7424,7 @@ async function runQualityGate({
     results,
     blocked,
     skipped,
+    diagram_specs: diagramSpecs,
     safety: {
       execution: "argv",
       shell: false,
@@ -7653,6 +7694,18 @@ async function runFrontendQa(rawOptions = {}) {
   return result;
 }
 
+const {
+  archifyProjectPath,
+  archifyDoctor,
+  archifyGuide,
+  archifyValidate,
+  archifyRender,
+  archifyDeliver,
+  archifyVisualCheck,
+  archifyCompare,
+  archifyMigrate,
+  archifyBrands
+} = createArchifyTools({ vaultRoot, archifyArtifactsRoot, safeProjectRoot, safeProjectFile, slugPart, readJsonIfExists });
 function frontendQaVisualArtifacts(result) {
   const artifacts = [];
   const add = (artifactPath, type, context = {}) => {
@@ -8411,8 +8464,23 @@ function verificationPassed(checks) {
     if (item.type === "quality_gate") return item.result?.status === "passed";
     if (item.type === "frontend_qa") return item.result?.gate === "pass";
     if (item.type === "frontend_product") return item.result?.ok === true;
+    if (item.type === "archify_deliver" || item.type === "archify_visual_check") return item.result?.ok === true;
     return false;
   });
+}
+async function validateArchifyDeliveryEvidence(entries, projectRoot) {
+  if (!Array.isArray(entries)) throw new Error("evidence must be an array.");
+  const checks = [];
+  for (const entry of entries) {
+    if (entry?.kind === "archify_visual_check") {
+      const htmlPath = archifyProjectPath(projectRoot, entry.html_path, "html_path");
+      checks.push({ type: "archify_visual_check", result: validateArchifyVisualCheckEvidence(entry, htmlPath) });
+      continue;
+    }
+    const htmlPath = archifyProjectPath(projectRoot, entry.html_path, "html_path");
+    checks.push({ type: "archify_deliver", result: await validateArchifyDeliveryReceipt(entry, htmlPath) });
+  }
+  return checks;
 }
 
 async function verifyTask({
@@ -8420,13 +8488,15 @@ async function verifyTask({
   run_quality = true,
   quality_labels = [],
   run_frontend = false,
-  frontend_options = {}
+  frontend_options = {},
+  evidence = []
 }) {
   const record = await taskStore.read(task_id);
   if (record.status === "complete") throw new Error("Completed task cannot be verified again.");
   const projectIdentity = await resolveProjectIdentity(record.project.path);
   const projectRoot = projectIdentity.project_root;
   const checks = [];
+  checks.push(...await validateArchifyDeliveryEvidence(evidence, projectRoot));
 
   if (run_quality) {
     try {
@@ -8556,6 +8626,14 @@ async function verifyTask({
       if (/design-first implementation gate|strict visual reference qa/i.test(item.text)) {
         criteria.push({ id: item.id, status: "met", evidence: [verification.id] });
       }
+      if (/diagram is delivered via archify_deliver/i.test(item.text)) {
+        const deliver = checks.find((check) => check.type === "archify_deliver");
+        const visual = checks.find((check) => check.type === "archify_visual_check");
+        const visualOk = !visual || visual.result?.ok === true;
+        if (deliver?.result?.ok === true && visualOk) {
+          criteria.push({ id: item.id, status: "met", evidence: [verification.id] });
+        }
+      }
     }
     if (criteria.length) {
       updated = await taskStore.checkpoint(task_id, {
@@ -8563,6 +8641,16 @@ async function verifyTask({
         criteria,
         notes: `Evidence: ${verification.id}`
       });
+    }
+  }
+  if (checks.some((check) => check.type === "archify_deliver")) {
+    try {
+      const card = await findProjectCard(projectRoot);
+      const report = await updateProjectCard({ name: card.name, section: "Archify Diagram Deliveries", mode: "replace", content: archifyDeliveryReceiptMarkdown(checks.filter((check) => check.type === "archify_deliver").map((check) => check.result)), update_index: false });
+      const synced = await syncProjectCard({ project_path: projectRoot, create_if_missing: false, update_index: true });
+      verification.registry = { report, synced };
+    } catch (error) {
+      verification.registry = { action: "skipped", reason: error instanceof Error ? error.message : String(error) };
     }
   }
   return {
@@ -8611,8 +8699,10 @@ async function completeTask({
   task_id,
   summary,
   allow_waived = false,
-  write_report = true
+  write_report = true,
+  evidence = []
 }) {
+  if (evidence.length) await verifyTask({ task_id, run_quality: false, run_frontend: false, evidence });
   const existing = await taskStore.read(task_id);
   const projectIdentity = await resolveProjectIdentity(existing.project.path);
   const projectRoot = projectIdentity.project_root;
@@ -9992,6 +10082,9 @@ async function recommendSkillsProjectAware({
   if (visualTask || frontendProject) {
     addNamed("frontend-polisher", "custom", frontendProject ? "project or task is frontend/UI oriented" : "task touches frontend quality or design", 128);
   }
+  if (DIAGRAM_REQUEST_PATTERN.test(task)) {
+    addNamed("archify", "external/archify", "task asks for a validated technical diagram or Mermaid conversion", 170, ["diagram intent"]);
+  }
   if (/(website|landing|portfolio|marketing site|premium site|premium|сайт|лендинг|портфолио)/i.test(task)) {
     addNamed("design-taste-frontend", "design/taste-skill", "task asks for a visually important website or landing page", 132);
   }
@@ -10181,6 +10274,15 @@ async function callTool(name, args) {
   if (name === "refresh_project_memory") return textContent(await refreshProjectMemory(args));
   if (name === "run_quality_gate") return textContent(await runQualityGate(args));
   if (name === "run_frontend_qa") return textContent(await runFrontendQa(args));
+  if (name === "archify_doctor") return textContent(await archifyDoctor(args));
+  if (name === "archify_guide") return textContent(await archifyGuide(args));
+  if (name === "archify_validate") return textContent(await archifyValidate(args));
+  if (name === "archify_render") return textContent(await archifyRender(args));
+  if (name === "archify_deliver") return textContent(await archifyDeliver(args));
+  if (name === "archify_visual_check") return textContent(await archifyVisualCheck(args));
+  if (name === "archify_compare") return textContent(await archifyCompare(args));
+  if (name === "archify_migrate") return textContent(await archifyMigrate(args));
+  if (name === "archify_brands") return textContent(await archifyBrands(args));
   if (name === "analyze_project") return textContent(await analyzeProjectTool(args));
   if (name === "compile_project_context") return textContent(await compileProjectContext(args));
   if (name === "project_context_status") return textContent(await projectContextStatus(args));
@@ -10209,7 +10311,7 @@ async function handle(message) {
       result(id, {
         protocolVersion: params?.protocolVersion ?? "2024-11-05",
         capabilities: { tools: {} },
-        serverInfo: { name: "ai-dev-system", version: "0.1.0" }
+        serverInfo: { name: "ai-dev-system", version: packageVersion }
       });
       return;
     }

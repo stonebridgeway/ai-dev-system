@@ -15,6 +15,9 @@ test("distribution path policy rejects private vault and runtime state", () => {
   assert.ok(distributionPathFindings(".ai-dev/context/task.md").length > 0);
   assert.ok(distributionPathFindings("runtime/search.sqlite").length > 0);
   assert.equal(distributionPathFindings("03-skills-catalog/sources/custom/reviewer/SKILL.md").length, 0);
+  assert.equal(distributionPathFindings("03-skills-catalog/sources/external/archify/node_modules/ajv/package.json").length, 0);
+  assert.equal(distributionPathFindings("public-seed/03-skills-catalog/sources/external/archify/node_modules/ajv/package.json").length, 0);
+  assert.ok(distributionPathFindings("03-skills-catalog/sources/custom/reviewer/node_modules/example/package.json").length > 0);
 });
 
 test("distribution text policy reports secret classes without echoing values", () => {

@@ -114,6 +114,7 @@ const EXPLICIT_GROUPS = new Map([
   ["data-pipeline-engineer", "data-ai"],
   ["llm-integration-engineer", "data-ai"],
   ["full-output-enforcement", "testing-quality"],
+  ["archify", "knowledge-productivity"],
   ["brandkit", "design-content"],
   ["imagegen-frontend-web", "design-content"],
   ["imagegen-frontend-mobile", "design-content"],

@@ -32,3 +32,30 @@ test("routing benchmark suite reports coverage and failures", () => {
   assert.equal(suite.summary.failed, 1);
   assert(suite.summary.uncovered_expected_skills.includes("missing-skill"));
 });
+
+test("routing evaluation excludes capabilities from the three-skill cardinality contract", () => {
+  const router = () => ({
+    matched_rules: ["api", "diagramming"],
+    skills: [
+      { name: "feature-builder", role: "workflow" },
+      { name: "backend-api-engineer", role: "domain" },
+      { name: "api-contract-reviewer", role: "verification" },
+      { name: "archify", role: "capability" }
+    ]
+  });
+  const result = evaluateSkillRoutingCase({
+    id: "diagram-capability",
+    task: "Build an architecture diagram",
+    expected_all: ["feature-builder", "backend-api-engineer", "api-contract-reviewer"],
+    expected_any: ["archify"]
+  }, router);
+  const suite = evaluateSkillRoutingSuite([{
+    id: "diagram-capability",
+    task: "Build an architecture diagram",
+    expected_any: ["archify"]
+  }], router);
+
+  assert.equal(result.status, "pass");
+  assert.equal(result.failures.skill_limit, null);
+  assert.equal(suite.summary.max_three_violations, 0);
+});
