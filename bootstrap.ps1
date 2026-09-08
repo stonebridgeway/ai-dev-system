@@ -56,9 +56,11 @@ function Ensure-Node {
         throw "Node.js was installed but is not available in this terminal. Open a new PowerShell window and run bootstrap.ps1 again."
     }
     $version = (& $node --version).Trim()
-    $major = [int](($version -replace '^v', '').Split('.')[0])
-    if ($major -lt 24) {
-        throw "Node.js 24 or newer is required; found $version. Update Node.js and run bootstrap.ps1 again."
+    $versionParts = ($version -replace '^v', '').Split('.')
+    $major = [int]$versionParts[0]
+    $minor = if ($versionParts.Count -gt 1) { [int]$versionParts[1] } else { 0 }
+    if ($major -lt 22 -or ($major -eq 22 -and $minor -lt 12)) {
+        throw "Node.js 22.12 or newer is required; found $version. Update Node.js and run bootstrap.ps1 again."
     }
     return $node
 }

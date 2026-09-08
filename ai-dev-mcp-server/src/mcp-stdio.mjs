@@ -6,6 +6,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { execFileWithInput } from "./core/input-process-runner.mjs";
 import {
   INTEGRATION_SUBGROUPS,
   SKILL_GROUPS,
@@ -46,7 +47,10 @@ import {
 } from "./core/archify-receipt.mjs";
 import { analyzeProject } from "./core/project-intelligence.mjs";
 import { configureRuntimeStateRoot, resolveProjectIdentity } from "./core/project-identity.mjs";
+import { INTENT } from "./core/intent-patterns.mjs";
 import { resolveRuntimeHome } from "./core/runtime-home.mjs";
+import { assertTrusted, trustProject } from "./core/project-trust.mjs";
+import { filterProjectQaConfig } from "./core/frontend-qa-config.mjs";
 import {
   compileContextPack,
   contextPackFreshness
@@ -141,7 +145,9 @@ import {
 } from "./core/reference-factory.mjs";
 import { buildToolDefinitions } from "./tool-definitions.mjs";
 import { autoCommands } from "./auto-commands.mjs";
-
+import { resolveCoreToolCall, resolveToolProfile } from "./core/tool-profile.mjs";
+import { createToolRouter } from "./tool-router.mjs";
+import { createRuntimeContext, createServices } from "./services/index.mjs";
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
 const packageVersion = (() => {
   try {
@@ -266,6 +272,7 @@ const defaultBgeM3ModelDir = path.resolve(
 const searchFreshnessCacheMs = 1000;
 let searchIndexRefreshPromise = null;
 let searchIndexDirtyReason = "";
+let searchIndexDirtyGeneration = 0;
 let searchIndexLastStatus = null;
 let searchIndexLastStatusAt = 0;
 let searchHardNegativeCache = null;
@@ -645,6 +652,7 @@ async function writeText(relativePath, value) {
 
 function markSearchIndexDirty(reason = "source changed") {
   searchIndexDirtyReason = String(reason || "source changed");
+  searchIndexDirtyGeneration += 1;
   searchIndexLastStatus = null;
   searchIndexLastStatusAt = 0;
 }
@@ -2577,44 +2585,6 @@ function execFile(command, args, { cwd, timeoutMs = 120000 } = {}) {
   });
 }
 
-function execFileWithInput(command, args, input, { cwd, timeoutMs = 120000, env = {} } = {}) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd,
-      windowsHide: true,
-      env: { ...process.env, ...env },
-      stdio: ["pipe", "pipe", "pipe"]
-    });
-    let stdout = "";
-    let stderr = "";
-    const timer = setTimeout(() => {
-      child.kill();
-      reject(new Error(`Command timed out: ${command} ${args.join(" ")}`));
-    }, timeoutMs);
-
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-    child.on("error", (err) => {
-      clearTimeout(timer);
-      reject(err);
-    });
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      if (code === 0) {
-        resolve({ stdout, stderr });
-      } else {
-        const message = stderr || stdout || `Command failed with exit code ${code}`;
-        reject(new Error(message));
-      }
-    });
-    child.stdin.end(input);
-  });
-}
-
 function truncateOutput(value, max = 6000) {
   const text = String(value ?? "");
   if (text.length <= max) return text;
@@ -2649,6 +2619,17 @@ async function runSearchCli(args, { timeoutMs = 600000, command = pythonCommand(
   } catch (err) {
     throw new Error(`Search helper returned invalid JSON: ${err instanceof Error ? err.message : String(err)}\n${output.stdout}`);
   }
+}
+
+async function denseBackendAvailable(modelDir = process.env.BGE_M3_MODEL_DIR || defaultBgeM3ModelDir) {
+  if (!(await pathExists(bgeM3WorkerCliPath))) return { ok: false, reason: "worker script missing" };
+  const python = embeddingPythonCommand();
+  if (!(await pathExists(python))) return { ok: false, reason: `Python runtime missing: ${python}` };
+  const resolvedModelDir = path.resolve(String(modelDir || defaultBgeM3ModelDir));
+  const hasWeights = (await pathExists(path.join(resolvedModelDir, "pytorch_model.bin")))
+    || (await pathExists(path.join(resolvedModelDir, "model.safetensors")));
+  if (!hasWeights) return { ok: false, reason: `model weights missing: ${resolvedModelDir}` };
+  return { ok: true, model_dir: resolvedModelDir };
 }
 
 async function runUiUxProMax(args, { json = false } = {}) {
@@ -2829,7 +2810,8 @@ async function rebuildSearchIndex({
   dense_text_limit = 1200,
   dense_include_membrane = false,
   dense_incremental = true,
-  preserve_dense = true
+  preserve_dense = true,
+  preserve_dirty = false
 } = {}) {
   await fs.mkdir(searchIndexDir, { recursive: true });
   const args = [
@@ -2860,7 +2842,7 @@ async function rebuildSearchIndex({
     timeoutMs: dense_embeddings ? 3600000 : 600000,
     command: dense_embeddings ? embeddingPythonCommand() : pythonCommand()
   });
-  searchIndexDirtyReason = "";
+  if (!preserve_dirty) searchIndexDirtyReason = "";
   searchIndexLastStatus = null;
   searchIndexLastStatusAt = 0;
   return rebuilt;
@@ -2868,6 +2850,7 @@ async function rebuildSearchIndex({
 
 const bgeWorkerStates = new Map();
 let bgeWorkerRequestSeq = 0;
+const bgeWorkerIdleMs = 10 * 60 * 1000;
 
 function workerKey(modelDir, device) {
   return `${path.resolve(String(modelDir || defaultBgeM3ModelDir))}\x1f${String(device || "cpu")}`;
@@ -2879,6 +2862,17 @@ function rejectWorkerPending(state, message) {
     pending.reject(new Error(message));
   }
   state.pending.clear();
+}
+
+function scheduleBgeWorkerIdleShutdown(state) {
+  clearTimeout(state.idle_timer);
+  state.idle_timer = setTimeout(() => {
+    if (state.pending.size || state.exited) return;
+    state.exited = true;
+    try { state.child.kill(); } catch { /* already stopped */ }
+    bgeWorkerStates.delete(state.key);
+  }, bgeWorkerIdleMs);
+  state.idle_timer.unref?.();
 }
 
 async function getBgeWorker({ model_dir = process.env.BGE_M3_MODEL_DIR || defaultBgeM3ModelDir, device = process.env.BGE_M3_DEVICE || "cpu" } = {}) {
@@ -2894,7 +2888,13 @@ async function getBgeWorker({ model_dir = process.env.BGE_M3_MODEL_DIR || defaul
   const selectedDevice = String(device || "cpu");
   const key = workerKey(resolvedModelDir, selectedDevice);
   const existing = bgeWorkerStates.get(key);
-  if (existing && !existing.exited) return existing;
+  if (existing && !existing.exited) {
+    scheduleBgeWorkerIdleShutdown(existing);
+    return existing;
+  }
+  if (bgeWorkerStates.size) {
+    throw new Error("A BGE-M3 worker is already running with a different model or device.");
+  }
 
   const child = spawn(python, [
     bgeM3WorkerCliPath,
@@ -2912,10 +2912,12 @@ async function getBgeWorker({ model_dir = process.env.BGE_M3_MODEL_DIR || defaul
     stderr: "",
     ready: false,
     exited: false,
+    idle_timer: null,
     model_dir: resolvedModelDir,
     device: selectedDevice
   };
   bgeWorkerStates.set(key, state);
+  scheduleBgeWorkerIdleShutdown(state);
 
   child.stdout.on("data", (chunk) => {
     state.buffer += chunk.toString();
@@ -2933,6 +2935,7 @@ async function getBgeWorker({ model_dir = process.env.BGE_M3_MODEL_DIR || defaul
       if (message.type === "ready") {
         state.ready = Boolean(message.ok);
         state.ready_message = message;
+        if (!state.ready) rejectWorkerPending(state, `BGE-M3 worker failed to load the model: ${message.error || JSON.stringify(message)}`);
         continue;
       }
       const id = message.id;
@@ -2940,6 +2943,7 @@ async function getBgeWorker({ model_dir = process.env.BGE_M3_MODEL_DIR || defaul
       const pending = state.pending.get(id);
       state.pending.delete(id);
       clearTimeout(pending.timer);
+      scheduleBgeWorkerIdleShutdown(state);
       if (message.ok === false) {
         pending.reject(new Error(message.error || "BGE-M3 worker request failed."));
       } else {
@@ -2953,12 +2957,20 @@ async function getBgeWorker({ model_dir = process.env.BGE_M3_MODEL_DIR || defaul
   });
   child.on("error", (err) => {
     state.exited = true;
+    clearTimeout(state.idle_timer);
     rejectWorkerPending(state, err.message);
     bgeWorkerStates.delete(key);
   });
   child.on("close", (code) => {
     state.exited = true;
+    clearTimeout(state.idle_timer);
     rejectWorkerPending(state, `BGE-M3 worker exited with code ${code}. ${state.stderr}`.trim());
+    bgeWorkerStates.delete(key);
+  });
+  child.stdin.on("error", (err) => {
+    state.exited = true;
+    clearTimeout(state.idle_timer);
+    rejectWorkerPending(state, `BGE-M3 worker stdin error: ${err.message}`);
     bgeWorkerStates.delete(key);
   });
 
@@ -2972,6 +2984,9 @@ async function requestBgeWorker(payload, { timeoutMs = 180000 } = {}) {
   });
   if (!state.child.stdin.writable) {
     throw new Error("BGE-M3 worker stdin is closed.");
+  }
+  if (state.ready_message && !state.ready) {
+    throw new Error(`BGE-M3 worker failed to load the model: ${state.ready_message.error || JSON.stringify(state.ready_message)}`);
   }
   const id = ++bgeWorkerRequestSeq;
   const request = {
@@ -2989,14 +3004,17 @@ async function requestBgeWorker(payload, { timeoutMs = 180000 } = {}) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       state.pending.delete(id);
+      scheduleBgeWorkerIdleShutdown(state);
       reject(new Error(`BGE-M3 worker request timed out after ${timeoutMs}ms.`));
     }, timeoutMs);
     state.pending.set(id, { resolve, reject, timer });
+    clearTimeout(state.idle_timer);
     state.child.stdin.write(`${JSON.stringify(request)}\n`, "utf8", (err) => {
       if (err) {
         state.pending.delete(id);
         clearTimeout(timer);
         reject(err);
+        scheduleBgeWorkerIdleShutdown(state);
       }
     });
   });
@@ -3005,6 +3023,7 @@ async function requestBgeWorker(payload, { timeoutMs = 180000 } = {}) {
 function shutdownBgeWorkers() {
   for (const state of bgeWorkerStates.values()) {
     try {
+      clearTimeout(state.idle_timer);
       if (!state.exited && state.child.stdin.writable) {
         state.child.stdin.write(`${JSON.stringify({ id: ++bgeWorkerRequestSeq, method: "shutdown" })}\n`);
       }
@@ -3121,7 +3140,10 @@ async function frontendQaEnvironmentStatus() {
     {
       cwd: path.dirname(frontendQaRunnerPath),
       timeoutMs: 60000,
-      env: { AI_DEV_FRONTEND_QA_ARTIFACT_ROOT: frontendQaArtifactsRoot }
+      env: {
+        AI_DEV_FRONTEND_QA_ARTIFACT_ROOT: frontendQaArtifactsRoot,
+        AI_DEV_CORE_DIR: path.join(serverDir, "core")
+      }
     }
   );
   return JSON.parse(output.stdout);
@@ -3185,12 +3207,10 @@ async function systemHealthCheck({
 
   await runCheck("required_notes", false, async () => {
     const required = [
-      "00-start-here.md",
       "01-system/AI Dev Control Center.md",
-      "09-mcp/README.md",
-      "09-mcp/ai-dev-mcp-server/README.md",
-      "09-mcp/ai-dev-mcp-server/docs/ARCHITECTURE.md",
-      "03-skills-catalog/Skill Cards.md"
+      "01-system/Project Agent Standards.md",
+      "07-quality-gates/Quality Gate.md",
+      "03-skills-catalog/sources/custom/ai-dev-orchestrator/SKILL.md"
     ];
     const files = [];
     for (const relative of required) {
@@ -3707,30 +3727,36 @@ async function ensureSearchIndex({ force_check = false } = {}) {
     return { action: "current", status: searchIndexLastStatus };
   }
 
-  const status = await searchIndexStatus({ include_external_project_files: true });
-  searchIndexLastStatus = status;
-  searchIndexLastStatusAt = Date.now();
-  if (!status.stale && !searchIndexDirtyReason) {
-    return { action: "current", status };
-  }
-
-  searchIndexRefreshPromise = (async () => {
+  // Claim the refresh slot before the first await. Otherwise concurrent search
+  // requests can all see a stale index and rebuild the same SQLite file.
+  const refresh = (async () => {
+    const status = await searchIndexStatus({ include_external_project_files: true });
+    searchIndexLastStatus = status;
+    searchIndexLastStatusAt = Date.now();
+    const dirtyGenerationAtStart = searchIndexDirtyGeneration;
+    if (!status.stale && !searchIndexDirtyReason) {
+      return { action: "current", status };
+    }
     const rebuild = await rebuildSearchIndex({
       include_external_project_files: true,
       dense_embeddings: false,
-      preserve_dense: true
+      preserve_dense: true,
+      preserve_dirty: true
     });
     const refreshed = await searchIndexStatus({ include_external_project_files: true });
     searchIndexLastStatus = refreshed;
     searchIndexLastStatusAt = Date.now();
-    searchIndexDirtyReason = "";
+    // Keep changes written while the rebuild was in progress marked dirty for
+    // the next request instead of silently losing them.
+    if (searchIndexDirtyGeneration === dirtyGenerationAtStart) searchIndexDirtyReason = "";
     return { action: "rebuilt", previous_status: status, rebuild, status: refreshed };
   })();
+  searchIndexRefreshPromise = refresh;
 
   try {
-    return await searchIndexRefreshPromise;
+    return await refresh;
   } finally {
-    searchIndexRefreshPromise = null;
+    if (searchIndexRefreshPromise === refresh) searchIndexRefreshPromise = null;
   }
 }
 
@@ -3806,22 +3832,38 @@ async function hybridSearchIndex({
   if (ensure_fresh) await ensureSearchIndex();
 
   let denseQueryVectorPath = "";
+  let effectiveDenseWeight = selectedDenseWeight;
+  const warnings = [];
   if (selectedDenseWeight > 0) {
-    const denseQuery = await requestBgeWorker({
-      texts: [normalizedQuery],
-      prefix: "query: ",
-      normalize: true,
-      batch_size: 1,
-      precision: 8,
-      include_embeddings: true,
-      model_dir: dense_model_dir,
-      device: dense_device
-    }, { timeoutMs: 300000 });
-    const vector = denseQuery.embeddings?.[0];
-    if (Array.isArray(vector) && vector.length) {
-      await fs.mkdir(searchIndexDir, { recursive: true });
-      denseQueryVectorPath = path.join(searchIndexDir, `.dense-query-${process.pid}-${Date.now()}.json`);
-      await atomicWriteJson(denseQueryVectorPath, vector, { spaces: 0 });
+    const denseBackend = await denseBackendAvailable(dense_model_dir);
+    if (!denseBackend.ok) {
+      effectiveDenseWeight = 0;
+      warnings.push(`Dense backend unavailable (${denseBackend.reason}); keyword and sparse ranking were used.`);
+    } else {
+      try {
+        const denseQuery = await requestBgeWorker({
+          texts: [normalizedQuery],
+          prefix: "query: ",
+          normalize: true,
+          batch_size: 1,
+          precision: 8,
+          include_embeddings: true,
+          model_dir: dense_model_dir,
+          device: dense_device
+        }, { timeoutMs: 300000 });
+        const vector = denseQuery.embeddings?.[0];
+        if (Array.isArray(vector) && vector.length) {
+          await fs.mkdir(searchIndexDir, { recursive: true });
+          denseQueryVectorPath = path.join(searchIndexDir, `.dense-query-${process.pid}-${Date.now()}.json`);
+          await atomicWriteJson(denseQueryVectorPath, vector, { spaces: 0 });
+        } else {
+          effectiveDenseWeight = 0;
+          warnings.push("Dense query embedding returned no vector; keyword and sparse ranking were used.");
+        }
+      } catch (err) {
+        effectiveDenseWeight = 0;
+        warnings.push(`Dense query embedding failed (${err instanceof Error ? err.message : String(err)}); keyword and sparse ranking were used.`);
+      }
     }
   }
 
@@ -3848,7 +3890,7 @@ async function hybridSearchIndex({
     "--keyword-weight",
     String(Number.isFinite(Number(keyword_weight)) ? Number(keyword_weight) : 0.45),
     "--dense-weight",
-    String(selectedDenseWeight),
+    String(effectiveDenseWeight),
     "--dense-model-dir",
     path.resolve(String(dense_model_dir || defaultBgeM3ModelDir)),
     "--dense-device",
@@ -3860,7 +3902,7 @@ async function hybridSearchIndex({
 
   try {
     const results = await runSearchCli(args, {
-      timeoutMs: selectedDenseWeight > 0 ? 300000 : 120000,
+      timeoutMs: effectiveDenseWeight > 0 ? 300000 : 120000,
       command: pythonCommand()
     });
     let ranked = results;
@@ -3881,12 +3923,12 @@ async function hybridSearchIndex({
       });
     }
     if (!intent_routing || !["all", "skills"].includes(String(scope || "all"))) {
-      return ranked.slice(0, requestedLimit);
+      return attachSearchDiagnostics(ranked.slice(0, requestedLimit), { selectedDenseWeight, effectiveDenseWeight, warnings });
     }
-    if (project || csvValue(folders)) return ranked.slice(0, requestedLimit);
-    if (isSkillCatalogQuery(normalizedQuery)) return ranked.slice(0, requestedLimit);
+    if (project || csvValue(folders)) return attachSearchDiagnostics(ranked.slice(0, requestedLimit), { selectedDenseWeight, effectiveDenseWeight, warnings });
+    if (isSkillCatalogQuery(normalizedQuery)) return attachSearchDiagnostics(ranked.slice(0, requestedLimit), { selectedDenseWeight, effectiveDenseWeight, warnings });
     const selectedSources = new Set(csvValue(source).split(",").map((item) => item.trim().toLowerCase()).filter(Boolean));
-    if (selectedSources.size && !selectedSources.has("custom")) return ranked.slice(0, requestedLimit);
+    if (selectedSources.size && !selectedSources.has("custom")) return attachSearchDiagnostics(ranked.slice(0, requestedLimit), { selectedDenseWeight, effectiveDenseWeight, warnings });
 
     const route = routeSkills({ task: normalizedQuery, maxSkills: 3 });
     const registry = await readSkillIndex();
@@ -3919,13 +3961,29 @@ async function hybridSearchIndex({
       })
       .filter(Boolean);
     const routedNames = new Set(routed.map((item) => item.title.toLowerCase()));
-    return [...routed, ...ranked.filter((item) => !routedNames.has(String(item.title || "").toLowerCase()))]
-      .slice(0, requestedLimit);
+    return attachSearchDiagnostics(
+      [...routed, ...ranked.filter((item) => !routedNames.has(String(item.title || "").toLowerCase()))]
+        .slice(0, requestedLimit),
+      { selectedDenseWeight, effectiveDenseWeight, warnings }
+    );
   } finally {
     if (denseQueryVectorPath) {
       await fs.rm(denseQueryVectorPath, { force: true }).catch(() => {});
     }
   }
+}
+
+function attachSearchDiagnostics(results, { selectedDenseWeight, effectiveDenseWeight, warnings }) {
+  Object.defineProperty(results, "search_diagnostics", {
+    value: {
+      dense_available: effectiveDenseWeight > 0,
+      requested_dense_weight: selectedDenseWeight,
+      effective_dense_weight: effectiveDenseWeight,
+      warnings
+    },
+    enumerable: false
+  });
+  return results;
 }
 
 function sanitizeRepoName(repositoryUrl, requestedName) {
@@ -3985,16 +4043,34 @@ async function safeProjectRoot(projectPath) {
     throw new Error("project_path must be an absolute path.");
   }
 
-  const resolved = path.resolve(projectPath);
-  const stats = await fs.stat(resolved).catch(() => null);
+  const stats = await fs.stat(projectPath).catch(() => null);
   if (!stats || !stats.isDirectory()) {
     throw new Error(`Project directory does not exist: ${projectPath}`);
   }
-  return resolved;
+  const identity = await resolveProjectIdentity(projectPath);
+  assertNotProtectedProjectRoot(identity.project_root);
+  return identity.project_root;
 }
 
 async function resolveTaskProjectRoot(projectPath) {
-  return (await resolveProjectIdentity(projectPath)).project_root;
+  return safeProjectRoot(projectPath);
+}
+
+function assertNotProtectedProjectRoot(projectRoot) {
+  const resolved = path.resolve(projectRoot);
+  const protectedRoots = new Set([
+    path.parse(resolved).root,
+    userHome,
+    path.join(userHome, ".ai-dev"),
+    vaultRoot
+  ].map((entry) => path.resolve(entry)));
+  if (protectedRoots.has(resolved)) {
+    throw new Error(`Refusing to treat a protected directory as a project: ${resolved}`);
+  }
+  const relativeToVault = path.relative(vaultRoot, resolved);
+  if (relativeToVault && !relativeToVault.startsWith("..") && !path.isAbsolute(relativeToVault)) {
+    throw new Error("The knowledge vault cannot be used as a project.");
+  }
 }
 
 function safeProjectFile(projectRoot, relativePath) {
@@ -4376,20 +4452,20 @@ function projectRiskSignals(detected) {
 
 function projectRecommendedNextCommands(detected) {
   const commands = [
-    "начни новую фичу: <описание>",
-    "найди баг: <симптом или ошибка>",
-    "сделай ревью",
-    "обнови память проекта"
+    "Start a new feature: <description>",
+    "Investigate a bug: <symptom or error>",
+    "Review changes",
+    "Refresh project memory"
   ];
-  if (detected.is_frontend) commands.splice(2, 0, "улучши frontend/design: <экран или компонент>");
-  if (detected.quality_gaps?.length || detected.risk_signals?.length) commands.push("обнови базу знаний");
+  if (detected.is_frontend) commands.splice(2, 0, "Improve frontend design: <screen or component>");
+  if (detected.quality_gaps?.length || detected.risk_signals?.length) commands.push("Update knowledge base");
   if (detected.is_frontend) {
     commands.splice(
       2,
       0,
-      "поддержи frontend/beta: <экран или компонент>",
-      "проверь frontend quality gate",
-      "проверь лендинг/конверсию: <страница>"
+      "Maintain beta frontend: <screen or component>",
+      "Run frontend quality gate",
+      "Review landing conversion: <page>"
     );
   }
   return [...new Set(commands)];
@@ -4528,16 +4604,14 @@ function agentStandardsMarkdown() {
 function autoCommandsMarkdown() {
   return `## Auto Commands
 
-These phrases are shortcuts for repeatable agent workflows. When the user writes one of them, resolve it through the AI Dev System MCP auto-command tools.
+These phrases are optional shortcuts for repeatable agent workflows. They never replace the normal task lifecycle.
 
 ${autoCommandTable()}
 
-### Command Rule
+### Optional Command Rule
 
-- Match the user's phrase with \`match_auto_command\`.
-- Read the selected runbook with \`read_auto_command\`.
-- Use the listed skills and tools before editing.
-- Follow the command guardrails and the project quality gate.
+- Use \`match_auto_command\` and \`read_auto_command\` when a phrase clarifies the intended runbook.
+- For substantive work, still use \`begin_task\`, \`checkpoint_task\`, \`verify_task\`, and \`complete_task\`.
 `;
 }
 
@@ -4558,13 +4632,11 @@ Generated by the AI Dev System project bootstrap command.
 ## Agent Startup
 
 1. Read this file before changing code.
-2. Read \`.ai-dev/project-brief.md\` for the short handoff memory.
-3. Read \`.ai-dev/project-map.md\` for structure and known commands.
-4. Read \`.ai-dev/quality-gate.md\` before final verification.
+2. If \`.ai-dev/project-brief.md\`, \`.ai-dev/project-map.md\`, or \`.ai-dev/quality-gate.md\` is missing, call \`prepare_project\` with \`overwrite=false\`.
+3. For substantive work, call \`begin_task\`. It resolves canonical project identity and compiles a bounded task-specific context pack under \`.ai-dev/context/\`.
+4. Inspect the returned context pack, keep acceptance criteria current with \`checkpoint_task\`, then use \`verify_task\` and \`complete_task\`.
 5. Inspect nearby code and existing patterns before editing.
-6. For substantive work, call \`begin_task\`. It resolves canonical project identity and compiles a bounded task-specific context pack under \`.ai-dev/context/\`.
-7. Inspect the returned context pack, keep acceptance criteria current with \`checkpoint_task\`, then use \`verify_task\` and \`complete_task\`.
-8. Use the AI Dev System MCP tools for durable knowledge and skill routing:
+6. Use the AI Dev System MCP tools for durable knowledge and skill routing:
    - \`project_identity\`
    - \`compile_project_context\`
    - \`project_context_status\`
@@ -4574,7 +4646,7 @@ Generated by the AI Dev System project bootstrap command.
    - \`recommend_skills\`
    - \`search_skills\`
    - \`read_skill\`
-9. For frontend product or visual work, call \`frontend_product_builder\` and pass the implementation gate before changing product UI code.
+7. For an explicitly design-first or visual-product task, call \`frontend_product_builder\` and pass the implementation gate before changing product UI code; ordinary UI fixes use the regular frontend QA path.
 
 ## Detected Stack
 
@@ -5290,6 +5362,7 @@ async function planFrontendReferences({
   artifact_budget = 32
 }) {
   const projectRoot = await safeProjectRoot(project_path);
+  await assertTrusted(projectRoot);
   const state = await readFrontendProductState(projectRoot);
   let conceptManifest = null;
   if ((stage === "coverage" || (stage === "auto" && state.approvals?.direction))) {
@@ -5403,9 +5476,11 @@ async function planFrontendReferences({
 async function registerFrontendReferences({
   project_path,
   manifest_id,
-  outputs = []
+  outputs = [],
+  dry_run = false
 }) {
   const projectRoot = await safeProjectRoot(project_path);
+  if (!dry_run) await assertTrusted(projectRoot);
   const state = await readFrontendProductState(projectRoot);
   const { manifest, relativePath: manifestPath } = await readReferenceFactoryManifest(
     projectRoot,
@@ -6063,6 +6138,7 @@ async function prepareProject({
   rebuild_search = true
 }) {
   const projectRoot = await safeProjectRoot(project_path);
+  await assertTrusted(projectRoot);
   const bootstrap = await bootstrapProject({
     project_path: projectRoot,
     project_name,
@@ -7339,6 +7415,7 @@ async function runQualityGate({
   register_if_missing = false
 }) {
   const projectRoot = await safeProjectRoot(project_path);
+  if (!dry_run) await assertTrusted(projectRoot);
   const gatePath = safeProjectFile(projectRoot, ".ai-dev/quality-gate.md");
   if (!(await pathExists(gatePath))) {
     throw new Error(`Quality gate file not found: ${path.join(projectRoot, ".ai-dev", "quality-gate.md")}`);
@@ -7505,15 +7582,19 @@ function frontendQaReportMarkdown(result) {
 
 async function runFrontendQa(rawOptions = {}) {
   const projectRoot = await safeProjectRoot(rawOptions.project_path);
+  await assertTrusted(projectRoot);
   const requestedConfigPath = String(rawOptions.config_path || ".ai-dev/frontend-qa.json");
   let projectConfig = {};
   let loadedConfigPath = "";
+  let ignoredConfigKeys = [];
   if (rawOptions.load_project_config !== false) {
     const candidate = safeProjectFile(projectRoot, requestedConfigPath);
     if (await pathExists(candidate)) {
-      projectConfig = JSON.parse(stripBom(await fs.readFile(candidate, "utf8")));
-      if (!projectConfig || typeof projectConfig !== "object" || Array.isArray(projectConfig)) {
-        throw new Error(`Frontend QA config must be a JSON object: ${candidate}`);
+      const loadedConfig = JSON.parse(stripBom(await fs.readFile(candidate, "utf8")));
+      try {
+        ({ config: projectConfig, ignoredKeys: ignoredConfigKeys } = filterProjectQaConfig(loadedConfig));
+      } catch (error) {
+        throw new Error(`${error instanceof Error ? error.message : String(error)}: ${candidate}`);
       }
       loadedConfigPath = candidate;
     }
@@ -7594,6 +7675,9 @@ async function runFrontendQa(rawOptions = {}) {
     load_project_config: false,
     config_path: requestedConfigPath,
     loaded_config_path: loadedConfigPath,
+    config_warnings: ignoredConfigKeys.length
+      ? [`Ignored project QA config keys: ${ignoredConfigKeys.join(", ")}`]
+      : [],
     take_screenshots,
     screenshot_dir: artifact_location === "project" ? screenshot_dir : "",
     artifact_dir: artifact_location === "system" ? systemArtifactDir : "",
@@ -7611,7 +7695,10 @@ async function runFrontendQa(rawOptions = {}) {
       {
         cwd: projectRoot,
         timeoutMs: Math.max(10000, Math.min(Number(timeout_ms) || 300000, 20 * 60 * 1000)),
-        env: { AI_DEV_FRONTEND_QA_ARTIFACT_ROOT: frontendQaArtifactsRoot }
+        env: {
+          AI_DEV_FRONTEND_QA_ARTIFACT_ROOT: frontendQaArtifactsRoot,
+          AI_DEV_CORE_DIR: path.join(serverDir, "core")
+        }
       }
     );
     result = JSON.parse(output.stdout);
@@ -8042,6 +8129,7 @@ function autoCommandPublic(command) {
   return {
     name: command.name,
     display_name: command.display_name,
+    display_name_ru: command.display_name_ru,
     aliases: command.aliases,
     purpose: command.purpose,
     tools: command.tools,
@@ -8173,6 +8261,7 @@ async function compileProjectContext({
   max_chars = 24_000,
   persist = true
 }) {
+  if (persist) await assertTrusted(await safeProjectRoot(project_path));
   const built = await buildProjectContextPack({
     projectRoot: project_path,
     task,
@@ -8733,7 +8822,7 @@ async function completeTask({
   return { task: record, report, skill_outcomes: skillOutcomes };
 }
 
-const tools = buildToolDefinitions({
+const legacyTools = buildToolDefinitions({
   CONCEPT_JURY_DIMENSIONS,
   FRONTEND_PRODUCT_MODES,
   PILOT_DIMENSIONS,
@@ -8744,6 +8833,7 @@ const tools = buildToolDefinitions({
   UI_UX_PRO_MAX_DOMAINS,
   UI_UX_PRO_MAX_STACKS
 });
+const tools = resolveToolProfile(legacyTools);
 
 async function searchKnowledge({ query, limit = 10 }) {
   const files = await listMarkdownFiles(vaultRoot);
@@ -8993,7 +9083,8 @@ function appliedSearchPresetSummary(resolved) {
 
 async function hybridSearch(options = {}) {
   const resolved = resolveSearchPresetArgs(options, { defaultLimit: 10 });
-  return hybridSearchIndex(resolved.search);
+  const results = await hybridSearchIndex(resolved.search);
+  return { ...results.search_diagnostics, results };
 }
 
 function clampSearchWeight(value, fallback) {
@@ -9115,10 +9206,13 @@ async function presetSearch(options = {}) {
   const explain = Boolean(options.explain);
   const resolved = resolveSearchPresetArgs(options, { defaultLimit: 10 });
   const results = await hybridSearchIndex(resolved.search);
+  const diagnostics = results.search_diagnostics;
   const weights = normalizedSearchWeights(resolved.search);
   return {
     query: resolved.search.query,
     result_count: results.length,
+    dense_available: diagnostics.dense_available,
+    warnings: diagnostics.warnings,
     applied: appliedSearchPresetSummary(resolved),
     tuning_notes: explain ? explainSearchTuningNotes(results, weights) : undefined,
     results: explain
@@ -9564,13 +9658,19 @@ async function explainSearch(options = {}) {
   const resolved = resolveSearchPresetArgs(options, { defaultLimit: 5 });
   resolved.search.limit = Math.max(1, Math.min(Number(resolved.search.limit) || 5, 20));
   const results = await hybridSearchIndex(resolved.search);
+  const diagnostics = results.search_diagnostics;
   const weights = normalizedSearchWeights(resolved.search);
   return {
     query: resolved.search.query,
     scope: resolved.search.scope,
     result_count: results.length,
+    dense_available: diagnostics.dense_available,
+    warnings: diagnostics.warnings,
     applied: appliedSearchPresetSummary(resolved),
-    weights: appliedSearchPresetSummary(resolved).weights,
+    weights: {
+      ...appliedSearchPresetSummary(resolved).weights,
+      effective: normalizedSearchWeights({ ...resolved.search, dense_weight: diagnostics.effective_dense_weight })
+    },
     notes: [
       "weighted_score_before_adjustments is computed from returned component scores and normalized weights.",
       "score_adjustment captures lexical boosts, vault-note preference, and source penalties applied inside the search helper."
@@ -9636,7 +9736,7 @@ function isVisualHeavySkill(item) {
 }
 
 function taskLooksVisual(task) {
-  return /(ui|ux|frontend|design|figma|responsive|landing|website|portfolio|mockup|image|visual|brand|logo|redesign|сайт|дизайн|интерфейс|лендинг|бренд|логотип|мокап)/i.test(task);
+  return INTENT.visual.test(task);
 }
 
 function taskLooksMembraneIntegration(task) {
@@ -9644,11 +9744,11 @@ function taskLooksMembraneIntegration(task) {
 }
 
 function taskLooksBackend(task) {
-  return /(api|backend|database|queue|worker|celery|fastapi|sqlalchemy|postgres|redis|bot|telegram|llm|vision|server|бэкенд|сервер|бот|очеред|база данных)/i.test(task);
+  return INTENT.backend.test(task);
 }
 
 function taskLooksQuality(task) {
-  return /(test|lint|typecheck|quality|gate|ci|coverage|security scan|ruff|pytest|провер|тест|качество|линт|тайпчек|безопасн)/i.test(task);
+  return INTENT.quality.test(task);
 }
 
 function taskLooksFrontendProduct(task) {
@@ -9656,27 +9756,23 @@ function taskLooksFrontendProduct(task) {
 }
 
 function taskLooksBetaFrontend(task) {
-  const frontendSignal = /(frontend|front-end|ui|ux|react|next\.js|vue|svelte|vite|tailwind|layout|component|screen|css|button|form|modal|интерфейс|фронт|верстк|экран|компонент|кнопк|форм|модал)/i.test(task);
-  const supportSignal = /(beta|staging|support|maintain|maintenance|existing app|admin panel|dashboard|responsive bug|layout bug|ui bug|frontend bug|small fix|polish ticket|бета|стейдж|поддерж|саппорт|админ|панел|дашборд|адаптив|поправ|почин|баг)/i.test(task);
-  return frontendSignal && supportSignal;
+  return INTENT.frontend.test(task) && INTENT.support.test(task);
 }
 
 function taskLooksFrontendGate(task) {
-  const frontendSignal = /(frontend|front-end|ui|ux|browser|visual|responsive|accessibility|a11y|wcag|web vitals|layout|form|screen|component|интерфейс|фронт|верстк|дизайн|адаптив|доступн|браузер|форм|экран|компонент)/i.test(task);
-  const gateSignal = /(quality gate|qa|check|verify|verification|review|test|lint|build|handoff|release|ship|провер|качество|гейт|тест|релиз|сдач|ревью)/i.test(task);
-  return frontendSignal && gateSignal;
+  return INTENT.frontend.test(task) && INTENT.quality.test(task);
 }
 
 function taskLooksLandingConversion(task) {
-  return /(landing|landing page|conversion|cro|cta|hero|pricing|marketing page|sales page|lead[- ]?gen|waitlist|signup|offer|funnel|copywriting|лендинг|ленд|конверс|оффер|продающ|заявк|герой|хиро|тариф|прайс|лид|вейтлист|подпис|регистрац)/i.test(task);
+  return INTENT.landing.test(task);
 }
 
 function projectLooksFrontend(context) {
-  return /(react|next\.js|vue|svelte|vite|tailwind|frontend|ui|ux)/i.test(context.context_text);
+  return INTENT.frontend.test(context.context_text);
 }
 
 function projectStackLooksFrontend(context) {
-  return /(react|next\.js|vue|svelte|vite|tailwind|frontend|ui|ux)/i.test((context.stack ?? []).join(" "));
+  return INTENT.frontend.test((context.stack ?? []).join(" "));
 }
 
 function projectLooksBackend(context) {
@@ -10204,7 +10300,7 @@ async function recommendSkillsProjectAware({
   return prioritizeRoutedRecommendations(rankedRecommendations, deterministicRoute, safeLimit);
 }
 
-async function callTool(name, args) {
+async function legacyCallTool(name, args) {
   if (name === "search_knowledge") return textContent(await searchKnowledge(args));
   if (name === "read_knowledge") return textContent(await readText(args.path));
   if (name === "search_skills") return textContent(await searchSkills(args));
@@ -10247,6 +10343,7 @@ async function callTool(name, args) {
   if (name === "rebuild_index") return textContent(await rebuildIndex(args));
   if (name === "import_skill_repo") return textContent(await importSkillRepo(args));
   if (name === "bootstrap_project") return textContent(await bootstrapProject(args));
+  if (name === "trust_project") return textContent({ project_path: await trustProject(args.project_path, { by: "mcp" }) });
   if (name === "prepare_project") return textContent(await prepareProject(args));
   if (name === "frontend_product_builder") return textContent(await frontendProductBuilder(args));
   if (name === "plan_frontend_references") return textContent(await planFrontendReferences(args));
@@ -10301,6 +10398,10 @@ async function callTool(name, args) {
   if (name === "append_knowledge_note") return textContent(await appendKnowledgeNote(args));
   throw new Error(`Unknown tool: ${name}`);
 }
+
+const runtimeContext = createRuntimeContext({ vaultRoot, userHome, serverDir });
+const services = createServices({ context: runtimeContext, legacyTools, legacyCallTool });
+const { callTool } = createToolRouter({ handlers: services.handlers, resolveCoreCall: resolveCoreToolCall, textContent });
 
 async function handle(message) {
   if (!message || typeof message !== "object") return;
@@ -10392,12 +10493,6 @@ export function startLegacyServer() {
   });
 }
 
-export {
-  callTool,
-  resolveTaskProjectRoot,
-  shutdownBgeWorkers,
-  tools,
-  vaultRoot
-};
+export { callTool, denseBackendAvailable, resolveTaskProjectRoot, safeProjectRoot, shutdownBgeWorkers, legacyTools, tools, vaultRoot };
 
 if (await isDirectExecution(import.meta.url)) startLegacyServer();

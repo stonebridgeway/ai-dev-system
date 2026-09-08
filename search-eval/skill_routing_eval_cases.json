@@ -186,6 +186,76 @@
       "id": "ru-generic-review",
       "task": "Сделай ревью изменений и найди регрессии",
       "expected_all": ["code-reviewer"]
+    },
+    {
+      "id": "en-testing-strategy",
+      "task": "Choose the right test level and isolate a flaky fixture",
+      "expected_all": ["testing-strategy"]
+    },
+    {
+      "id": "ru-testing-strategy",
+      "task": "Выбери уровень тестов, изолируй фикстуру и найди причину flaky теста",
+      "expected_all": ["testing-strategy"]
+    },
+    {
+      "id": "en-git-pr-hygiene",
+      "task": "Prepare a reviewable commit series and a changelog entry",
+      "expected_all": ["git-pr-hygiene"]
+    },
+    {
+      "id": "ru-git-pr-hygiene",
+      "task": "Подготовь чистую серию коммитов, описание PR и changelog",
+      "expected_all": ["git-pr-hygiene"]
+    },
+    {
+      "id": "en-dependency-upgrade",
+      "task": "Upgrade a major dependency with codemods and rollback notes",
+      "expected_all": ["dependency-upgrade"]
+    },
+    {
+      "id": "ru-dependency-upgrade",
+      "task": "Обнови мажорную зависимость, lockfile и миграционные проверки",
+      "expected_all": ["dependency-upgrade"]
+    },
+    {
+      "id": "en-performance-profiling",
+      "task": "Profile CPU and memory latency against a performance budget",
+      "expected_all": ["performance-profiling"]
+    },
+    {
+      "id": "ru-performance-profiling",
+      "task": "Профилируй память и задержку и сравни с бюджетом производительности",
+      "expected_all": ["performance-profiling"]
+    },
+    {
+      "id": "en-docs-writing",
+      "task": "Update the README and troubleshooting guide with verified commands",
+      "expected_all": ["docs-writing"]
+    },
+    {
+      "id": "ru-docs-writing",
+      "task": "Напиши README и документацию с проверенными командами",
+      "expected_all": ["docs-writing"]
+    },
+    {
+      "id": "en-incident-log-debugging",
+      "task": "Build an incident timeline from logs, traces, and deployment metrics",
+      "expected_all": ["incident-log-debugging"]
+    },
+    {
+      "id": "ru-incident-log-debugging",
+      "task": "Разбери инцидент по логам, трассам, метрикам и временной шкале",
+      "expected_all": ["incident-log-debugging"]
+    },
+    {
+      "id": "en-accessibility",
+      "task": "Test keyboard navigation, semantic labels, focus, and WCAG blockers",
+      "expected_all": ["accessibility"]
+    },
+    {
+      "id": "ru-accessibility",
+      "task": "Проверь доступность, клавиатурную навигацию и фокус без мыши",
+      "expected_all": ["accessibility"]
     }
   ]
 }

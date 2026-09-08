@@ -87,6 +87,7 @@ async function call(name, args) {
 
 try {
   await client.connect(transport);
+  await call("trust_project", { project_path: projectRoot });
   const begun = await call("begin_task", {
     project_path: projectRoot,
     task: "Implement and verify the fixture sum behavior"
@@ -140,7 +141,7 @@ try {
     write_report: false
   });
   assert.equal(completed.task.status, "complete");
-  const outcomes = await call("skill_outcome_status", {});
+  const outcomes = await call("pilot", { action: "skill_outcomes" });
   assert.equal(outcomes.events, 1);
   process.stdout.write(`${JSON.stringify({
     status: "pass",

@@ -135,3 +135,16 @@ test("diagnostic page blocks console, overflow, and accessibility regressions", 
     assert(report.results[0].anti_slop_findings.some((finding) => finding.rule_id === "generic-saas-copy"));
   });
 });
+
+test("setup failures block instead of producing an empty warning-only gate", async () => {
+  await withFixture("healthy", 43283, async ({ projectRoot }) => {
+    const report = await runRunner({
+      project_path: projectRoot,
+      start_dev_server: false,
+      check_visual_regression: false
+    });
+    assert.equal(report.gate, "block");
+    assert.ok(["missing_url", "playwright_unavailable"].includes(report.status));
+    assert.equal(report.results.length, 0);
+  });
+});

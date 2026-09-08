@@ -28,7 +28,7 @@ For the Docker path:
 - Docker Desktop (Windows / macOS) or Docker Engine (Linux); bootstrap can install it;
 - Docker must have access to the project folder you choose.
 
-To run from source you additionally need Node.js 24 and npm. On Windows you can
+To run from source you additionally need Node.js 22.12 or newer and npm. On Windows you can
 use the bundled runtime described in the [server README](ai-dev-mcp-server/README.md).
 
 ## One command on Windows

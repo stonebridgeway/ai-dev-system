@@ -12,16 +12,10 @@ Use this template for repositories that are not yet bootstrapped by `bootstrap_p
 ## Agent Startup
 
 1. Read this file before changing code.
-2. Read `.ai-dev/project-map.md` for architecture and commands.
-3. Read `.ai-dev/quality-gate.md` before final verification.
-4. Inspect nearby code and existing patterns before editing.
-5. Use the AI Dev System MCP tools for knowledge, skills, and auto-command routing:
-   - `match_auto_command`
-   - `read_auto_command`
-   - `recommend_skills`
-   - `search_knowledge`
-   - `read_skill`
-6. Call `recommend_skills` with this repository as `project_path` when no registered project card exists.
+2. If any `.ai-dev` context file is missing, call `prepare_project` with `overwrite=false`.
+3. Call `begin_task(project_path, task)` and read its bounded context pack plus at most three routed skills.
+4. Record meaningful progress with `checkpoint_task`; call `verify_task` after edits and `complete_task` only with current passing evidence.
+5. Use `match_auto_command` only as an optional shortcut for a recognised phrase.
 
 ## Commands
 
@@ -38,12 +32,12 @@ Use this template for repositories that are not yet bootstrapped by `bootstrap_p
 
 | Phrase | Workflow |
 | --- | --- |
-| `подготовь репозиторий` | Bootstrap/audit repository and AI-dev files. |
-| `начни новую фичу` | Implement a focused feature with tests and quality gate. |
-| `найди баг` | Reproduce, find root cause, add regression coverage, fix. |
-| `сделай ревью` | Review changed code with findings first. |
-| `улучши frontend/design` | Improve UI/UX with frontend and design quality checks. |
-| `обнови базу знаний` | Save durable project/system knowledge to Obsidian. |
+| `prepare repository` | Bootstrap/audit repository and AI-dev files. |
+| `start a new feature` | Implement a focused feature with tests and quality gate. |
+| `investigate a bug` | Reproduce, find root cause, add regression coverage, fix. |
+| `review changes` | Review changed code with findings first. |
+| `improve frontend design` | Improve UI/UX with frontend and design quality checks. |
+| `update knowledge base` | Save durable project/system knowledge to the knowledge folder. |
 
 ## Agent Standards
 

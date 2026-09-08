@@ -160,6 +160,15 @@ function round(value) {
   return Math.round(value * 1_000_000) / 1_000_000;
 }
 
+function matchesPatternValue(actual, expected) {
+  if (expected && typeof expected === "object" && !Array.isArray(expected)) {
+    if (typeof expected.contains === "string") return normalize(actual).includes(normalize(expected.contains));
+    if (typeof expected.equals === "string") return normalize(actual) === normalize(expected.equals);
+    return false;
+  }
+  return normalize(actual).includes(normalize(expected));
+}
+
 /**
  * Re-score and re-order hybrid search results using lexical overlap, title/path
  * exact matches, intent alignment and conflicts, scope compatibility, source
@@ -273,11 +282,11 @@ export function rerankSearchResults(query, results, {
         : 0;
       if (overlap < 0.6) continue;
       const matches = (rule.patterns ?? []).some((pattern) => {
-        if (pattern.title && !title.includes(normalize(pattern.title))) return false;
-        if (pattern.path && !path.includes(normalize(pattern.path))) return false;
-        if (pattern.scope && normalize(result.scope) !== normalize(pattern.scope)) return false;
-        if (pattern.source && !normalize(result.source).includes(normalize(pattern.source))) return false;
-        if (pattern.text && !text.includes(normalize(pattern.text))) return false;
+        if (pattern.title && !matchesPatternValue(title, pattern.title)) return false;
+        if (pattern.path && !matchesPatternValue(path, pattern.path)) return false;
+        if (pattern.scope && !matchesPatternValue(result.scope, pattern.scope)) return false;
+        if (pattern.source && !matchesPatternValue(result.source, pattern.source)) return false;
+        if (pattern.text && !matchesPatternValue(text, pattern.text)) return false;
         return Boolean(pattern.title || pattern.path || pattern.scope || pattern.source || pattern.text);
       });
       if (matches) {

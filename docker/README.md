@@ -15,8 +15,8 @@ MCP tools.
 - MCP-сервер и зафиксированные npm-зависимости;
 - чистые правила, промпты, quality gates и шаблоны;
 - публичный набор custom skills;
-- MIT-лицензированные `taste-skill` и `ui-ux-pro-max`;
-- Python CLI для локального поиска;
+- `taste-skill` и `ui-ux-pro-max` с их upstream-лицензиями;
+- runtime-файлы локального поиска и опционального Archify;
 - Playwright и Chromium для frontend QA.
 
 В образ не входят:
@@ -28,6 +28,9 @@ MCP tools.
 - личный Obsidian Vault;
 - исходники пользовательских проектов;
 - BGE-M3 модель и ее веса.
+
+Лицензии Archify и его bundled brand marks перечислены в `THIRD_PARTY_NOTICES.md` внутри
+vendored-каталога. Демонстрационные изображения и отрендеренные HTML-примеры в seed не входят.
 
 Сборка получает не корень Vault и не корень репозитория, а отдельный сгенерированный каталог
 `.docker/build-context`. Перед сборкой он проверяется на запрещенные пути, секреты, имя локального

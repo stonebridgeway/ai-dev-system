@@ -8,14 +8,15 @@ evidence-bound task completion.
 ## Runtime
 
 - `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.29.0`.
-- `src/mcp-stdio-legacy.mjs`: single source of truth for tool dispatch (`callTool`), the
-  `tools` contract list, and the hand-rolled JSON-RPC fallback server (`start:legacy`).
-- `src/mcp-stdio.mjs`: thin compatibility shim that re-exports the legacy module for
-  `server.mjs`, the scripts, and the tests.
+- `src/mcp-stdio.mjs`: compatibility facade for the legacy dispatch surface and hand-rolled JSON-RPC
+  fallback server (`start:legacy`). Its public `callTool`, `tools`, and lifecycle exports remain stable.
+- `src/tool-router.mjs`: core/full profile router. The default core profile publishes 22 grouped tools;
+  set `AI_DEV_TOOL_PROFILE=full` to publish all 93 legacy names for compatibility.
+- `src/core/tool-profile.mjs`: grouped tool contracts and action-to-legacy dispatch mapping.
 - `src/tool-definitions.mjs`: typed MCP tool contracts, separated from runtime dispatch.
 - `src/core/`: path, command, process, project identity, context, task, routing, outcome, dashboard,
   overlay, frontend-quality, and distribution modules.
-- Node.js: 24+ on `PATH` (any distribution). No agent-specific runtime is required.
+- Node.js: 22.12+ on `PATH` (any distribution). No agent-specific runtime is required.
 - Regenerable runtime data lives under the **AI Dev home** — `AI_DEV_HOME`, default `~/.ai-dev`:
   - `~/.ai-dev/state` — task lifecycle, skill outcomes, pilots (override: `AI_DEV_STATE_ROOT`)
   - `~/.ai-dev/cache/search-index` — SQLite + dense index (override: `AI_DEV_SEARCH_INDEX_DIR`)
@@ -33,6 +34,9 @@ AI_DEV_VAULT_ROOT="/path/to/vault" node src/server.mjs
 The server negotiates MCP over stdio and exposes structured tool results, Resources, resource
 templates, Prompts, progress notifications, and tool annotations. Any stdio MCP client works —
 Claude Code / Desktop, Cursor, VS Code, Gemini, Codex. Minimal client entry:
+
+`AI_DEV_TOOL_PROFILE=core` is the default and keeps the `tools/list` payload below the context budget.
+Use `AI_DEV_TOOL_PROFILE=full` only for clients or scripts that still require the legacy tool names.
 
 ```jsonc
 {
@@ -55,7 +59,8 @@ For substantive repository work:
    and compiles a bounded task-specific context pack.
 3. Read the compiled pack and no more than three routed skills.
 4. Implement a scoped change and call `checkpoint_task`.
-5. For product UI, pass `frontend_product_gate`, run strict visual reference QA, and record independent review.
+5. For product UI, call `frontend_product` with the relevant action, pass its implementation gate,
+   run strict visual reference QA, and record independent review.
 6. Call `verify_task`; it automatically checks prepared frontend product handoff state.
 7. Call `complete_task` only after all criteria are resolved and evidence matches current Git state.
 

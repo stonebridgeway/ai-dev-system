@@ -6,11 +6,21 @@ import { createRequire } from "node:module";
 import AxeBuilder from "@axe-core/playwright";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
-import { parseSafeCommand } from "../ai-dev-mcp-server/src/core/command-policy.mjs";
-import {
-  buildSpawnEnvironment,
-  resolveSpawnInvocation
-} from "../ai-dev-mcp-server/src/core/process-runner.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+// The server may spawn this runner from a symlink (the Docker image links
+// <vault>/09-mcp/frontend-qa -> /opt/ai-dev/frontend-qa), and Node resolves a
+// module's imports from its *real* path. A hard "../ai-dev-mcp-server/..."
+// relative import therefore points at a directory that does not exist in the
+// image. Resolve the core modules through AI_DEV_CORE_DIR, which the server
+// sets when it spawns the runner, and fall back to the sibling checkout layout.
+const runnerDir = path.dirname(fileURLToPath(import.meta.url));
+const coreDir = process.env.AI_DEV_CORE_DIR
+  ? path.resolve(process.env.AI_DEV_CORE_DIR)
+  : path.resolve(runnerDir, "..", "ai-dev-mcp-server", "src", "core");
+const { parseSafeCommand } = await import(pathToFileURL(path.join(coreDir, "command-policy.mjs")).href);
+const { buildSpawnEnvironment, resolveSpawnInvocation } =
+  await import(pathToFileURL(path.join(coreDir, "process-runner.mjs")).href);
 
 const rootRequire = createRequire(import.meta.url);
 
@@ -690,6 +700,7 @@ async function compareVisualScreenshot({
 }
 
 function summarizeStatus(results, setupWarnings) {
+  if (!results.length && setupWarnings.length) return "block";
   const hasNavigationFailure = results.some((item) => item.status === "failed");
   const hasConsoleErrors = results.some((item) => item.console_errors.length || item.page_errors.length);
   const hasServerFailures = results.some((item) => blockingNetworkFailures(item).some((failure) => Number(failure.status || 0) >= 500 || failure.kind === "requestfailed"));
@@ -848,7 +859,7 @@ async function runFrontendQa(options) {
   const configuredRoutes = asArray(options.routes).length ? asArray(options.routes).map(String) : ["/"];
   const routes = [...new Set([...configuredRoutes, ...scenarioRoutes(scenarios)])];
   const viewports = defaultViewports(options.viewports);
-  const setupWarnings = [];
+  const setupWarnings = [...(options.config_warnings || [])];
   const screenshots = [];
   const runId = nowIsoForPath();
   const screenshotDir = artifactDirectory(projectRoot, options, runId);
@@ -874,7 +885,7 @@ async function runFrontendQa(options) {
   const playwright = loadPlaywright(workingDirectory);
   if (!playwright.module) {
     return {
-      gate: "warn",
+      gate: "block",
       status: "playwright_unavailable",
       started_at: startedAt,
       finished_at: new Date().toISOString(),
@@ -887,6 +898,7 @@ async function runFrontendQa(options) {
       artifact_dir: screenshotDir,
       playwright_source: "",
       setup_warnings: [
+        ...setupWarnings,
         "Playwright package is not available from the project or runner environment.",
         "Install Playwright and Chromium in the AI Dev System frontend-qa runner environment.",
         ...playwright.errors
@@ -916,7 +928,7 @@ async function runFrontendQa(options) {
   if (!baseUrl) {
     await stopDevServer(devServer);
     return {
-      gate: "warn",
+      gate: "block",
       status: "missing_url",
       started_at: startedAt,
       finished_at: new Date().toISOString(),
@@ -929,6 +941,7 @@ async function runFrontendQa(options) {
       artifact_dir: screenshotDir,
       playwright_source: playwright.source,
       setup_warnings: [
+        ...setupWarnings,
         "No URL was provided and no dev server URL could be detected.",
         "Pass `url`, or pass `dev_command` with `start_dev_server: true`."
       ],
@@ -1220,11 +1233,24 @@ async function withProjectConfiguration(input) {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error(`Frontend QA config must be a JSON object: ${configPath}`);
   }
+  const allowedKeys = new Set([
+    "dev_command", "app_subdir", "url", "routes", "viewports", "scenarios", "required_states",
+    "check_anti_slop", "check_accessibility_axe", "check_visual_regression", "max_pixel_diff_ratio",
+    "allowed_http_errors", "server_ready_timeout_ms", "navigation_timeout_ms"
+  ]);
+  const projectConfig = Object.fromEntries(
+    Object.entries(parsed).filter(([key]) => allowedKeys.has(key))
+  );
+  const ignoredKeys = Object.keys(parsed).filter((key) => !allowedKeys.has(key));
   return {
-    ...parsed,
+    ...projectConfig,
     ...input,
     project_path: projectRoot,
-    loaded_config_path: configPath
+    loaded_config_path: configPath,
+    config_warnings: [
+      ...(input.config_warnings || []),
+      ...(ignoredKeys.length ? [`Ignored project QA config keys: ${ignoredKeys.join(", ")}`] : [])
+    ]
   };
 }
 

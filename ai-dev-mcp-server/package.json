@@ -1,11 +1,15 @@
 {
-  "name": "ai-dev-mcp-server",
-  "version": "1.1.0",
-  "private": true,
+  "name": "ai-dev-mcp",
+  "version": "1.2.0",
+  "private": false,
   "type": "module",
   "description": "Local MCP server for the AI Dev System Obsidian vault and skill registry.",
+  "bin": {
+    "ai-dev": "bin/ai-dev.mjs"
+  },
+  "files": ["bin", "src", "scripts/models.mjs", "models/bge-m3.manifest.json", "docs/STANDALONE-CLI.md"],
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=22.12.0"
   },
   "packageManager": "npm@11.17.0",
   "scripts": {
@@ -23,9 +27,14 @@
     "docker:smoke": "node scripts/docker-smoke.mjs",
     "unix:launcher-smoke": "node scripts/unix-launcher-smoke.mjs",
     "skills:ensure-index": "node scripts/ensure-skill-index.mjs",
+    "docs:tools": "node scripts/render-tools-doc.mjs",
+    "docs:tools:check": "node scripts/render-tools-doc.mjs --check",
+    "skill-routing:check": "node scripts/skill-routing-smoke.mjs",
     "test:vault": "node scripts/ensure-skill-index.mjs && node --test",
     "packaging:check": "node scripts/validate-packaging.mjs",
     "clients:install": "node scripts/install-local-mcp-clients.mjs --apply",
+    "models:pull": "node scripts/models.mjs pull",
+    "models:status": "node scripts/models.mjs status",
     "start:legacy": "node src/mcp-stdio.mjs",
     "test": "node --test",
     "test:core": "node --test \"src/core/**/*.test.mjs\"",
@@ -40,6 +49,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
+    "ajv": "8.17.1",
     "zod": "4.4.3"
   }
 }

@@ -7,7 +7,7 @@ description: Use when Codex needs to investigate and fix a bug, failing test, ru
 
 ## Workflow
 
-1. Read project guidance, `CONTEXT.md`, and nearby ADRs when present.
+1. Read project guidance, `.ai-dev/project-brief.md`, and nearby ADRs when present.
 2. Capture the exact symptom, expected behavior, environment, and last known good state.
 3. Build the narrowest agent-runnable feedback loop that can go red on the reported symptom: a failing test, CLI/HTTP script, browser check, replay, or focused harness.
 4. Run the loop, then minimize the reproducer one input, dependency, or step at a time.

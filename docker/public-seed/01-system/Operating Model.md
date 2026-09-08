@@ -1,42 +1,42 @@
 # Operating Model
 
-Эта система строится вокруг простого принципа: агент должен получать меньше лишнего контекста, но больше точного контекста.
+This system follows a simple principle: the agent should receive less irrelevant context and more precise context.
 
-## Роли слоев
+## Layer roles
 
 ## 1. Knowledge
 
-Знания отвечают на вопрос: "Что правда в этом проекте или системе?"
+Knowledge answers: "What is true in this project or system?"
 
-Примеры:
+Examples:
 
-- архитектура;
-- стек;
-- бизнес-логика;
+- architecture;
+- stack;
+- business logic;
 - API contracts;
-- дизайн-система;
-- тестовые правила;
+- design system;
+- test rules;
 - deployment;
 - security constraints.
 
 ## 2. Rules
 
-Правила отвечают на вопрос: "Как агент должен работать?"
+Rules answer: "How should the agent work?"
 
-Примеры:
+Examples:
 
-- не ломать существующую архитектуру;
-- читать проект перед правками;
-- запускать проверки;
-- использовать существующие компоненты;
-- не выдумывать API;
-- фиксировать риски.
+- preserve existing architecture;
+- read the project before editing;
+- run checks;
+- reuse existing components;
+- do not invent APIs;
+- record risks.
 
 ## 3. Skills
 
-Skills отвечают на вопрос: "Как выполнять конкретный класс задач?"
+Skills answer: "How should a class of tasks be performed?"
 
-Примеры:
+Examples:
 
 - feature-builder;
 - bugfix-investigator;
@@ -49,24 +49,23 @@ Skills отвечают на вопрос: "Как выполнять конкр
 
 ## 4. MCP
 
-MCP отвечает на вопрос: "Как агент получает доступ к знаниям и инструментам?"
+MCP answers: "How does the agent access knowledge and tools?"
 
-Планируемые MCP capabilities:
+MCP capabilities:
 
-- искать по базе знаний;
-- читать конкретные заметки;
-- искать нужные skills;
-- читать конкретный `SKILL.md`;
-- рекомендовать skills под задачу;
-- обновлять индекс.
+- search the knowledge base;
+- read specific notes;
+- find relevant skills;
+- read a specific `SKILL.md`;
+- recommend skills for a task;
+- update the index.
 
-## Решение по skills
+## Skill policy
 
-Не держать все 3000+ skills активными одновременно.
+Do not keep all 3,000+ skills active at once.
 
-Правильный подход:
+Preferred approach:
 
-- 5-10 главных workflow skills держать активными;
-- большую библиотеку integrations держать в каталоге;
-- агент через MCP ищет нужный skill и читает только его.
-
+- use no more than three routed skills per task;
+- keep the large integration library in the registry;
+- let the agent find the relevant skill through MCP and read only that skill.

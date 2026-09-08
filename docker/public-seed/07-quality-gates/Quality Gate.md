@@ -1,6 +1,6 @@
 # Quality Gate
 
-Перед финальным ответом агент должен по возможности выполнить relevant checks.
+Before the final response, the agent should run the relevant checks whenever possible.
 
 ## Default checks
 
@@ -13,19 +13,18 @@ npm run build
 
 ## Adaptation
 
-Команды всегда брать из конкретного проекта:
+Always derive commands from the concrete project:
 
 - README;
 - package.json;
 - Makefile;
-- CI config;
+- CI configuration;
 - AGENTS.md.
 
 ## If checks cannot run
 
-В финале указать:
+In the final response, state:
 
-- какая проверка не запущена;
-- почему;
-- какой риск остается.
-
+- which check was not run;
+- why it was skipped;
+- what residual risk remains.

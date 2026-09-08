@@ -84,6 +84,10 @@ RUN npm install --global pnpm@11.9.0 --ignore-scripts --no-audit --no-fund \
     && npm cache clean --force \
     && rm -rf /var/lib/apt/lists/*
 COPY runtime/frontend-qa/frontend_qa_runner.mjs ./
+# The runner resolves the server's core modules via AI_DEV_CORE_DIR (set by the
+# server on spawn). This symlink is a fallback for the legacy "../ai-dev-mcp-server"
+# relative layout the runner still recognises.
+RUN ln -sfn /opt/ai-dev/app /opt/ai-dev/ai-dev-mcp-server
 
 COPY runtime/search-index/ /opt/ai-dev/search-index/
 COPY runtime/search-eval/ /opt/ai-dev/search-eval/

@@ -1,21 +1,20 @@
 # Bugfix Investigator
 
-Use when: нужно исправить баг.
+Use when: the agent needs to fix a bug.
 
 ## Steps
 
-1. Зафиксировать симптом.
-2. Найти воспроизведение.
-3. Проследить data/control flow.
-4. Найти root cause.
-5. Написать минимальный fix.
-6. Добавить regression test, если возможно.
-7. Проверить, что соседнее поведение не сломано.
+1. Record the symptom.
+2. Find or establish a reproduction.
+3. Trace the data and control flow.
+4. Find the root cause.
+5. Write the smallest fix.
+6. Add a regression test when possible.
+7. Check that neighboring behavior still works.
 
 ## Output
 
 - Root cause.
 - Fix summary.
-- Tests/checks.
+- Tests and checks.
 - Residual risk.
-

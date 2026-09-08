@@ -44,12 +44,7 @@ phrases below remain shortcuts for their domain-specific runbooks.
 
 Auto commands are natural-language shortcuts for repeatable AI development workflows.
 
-The user can write the phrase in chat. The agent should then use the AI Dev System MCP tools:
-
-1. `match_auto_command`
-2. `read_auto_command`
-3. `recommend_skills`
-4. task-specific tools such as `prepare_project`, `bootstrap_project`, `search_knowledge`, `read_skill`, or knowledge write tools
+The user can write a phrase in chat. `match_auto_command` and `read_auto_command` are optional shortcuts; substantive work still follows `begin_task` → `checkpoint_task` → `verify_task` → `complete_task`.
 
 ## Command Catalog
 
@@ -203,4 +198,4 @@ If the project has no Playwright dependency yet, report the `warn` result and th
 
 ## Agent Rule
 
-When a user phrase resembles one of these commands, do not rely on memory. Use `match_auto_command` and `read_auto_command` first, then execute the matched runbook.
+When a user phrase resembles one of these commands, use `match_auto_command` and `read_auto_command` when they clarify the workflow, then execute the normal task lifecycle.

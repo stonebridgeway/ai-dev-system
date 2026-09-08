@@ -26,6 +26,7 @@ transport.stderr?.on("data", (chunk) => stderr.push(chunk));
 
 try {
   await client.connect(transport);
+  const fullProfile = process.env.AI_DEV_TOOL_PROFILE?.toLowerCase() === "full";
   const [tools, resources, templates, prompts] = await Promise.all([
     client.listTools(),
     client.listResources(),
@@ -33,45 +34,40 @@ try {
     client.listPrompts()
   ]);
   const presetResult = await client.callTool({
-    name: "list_search_presets",
-    arguments: {}
+    name: fullProfile ? "list_search_presets" : "system",
+    arguments: fullProfile ? {} : { action: "list_auto_commands" }
   });
   if (presetResult.isError || !presetResult.structuredContent?.result) {
     throw new Error("Structured tool result was not returned over stdio.");
   }
-  const requiredTools = [
+  const coreRequiredTools = [
     "prepare_project",
-    "project_identity",
+    "project",
+    "search",
+    "search_index",
+    "system",
     "begin_task",
-    "compile_project_context",
-    "project_context_status",
     "verify_task",
     "complete_task",
-    "start_project_pilot",
-    "record_project_pilot_review",
-    "project_pilot_status",
     "run_frontend_qa",
-    "frontend_product_builder",
-    "prepare_frontend_product",
-    "plan_frontend_references",
-    "register_frontend_references",
-    "reference_factory_status",
-    "record_frontend_concept_jury",
-    "frontend_product_gate",
-    "run_visual_reference_qa",
-    "record_visual_review",
-    "run_skill_routing_eval",
-    "skill_outcome_status",
-    "rebuild_skill_outcomes",
-    "sync_skill_overlays",
-    "rebuild_system_dashboard",
-    "system_dashboard_status",
-    "prepare_runtime_distribution",
-    "runtime_distribution_status"
+    "frontend_product",
+    "pilot",
+    "diagram"
   ];
+  const fullRequiredTools = [
+    "search_knowledge", "search_skills", "read_skill", "prepare_project", "project_identity",
+    "begin_task", "verify_task", "complete_task", "run_quality_gate", "run_frontend_qa",
+    "archify_validate", "archify_deliver"
+  ];
+  const requiredTools = fullProfile ? fullRequiredTools : coreRequiredTools;
   const toolNames = new Set(tools.tools.map((item) => item.name));
   const missingTools = requiredTools.filter((name) => !toolNames.has(name));
   if (missingTools.length) throw new Error(`Missing required tools: ${missingTools.join(", ")}`);
+  if (!fullProfile && tools.tools.length > 25) throw new Error(`Core profile exposes too many tools: ${tools.tools.length}`);
+  const toolListJson = JSON.stringify(tools.tools);
+  if (!fullProfile && Buffer.byteLength(toolListJson, "utf8") > 25000) {
+    throw new Error(`Core tools/list is too large: ${Buffer.byteLength(toolListJson, "utf8")} bytes`);
+  }
   if (!resources.resources.some((item) => item.uri === "ai-dev://system/control-center")) {
     throw new Error("Control Center resource is missing.");
   }

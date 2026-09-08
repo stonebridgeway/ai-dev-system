@@ -4,18 +4,18 @@
 
 ```text
 <auto-command phrase>: <task details>
-Use ai_dev_system MCP. First call match_auto_command, then read_auto_command, then recommend_skills. Follow the matched runbook, project AGENTS.md, project-map, and quality-gate.
+Use the ai_dev_system MCP server. Call match_auto_command and read_auto_command when they clarify the workflow, then follow the normal begin_task, checkpoint_task, verify_task, and complete_task lifecycle. Read the project AGENTS.md, project map, and quality gate.
 ```
 
 Recommended phrases:
 
-- `подготовь проект`
-- `подготовь репозиторий`
-- `начни новую фичу`
-- `найди баг`
-- `сделай ревью`
-- `улучши frontend/design`
-- `обнови базу знаний`
+- `prepare project`
+- `prepare repository`
+- `start a new feature`
+- `investigate a bug`
+- `review changes`
+- `improve frontend design`
+- `update knowledge base`
 
 ## Good task prompt
 

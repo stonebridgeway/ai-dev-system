@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Search now falls back to keyword and sparse ranking when the optional BGE-M3 backend is unavailable, and reports the effective dense status to callers.
+- Search-index refreshes are single-flight and preserve a change recorded while a rebuild is running; BGE worker stdin failures, idle workers, and oversized Frontend QA output no longer destabilize the server.
+- Docker smoke verifies that Frontend QA can launch Chromium and that keyword-only hybrid search works in the published no-model profile.
+- Node.js 22.12+ is supported, with CI coverage on Node 22 and 24 plus Windows, Frontend QA, and Python search-index checks.
+
 ### Added
 
 - Archify diagram capability: nine typed MCP tools for local validation,

@@ -1,6 +1,6 @@
 # Frontend Product Quality v2
 
-This is the mandatory product-design workflow for new interfaces, landing pages, substantial redesigns, and visual frontend delivery.
+This is an opt-in product-design workflow for new interfaces, landing pages, substantial redesigns, and visual frontend delivery. Use it when the task explicitly asks for a design-first or visual-product outcome; ordinary UI fixes use the regular frontend QA path.
 
 ## Why It Exists
 

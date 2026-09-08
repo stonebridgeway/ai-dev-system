@@ -17,8 +17,12 @@ concurrency:
 
 jobs:
   mcp-server:
-    name: MCP server (lint, security, unit)
+    name: MCP server (${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -26,7 +30,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: ai-dev-mcp-server/package-lock.json
 
@@ -45,6 +49,87 @@ jobs:
       - name: Packaging manifest check
         working-directory: ai-dev-mcp-server
         run: npm run packaging:check
+
+      - name: Generated tool reference check
+        working-directory: ai-dev-mcp-server
+        run: npm run docs:tools:check
+
+      - name: Skill routing evaluation
+        working-directory: ai-dev-mcp-server
+        run: npm run skill-routing:check
+
+      - name: Core unit tests with coverage thresholds
+        working-directory: ai-dev-mcp-server
+        run: npm run test:coverage
+
+  frontend-and-search:
+    name: Frontend QA and search index
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend-qa/pnpm-lock.yaml
+
+      - name: Install and test Frontend QA runner
+        working-directory: frontend-qa
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm test
+
+      - name: Run Python search-index tests
+        run: python -m unittest discover -s search-index
+
+  windows:
+    name: Windows (PowerShell, bootstrap plan, proxy, core)
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ai-dev-mcp-server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Include *.ps1 -Path . | Where-Object { $_.FullName -notmatch 'node_modules|public-seed' }
+          $failed = $false
+          foreach ($file in $files) {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors) { $errors | ForEach-Object { Write-Host "::error file=$($file.Name)::$($_.Message)" }; $failed = $true }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Bootstrap plan without side effects
+        shell: pwsh
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Plan
+
+      - name: Compile Claude MCP proxy
+        shell: pwsh
+        run: |
+          $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          & $csc /nologo /target:exe "/out:$env:RUNNER_TEMP\ClaudeMcpProxy.exe" docker\ClaudeMcpProxy.cs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate client installer paths
+        shell: pwsh
+        run: node ai-dev-mcp-server/scripts/install-docker-mcp-clients.mjs --launcher docker\run-mcp.ps1 --image ghcr.io/stonebridgeway/ai-dev-system:latest --project-path "$env:RUNNER_TEMP\projects" --clients codex,cursor,vscode,claude
 
       - name: Core unit tests
         working-directory: ai-dev-mcp-server

@@ -38,6 +38,16 @@ test("routes frontend bug to workflow, domain, and verification", () => {
   ]);
 });
 
+test("does not route substring-only frontend and landing false positives", () => {
+  const auth = routeSkills({ task: "исправь ошибку в функции авторизации" });
+  assert.equal(auth.skills.some((item) => item.name === "repo-onboarding"), false);
+
+  for (const task of ["добавь валидацию формы регистрации", "обнови календарь в админке"]) {
+    const route = routeSkills({ task });
+    assert.equal(route.skills.some((item) => item.name === "landing-conversion-reviewer"), false, task);
+  }
+});
+
 test("adds archify as a capability without displacing the normal routing triple", () => {
   const route = routeSkills({
     task: "Построй архитектурную карту backend API платёжного сервиса"

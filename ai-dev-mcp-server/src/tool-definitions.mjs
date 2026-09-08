@@ -1,5 +1,45 @@
 import { ARCHIFY_TYPES } from "./core/archify.mjs";
 
+const DEFAULT_NUMERIC_MAXIMUM = 3_600_000;
+
+function humanize(value) {
+  return String(value).replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function normalizeSchema(schema, propertyName = "value") {
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) return schema;
+  const normalized = { ...schema };
+  if (!normalized.description && propertyName) normalized.description = `${humanize(propertyName)}.`;
+  if (normalized.type === "number" || normalized.type === "integer") {
+    if (propertyName === "limit") normalized.type = "integer";
+    if (normalized.minimum === undefined) normalized.minimum = 0;
+    if (normalized.maximum === undefined) {
+      normalized.maximum = propertyName === "limit" ? 50 : DEFAULT_NUMERIC_MAXIMUM;
+    }
+  }
+  if (normalized.type === "object" || normalized.properties) {
+    normalized.properties = Object.fromEntries(Object.entries(normalized.properties || {}).map(([key, value]) => [
+      key,
+      normalizeSchema(value, key)
+    ]));
+    normalized.required = normalized.required || [];
+    if (normalized.additionalProperties === undefined) normalized.additionalProperties = false;
+  }
+  if (normalized.items) normalized.items = normalizeSchema(normalized.items, propertyName);
+  if (normalized.oneOf) normalized.oneOf = normalized.oneOf.map((entry) => normalizeSchema(entry, propertyName));
+  return normalized;
+}
+
+function normalizeToolDefinitions(definitions) {
+  return definitions.map((tool) => {
+    const inputSchema = normalizeSchema(tool.inputSchema, tool.name);
+    if (inputSchema.properties?.limit && tool.name === "list_tasks") {
+      inputSchema.properties.limit.maximum = 200;
+    }
+    return { ...tool, title: tool.title || humanize(tool.name), inputSchema };
+  });
+}
+
 export function buildToolDefinitions({
   CONCEPT_JURY_DIMENSIONS,
   FRONTEND_PRODUCT_MODES,
@@ -33,7 +73,17 @@ export function buildToolDefinitions({
       required: ["kind", "html_path"]
     }
   };
-  return [
+  return normalizeToolDefinitions([
+  {
+    name: "trust_project",
+    title: "Trust project",
+    description: "Allow AI Dev to execute this repository's verification and dev-server commands on this machine. Ask the user before calling.",
+    inputSchema: {
+      type: "object",
+      properties: { project_path: { type: "string", description: "Absolute repository path." } },
+      required: ["project_path"]
+    }
+  },
   {
     name: "search_knowledge",
     description: "Search Markdown knowledge files in the AI Dev System vault.",
@@ -1536,7 +1586,7 @@ export function buildToolDefinitions({
       type: "object",
       properties: {
         project_path: { type: "string" },
-        status: { type: "string" },
+        status: { type: "string", enum: ["active", "complete", "blocked"] },
         limit: { type: "number", default: 20 }
       }
     }
@@ -1825,5 +1875,5 @@ export function buildToolDefinitions({
     description: "Search built-in Archify brand marks or capture a digest-pinned brand reference from an explicit URL.",
     inputSchema: { type: "object", properties: { query: { type: "string", default: "" }, capture_url: { type: "string" } } }
   }
-  ];
+  ]);
 }

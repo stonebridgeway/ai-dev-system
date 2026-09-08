@@ -132,14 +132,16 @@ async function copySkillSources(vaultRoot, stage) {
   const archifySource = path.join(vaultRoot, "03-skills-catalog", "sources", "external", "archify");
   const archifyTarget = path.join(catalogTarget, "external", "archify");
   for (const directory of [
-    "assets", "bin", "brand-marks", "delta", "examples", "migrations",
-    "recipes", "references", "renderers", "schemas", "scripts", "node_modules"
+    "bin", "brand-marks", "delta", "examples", "migrations",
+    "recipes", "references", "renderers", "schemas", "node_modules"
   ]) {
     await copyDistributionTree(
       path.join(archifySource, directory),
       path.join(archifyTarget, directory),
       {
-        exclude: directory === "node_modules"
+        exclude: directory === "examples"
+          ? (relative, entry) => excludedSource(relative, entry) || entry.name.endsWith(".html")
+          : directory === "node_modules"
           // `simple-icons` (~23 MB) is only used by the brand-mark generator,
           // never at runtime, so the clean seed omits it.
           ? (relative, entry) => entry.name === ".DS_Store" || entry.name === "simple-icons"
@@ -147,7 +149,8 @@ async function copySkillSources(vaultRoot, stage) {
       }
     );
   }
-  for (const file of ["LICENSE", "SKILL.md", "THIRD_PARTY_NOTICES.md", "package.json", "package-lock.json", "upstream.json"]) {
+  await copyDistributionFile(path.join(archifySource, "assets", "template.html"), path.join(archifyTarget, "assets", "template.html"));
+  for (const file of ["LICENSE", "SKILL.md", "THIRD_PARTY_NOTICES.md", "package.json", "upstream.json"]) {
     await copyDistributionFile(path.join(archifySource, file), path.join(archifyTarget, file));
   }
 }
@@ -178,7 +181,8 @@ that the local user explicitly mounts into the container.
   await writeText(path.join(stage, "PUBLIC_SEED.md"), `# Public Seed
 
 This seed contains reusable system rules, project templates, prompts, quality gates, custom workflow
-skills, and MIT-licensed design knowledge. It deliberately contains no owner passwords, project
+skills, the runtime files needed by the optional Archify diagram capability, and MIT-licensed design knowledge.
+Archify's bundled third-party brand marks are covered by its own notices. It deliberately contains no owner passwords, project
 contexts, task history, search indexes, logs, caches, models, or runtime state.
 `);
 }

@@ -91,3 +91,19 @@ test("golden must-not expectations become reusable hard-negative rules", () => {
   assert.equal(ranked[0].title, "Landing Conversion Reviewer");
   assert.match(ranked[1].hard_negative_reasons.join("\n"), /golden-case hard negative/);
 });
+
+test("golden must-not supports structured contains predicates", () => {
+  const rules = hardNegativeRulesFromCases([{
+    id: "structured",
+    query: "frontend design premium website",
+    must_not: [{ title: { contains: "backend" }, scope: "skills" }]
+  }]);
+  const ranked = rerankSearchResults("frontend design premium website", [{
+    title: "Backend API Skill",
+    path: "backend.md",
+    scope: "skills",
+    source: "custom",
+    score: 1
+  }], { scope: "skills", hardNegativeRules: rules });
+  assert.equal(ranked[0].hard_negative, true);
+});

@@ -11,14 +11,16 @@
 ## Runtime Layers
 
 1. `server.mjs`: official MCP SDK transport, protocol capabilities, resources, prompts, and tool registration.
-2. `mcp-stdio.mjs`: composed domain-service facade and legacy-compatible rollback handler.
-3. `tool-definitions.mjs`: typed MCP contracts separated from dispatch and implementation.
-4. `core/`: path policy, atomic storage, command policy, process execution, canonical project
+2. `mcp-stdio.mjs`: compatibility facade and legacy-compatible fallback handler.
+3. `tool-router.mjs` and `core/tool-profile.mjs`: grouped core contracts, action dispatch, and legacy
+   compatibility. `AI_DEV_TOOL_PROFILE=core` publishes 22 tools; `full` publishes all 93 legacy names.
+4. `tool-definitions.mjs`: typed legacy MCP contracts separated from runtime dispatch.
+5. `core/`: path policy, atomic storage, command policy, process execution, canonical project
    identity, context compilation, task state, routing, outcome analytics, overlays, dashboard,
    frontend quality, and runtime distribution.
-5. `09-mcp/search-index`: FTS and BGE-M3 hybrid retrieval.
-6. Obsidian: human-readable knowledge, generated project cards, workflows, and reports.
-7. `${AI_DEV_HOME}/state` (default `~/.ai-dev/state`): runtime task state and evidence that should not clutter the vault.
+6. `09-mcp/search-index`: FTS and BGE-M3 hybrid retrieval.
+7. Obsidian: human-readable knowledge, generated project cards, workflows, and reports.
+8. `${AI_DEV_HOME}/state` (default `~/.ai-dev/state`): runtime task state and evidence that should not clutter the vault.
 
 Archify is a local, vendored diagram capability. Its nine typed MCP tools and
 artifact/evidence contract are documented in [ARCHIFY.md](ARCHIFY.md).

@@ -1,7 +1,8 @@
 export const autoCommands = [
   {
     name: "format_project_for_ai",
-    display_name: "оформи проект для ИИ",
+    display_name: "Format project for AI",
+    display_name_ru: "оформи проект для ИИ",
     aliases: [
       "оформи проект для ии",
       "оформи проект под ии",
@@ -81,12 +82,13 @@ export const autoCommands = [
       "Agent memory files: AGENTS.md, .ai-dev/README.md, .ai-dev/project-brief.md, .ai-dev/project-map.md, .ai-dev/quality-gate.md, and Obsidian project card path.",
       "Recommended skills: the short list the agent should use for future feature, bugfix, review, frontend, and knowledge tasks.",
       "Risks and gaps: missing tests/checks, dangerous scripts, unclear architecture, external side effects, secrets risk, or documentation gaps.",
-      "Next best command: one of `начни новую фичу`, `найди баг`, `сделай ревью`, `улучши frontend/design`, or `обнови базу знаний`."
+      "Next best command: one of `Start a new feature`, `Investigate a bug`, `Review changes`, `Improve frontend design`, or `Update knowledge base`."
     ]
   },
   {
     name: "prepare_repository",
-    display_name: "подготовь проект",
+    display_name: "Prepare repository",
+    display_name_ru: "подготовь проект",
     aliases: ["подготовь проект", "подготовить проект", "подготовь репозиторий", "подготовить репозиторий", "bootstrap repo", "repo onboarding", "prepare repository", "prepare project"],
     purpose: "Bootstrap or audit a repository so agents can work with a local AGENTS.md, project map, quality gate, and skill routing.",
     tools: ["prepare_project", "bootstrap_project", "sync_project_card", "rebuild_search_index", "recommend_skills", "search_knowledge", "read_knowledge"],
@@ -109,7 +111,8 @@ export const autoCommands = [
   },
   {
     name: "refresh_project_memory",
-    display_name: "обнови память проекта",
+    display_name: "Refresh project memory",
+    display_name_ru: "обнови память проекта",
     aliases: [
       "обнови память проекта",
       "обнови карту проекта",
@@ -165,7 +168,8 @@ export const autoCommands = [
   },
   {
     name: "start_feature",
-    display_name: "начни новую фичу",
+    display_name: "Start a new feature",
+    display_name_ru: "начни новую фичу",
     aliases: ["начни новую фичу", "добавь фичу", "реализуй фичу", "new feature", "implement feature", "build feature"],
     purpose: "Implement a product or developer feature with local project rules, focused tests, and the relevant quality gate.",
     tools: [
@@ -199,7 +203,8 @@ export const autoCommands = [
   },
   {
     name: "investigate_bug",
-    display_name: "найди баг",
+    display_name: "Investigate a bug",
+    display_name_ru: "найди баг",
     aliases: ["найди баг", "исправь баг", "почини ошибку", "bug", "debug", "fix failure", "investigate bug"],
     purpose: "Find root cause before editing, add regression coverage where possible, and verify the fix with the narrowest useful checks.",
     tools: [
@@ -231,7 +236,8 @@ export const autoCommands = [
   },
   {
     name: "review_changes",
-    display_name: "сделай ревью",
+    display_name: "Review changes",
+    display_name_ru: "сделай ревью",
     aliases: ["сделай ревью", "проверь код", "проверь diff", "review code", "review pr", "code review"],
     purpose: "Review code, diffs, or PRs with findings first: bugs, regressions, missing tests, security risks, and maintainability risks.",
     tools: ["recommend_skills", "search_knowledge", "read_skill"],
@@ -253,7 +259,8 @@ export const autoCommands = [
   },
   {
     name: "generate_frontend_references",
-    display_name: "сгенерируй референсы для проекта",
+    display_name: "Generate frontend references",
+    display_name_ru: "сгенерируй референсы для проекта",
     aliases: [
       "сгенерируй референсы для проекта",
       "сгенерируй референс для проекта",
@@ -313,7 +320,8 @@ export const autoCommands = [
   },
   {
     name: "build_frontend_product",
-    display_name: "build frontend product",
+    display_name: "Build frontend product",
+    display_name_ru: "build frontend product",
     aliases: [
       "build frontend product",
       "frontend product builder",
@@ -370,7 +378,8 @@ export const autoCommands = [
   },
   {
     name: "improve_frontend_design",
-    display_name: "улучши frontend/design",
+    display_name: "Improve frontend design",
+    display_name_ru: "улучши frontend/design",
     aliases: ["улучши frontend/design", "улучши frontend", "улучши дизайн", "сделай красиво", "ui polish", "frontend polish", "redesign"],
     purpose: "Improve frontend UX/UI quality with project patterns, responsive checks, state coverage, and design skills when visual quality matters.",
     tools: [
@@ -406,7 +415,8 @@ export const autoCommands = [
   },
   {
     name: "maintain_beta_frontend",
-    display_name: "поддержи frontend/beta",
+    display_name: "Maintain beta frontend",
+    display_name_ru: "поддержи frontend/beta",
     aliases: [
       "поддержи frontend/beta",
       "поддержи фронтенд",
@@ -443,7 +453,8 @@ export const autoCommands = [
   },
   {
     name: "frontend_quality_gate",
-    display_name: "проверь frontend quality gate",
+    display_name: "Run frontend quality gate",
+    display_name_ru: "проверь frontend quality gate",
     aliases: [
       "проверь frontend quality gate",
       "проверь фронтенд перед сдачей",
@@ -479,7 +490,8 @@ export const autoCommands = [
   },
   {
     name: "review_landing_conversion",
-    display_name: "проверь лендинг/конверсию",
+    display_name: "Review landing conversion",
+    display_name_ru: "проверь лендинг/конверсию",
     aliases: [
       "проверь лендинг/конверсию",
       "проверь лендинг",
@@ -512,7 +524,8 @@ export const autoCommands = [
   },
   {
     name: "audit_skill_library",
-    display_name: "проверь библиотеку скиллов",
+    display_name: "Audit skill library",
+    display_name_ru: "проверь библиотеку скиллов",
     aliases: [
       "проверь библиотеку скиллов",
       "проверь качество скиллов",
@@ -551,7 +564,8 @@ export const autoCommands = [
   },
   {
     name: "update_knowledge_base",
-    display_name: "обнови базу знаний",
+    display_name: "Update knowledge base",
+    display_name_ru: "обнови базу знаний",
     aliases: ["обнови базу знаний", "запиши в obsidian", "сохрани выводы", "обнови knowledge", "update knowledge", "write notes"],
     purpose: "Write durable project or system knowledge to Obsidian without turning transient task chatter into permanent notes.",
     tools: ["search_knowledge", "read_knowledge", "write_knowledge_note", "append_knowledge_note", "rebuild_index"],
@@ -572,3 +586,9 @@ export const autoCommands = [
     ]
   }
 ];
+
+for (const command of autoCommands) {
+  if (command.display_name_ru) {
+    command.aliases = [...new Set([command.display_name_ru, ...command.aliases])];
+  }
+}

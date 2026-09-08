@@ -1,3 +1,5 @@
+import { FRONTEND_PRODUCT_PATTERN, FRONTEND_REFERENCE_PATTERN, INTENT, taskHasFrontendProductIntent } from "./intent-patterns.mjs";
+
 function normalized(value) {
   return String(value ?? "")
     .normalize("NFKC")
@@ -7,8 +9,6 @@ function normalized(value) {
     .trim();
 }
 
-const FRONTEND_PRODUCT_PATTERN = /(frontend product|product interface|design[- ]first|anti[- ]?slop|visual direction|design system|landing page|(?:build|create|implement|design|redesign|improve|upgrade).{0,48}(?:front.?end|ui\b|ux\b|interface|landing|website|page)|\u0438\u0438[- ]?\u0441\u043b\u043e\u043f|\u0441\u0434\u0435\u043b\u0430\u0439.{0,48}(?:\u0434\u0438\u0437\u0430\u0439\u043d|\u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441|\u0441\u0430\u0439\u0442|\u043b\u0435\u043d\u0434\u0438\u043d\u0433)|(?:\u0441\u043e\u0437\u0434\u0430\u0439|\u0441\u043e\u0437\u0434\u0430\u0442\u044c|\u0440\u0430\u0437\u0440\u0430\u0431\u043e\u0442\u0430\u0439|\u0441\u0432\u0435\u0440\u0441\u0442\u0430\u0439).{0,48}(?:\u0434\u0438\u0437\u0430\u0439\u043d|\u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441|\u0444\u0440\u043e\u043d\u0442\u0435\u043d\u0434|\u0441\u0430\u0439\u0442|\u043b\u0435\u043d\u0434\u0438\u043d\u0433)|\u0443\u043b\u0443\u0447\u0448\u0438.{0,48}(?:\u0434\u0438\u0437\u0430\u0439\u043d|\u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441|\u0444\u0440\u043e\u043d\u0442\u0435\u043d\u0434)|\u0440\u0435\u0434\u0438\u0437\u0430\u0439\u043d)/i;
-const FRONTEND_REFERENCE_PATTERN = /(reference factory|generate.{0,32}(?:frontend|visual|design|interface|website).{0,24}reference|create.{0,32}(?:visual|interface).{0,24}reference|no reference|without reference|\u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0441\u043e\u0437\u0434\u0430\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0441\u0434\u0435\u043b\u0430\u0439.{0,48}\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441|\u0440\u0435\u0444\u0435\u0440\u0435\u043d\u0441[^\n]{0,24}\u043d\u0435\u0442)/i;
 
 /**
  * Single source of truth for "this task asks for a technical diagram".
@@ -38,7 +38,7 @@ export function taskRequestsDiagram(value) {
  */
 export function taskRequiresFrontendProductWorkflow(value) {
   const valueNormalized = normalized(value);
-  return FRONTEND_PRODUCT_PATTERN.test(valueNormalized) ||
+  return taskHasFrontendProductIntent(valueNormalized) ||
     FRONTEND_REFERENCE_PATTERN.test(valueNormalized);
 }
 
@@ -117,7 +117,7 @@ const RULES = [
   },
   {
     id: "landing",
-    pattern: /(landing|лендинг|conversion|конверси|marketing page|cta|hero section)/i,
+    pattern: INTENT.landing,
     domain: "landing-conversion-reviewer",
     verification: "frontend-quality-gate"
   },
@@ -129,7 +129,7 @@ const RULES = [
   },
   {
     id: "frontend",
-    pattern: /(front.?end|фронтенд|интерфейс|ui\b|ux\b|верст|компонент|экран|форма|адаптив|responsive|layout|react|next\.?js|vue|svelte|css|accessibility|a11y|wcag|доступност|клавиатур[а-я]*\s+навигац|скринридер)/i,
+    pattern: INTENT.frontend,
     domain: "beta-frontend-maintainer",
     verification: "frontend-quality-gate"
   },
@@ -143,6 +143,41 @@ const RULES = [
     id: "devops",
     pattern: /(deploy|deployment|release|rollback|ci\/cd|github actions|gitlab ci|депло|релиз|откат|сборочн[а-я]*\s+пайплайн)/i,
     domain: "devops-release-engineer"
+  },
+  {
+    id: "testing-strategy",
+    pattern: /(test strategy|test level|fixture strategy|flaky|coverage budget|стратег[а-я]*\s+тест|уров[а-я]*\s+тест|фикстур[а-я]*|флак)/i,
+    domain: "testing-strategy"
+  },
+  {
+    id: "git-pr-hygiene",
+    pattern: /(commit series|pull request|pr description|changelog|branch hygiene|сер[а-я]*\s+коммит|описан[а-я]*\s+pr|ветк[а-я]*|changelog)/i,
+    domain: "git-pr-hygiene"
+  },
+  {
+    id: "dependency-upgrade",
+    pattern: /(dependency upgrade|major dependency|codemod|lockfile migration|обнов[а-я]*\s+мажорн[а-я]*\s+зависим|мажорн[а-я]*\s+зависим|миграц[а-я]*\s+lockfile)/i,
+    domain: "dependency-upgrade"
+  },
+  {
+    id: "performance-profiling",
+    pattern: /(performance profil|performance budget|latency budget|throughput budget|memory budget|профилир[а-я]*|бюджет[а-я]*\s+(задерж|памят|производительност))/i,
+    domain: "performance-profiling"
+  },
+  {
+    id: "docs-writing",
+    pattern: /(readme|api documentation|troubleshooting guide|docs writing|документац[а-я]*|руководств[а-я]*\s+по\s+устран|напис[а-я]*\s+(readme|документац))/i,
+    domain: "docs-writing"
+  },
+  {
+    id: "incident-log-debugging",
+    pattern: /(incident timeline|logs, traces|traces and metrics|postmortem|разбор[а-я]*\s+инцидент|инцидент[а-я]*\s+по\s+лог|временн[а-я]*\s+шкал[а-я]*\s+инцидент)/i,
+    domain: "incident-log-debugging"
+  },
+  {
+    id: "accessibility",
+    pattern: /(accessibility|keyboard navigation|screen reader|wcag|доступност[а-я]*|клавиатурн[а-я]*\s+навигац|подпис[а-я]*\s+элемент)/i,
+    domain: "accessibility"
   }
 ];
 
@@ -150,6 +185,7 @@ const RULE_PRIORITY = Object.freeze({
   "task-lifecycle": 100,
   repository: 90,
   "frontend-product": 85,
+  "dependency-upgrade": 80,
   knowledge: 10
 });
 

@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import Ajv from "ajv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -19,7 +20,7 @@ import {
 import {
   callTool,
   shutdownBgeWorkers,
-  tools as legacyTools,
+  tools,
   vaultRoot
 } from "./mcp-stdio.mjs";
 import { isDirectExecution } from "./core/direct-execution.mjs";
@@ -32,6 +33,19 @@ const VERSION = JSON.parse(
 ).version || "0.0.0";
 
 const READ_ONLY_TOOLS = new Set([
+  "search",
+  "search_index",
+  "recommend_skills",
+  "read_skill",
+  "skills_admin",
+  "ui_ux",
+  "system",
+  "project",
+  "get_task",
+  "list_tasks",
+  "frontend_product",
+  "pilot",
+  "diagram",
   "search_knowledge",
   "read_knowledge",
   "search_skills",
@@ -81,6 +95,11 @@ const READ_ONLY_TOOLS = new Set([
 ]);
 
 const OPEN_WORLD_TOOLS = new Set(["import_skill_repo"]);
+const ajv = new Ajv({ allErrors: true, strict: false, useDefaults: true, coerceTypes: false });
+const toolValidators = new Map(tools.map((tool) => [
+  tool.name,
+  ajv.compile(tool.inputSchema)
+]));
 
 const FIXED_RESOURCES = [
   {
@@ -124,46 +143,46 @@ const FIXED_RESOURCES = [
 const PROMPTS = [
   {
     name: "format_project_for_ai",
-    title: "Оформи проект для ИИ",
+    title: "Format project for AI",
     description: "Prepare an existing or new repository for reliable work by Codex or Claude.",
     arguments: [
       { name: "project_path", description: "Absolute repository path.", required: true },
       { name: "task", description: "Optional first task to prepare for.", required: false }
     ],
     render: ({ project_path, task = "" }) => [
-      `Оформи проект для ИИ по пути: ${project_path}.`,
-      "Сначала вызови prepare_project, затем проверь созданные AGENTS.md, project-brief, project-map и quality-gate.",
-      "Используй recommend_skills с лимитом 3 и верни найденные риски, пропущенные проверки и следующий безопасный шаг.",
-      task ? `После подготовки начни задачу: ${task}` : ""
+      `Prepare the project at: ${project_path}.`,
+      "First call prepare_project, then inspect the created AGENTS.md, project-brief, project-map, and quality-gate files.",
+      "Use recommend_skills with a limit of 3 and return discovered risks, missing checks, and the next safe step.",
+      task ? `After preparation, start this task: ${task}` : ""
     ].filter(Boolean).join("\n")
   },
   {
     name: "start_engineering_task",
-    title: "Начни инженерную задачу",
+    title: "Start an engineering task",
     description: "Start feature, bugfix, review, frontend, backend, or integration work with bounded context.",
     arguments: [
       { name: "project_path", description: "Absolute repository path.", required: true },
       { name: "task", description: "Concrete task or bug report.", required: true }
     ],
     render: ({ project_path, task }) => [
-      `Проект: ${project_path}`,
-      `Задача: ${task}`,
-      "Вызови begin_task. Прочитай только выданный Project Brief, релевантные части Project Map и максимум три рекомендованных skill.",
-      "Перед изменениями зафиксируй acceptance criteria и риск. После изменений вызови verify_task и complete_task только при наличии evidence."
+      `Project: ${project_path}`,
+      `Task: ${task}`,
+      "Call begin_task. Read only the returned Project Brief, relevant Project Map sections, and at most three recommended skills.",
+      "Record acceptance criteria and risk before editing. After changes call verify_task, then complete_task only with current evidence."
     ].join("\n")
   },
   {
     name: "review_frontend_beta",
-    title: "Проверь frontend beta",
+    title: "Review frontend beta",
     description: "Review a beta frontend change for regressions, visual quality, responsive behavior, and accessibility.",
     arguments: [
       { name: "project_path", description: "Absolute repository path.", required: true },
       { name: "scope", description: "Route, component, PR, or task scope.", required: true }
     ],
     render: ({ project_path, scope }) => [
-      `Проверь frontend beta в проекте ${project_path}. Scope: ${scope}.`,
-      "Начни task lifecycle, изучи существующий дизайн и ограничения проекта, затем используй frontend skills только по необходимости.",
-      "Запусти run_frontend_qa для desktop/mobile и quality gate. Не объявляй результат готовым без console/network/overflow/a11y evidence и визуального просмотра скриншотов."
+      `Review frontend beta in ${project_path}. Scope: ${scope}.`,
+      "Start the task lifecycle, inspect the existing design and project constraints, then use frontend skills only when needed.",
+      "Run run_frontend_qa for desktop/mobile and the quality gate. Do not claim completion without console, network, overflow, accessibility, and screenshot evidence."
     ].join("\n")
   },
   {
@@ -179,11 +198,11 @@ const PROMPTS = [
       `Project: ${project_path}`,
       `Frontend product task: ${task}`,
       mode ? `Mode: ${mode}` : "",
-      "Call frontend_product_builder and use no more than its three selected skills.",
+      "Call frontend_product with action=builder and use no more than its three selected skills.",
       "Prepare and complete the mandatory product brief, references, two or three visual directions, design system, UI inventory, and visual acceptance files.",
-      "Do not edit product UI code until approve_frontend_direction, approve_frontend_design_system, and frontend_product_gate gate=implementation pass.",
-      "After implementation, run run_visual_reference_qa. Inspect every screenshot, baseline, and diff through an independent reviewer and record all ten Product Design Scorecard dimensions.",
-      "Finish only after frontend_product_gate gate=handoff and the repository quality gate pass."
+      "Do not edit product UI code until frontend_product actions approve_direction, approve_design_system, and gate=implementation pass.",
+      "After implementation, run frontend_product action=visual_qa. Inspect every screenshot, baseline, and diff through an independent reviewer and record all ten Product Design Scorecard dimensions.",
+      "Finish only after frontend_product action=gate with gate=handoff and the repository quality gate pass."
     ].filter(Boolean).join("\n")
   },
   {
@@ -199,30 +218,30 @@ const PROMPTS = [
       `Project: ${project_path}`,
       `Reference task: ${task}`,
       surface ? `Surface: ${surface}` : "",
-      "Use frontend_product_builder and keep exactly its three selected skills.",
+      "Use frontend_product with action=builder and keep exactly its three selected skills.",
       "Prepare Frontend Product Quality and complete truthful product context before planning.",
-      "Call plan_frontend_references for concept directions. The MCP server only creates a manifest; call ImageGen or Figma for every artifact job.",
-      "Save each PNG at the exact output_path, inspect every image, and call register_frontend_references with prompt hashes and concrete observations.",
+      "Call frontend_product with action=plan_references for concept directions. The MCP server only creates a manifest; call ImageGen or Figma for every artifact job.",
+      "Save each PNG at the exact output_path, inspect every image, and call frontend_product with action=register_references, prompt hashes, and concrete observations.",
       "Present the materially distinct concepts and approve one direction. Then plan and register stage=coverage for only the approved direction.",
       "Do not approve the design system until Reference Factory coverage is registered."
     ].filter(Boolean).join("\n")
   },
   {
     name: "refresh_project_context",
-    title: "Обнови память проекта",
+    title: "Refresh project memory",
     description: "Refresh project map, brief, Obsidian card, and search index after meaningful changes.",
     arguments: [
       { name: "project_path", description: "Absolute repository path.", required: true }
     ],
     render: ({ project_path }) => [
-      `Обнови память проекта ${project_path}.`,
-      "Вызови refresh_project_memory, проверь компоненты и команды, затем search_index_status.",
-      "Сообщи, какие факты изменились и какие риски или quality gates остались."
+      `Refresh project memory for ${project_path}.`,
+      "Call project with action=refresh_memory, inspect components and commands, then call search_index with action=status.",
+      "Report changed facts and any remaining risks or quality gates."
     ].join("\n")
   },
   {
     name: "build_architecture_diagram",
-    title: "Построй диаграмму архитектуры",
+    title: "Build an architecture diagram",
     description: "Create a verified Archify architecture diagram and finish with a delivery receipt.",
     arguments: [
       { name: "project_path", description: "Absolute repository path.", required: true },
@@ -230,13 +249,13 @@ const PROMPTS = [
       { name: "output_path", description: "Project-relative output HTML path, for example docs/diagrams/architecture.html.", required: true }
     ],
     render: ({ project_path, scenario, output_path }) => [
-      `Проект: ${project_path}`,
-      `Сценарий: ${scenario}`,
-      `Артефакт: ${output_path}`,
-      "Вызови begin_task, затем archify_guide. Создай JSON IR и повторяй archify_validate до нулевых ошибок и предупреждений.",
-      "Вызови archify_deliver с artifact_location=project, quality=showcase и output_path, затем archify_visual_check для доставленного HTML.",
-      "Не смешивай deterministic delivery, automated browser evidence и perceptual review: последний остаётся отдельным человеческим или image-capable review.",
-      "Заверши только с receipt; передай его в verify_task или complete_task как evidence kind=archify_deliver."
+      `Project: ${project_path}`,
+      `Scenario: ${scenario}`,
+      `Artifact: ${output_path}`,
+      "Call begin_task, then diagram with action=guide. Create a JSON IR and repeat diagram action=validate until there are no errors or warnings.",
+      "Call diagram with action=deliver, artifact_location=project, quality=showcase, and output_path, then diagram action=visual_check for the delivered HTML.",
+      "Keep deterministic delivery, automated browser evidence, and perceptual review separate; the last remains an independent human or image-capable review.",
+      "Finish only with a receipt and pass it to verify_task or complete_task as evidence kind=diagram deliver."
     ].join("\n")
   }
 ];
@@ -250,6 +269,7 @@ function toolTitle(name) {
 
 function toolDefinition(tool) {
   const readOnly = READ_ONLY_TOOLS.has(tool.name);
+  const destructive = tool.name === "trust_project";
   return {
     ...tool,
     title: tool.title || toolTitle(tool.name),
@@ -262,7 +282,7 @@ function toolDefinition(tool) {
     annotations: {
       title: tool.title || toolTitle(tool.name),
       readOnlyHint: readOnly,
-      destructiveHint: false,
+      destructiveHint: destructive,
       idempotentHint: readOnly || /^(rebuild|sync|refresh|prepare|bootstrap|validate)/.test(tool.name),
       openWorldHint: OPEN_WORLD_TOOLS.has(tool.name)
     }
@@ -311,6 +331,19 @@ async function readFixedResource(resource) {
     };
   } catch (error) {
     if (error?.code === "ENOENT") {
+      if (resource.name === "system-dashboard") {
+        await callTool("rebuild_system_dashboard", { rebuild_search: false });
+        return readFixedResource(resource);
+      }
+      if (resource.name === "projects-index") {
+        return {
+          contents: [{
+            uri: resource.uri,
+            mimeType: resource.mimeType,
+            text: "# Registered Projects\n\nNo projects registered yet. Call prepare_project.\n"
+          }]
+        };
+      }
       throw new McpError(ErrorCode.InvalidParams, `Resource source is missing: ${resource.uri}`);
     }
     throw error;
@@ -360,20 +393,29 @@ export function createAiDevServer() {
         "Use this server as a bounded context and quality layer for local software development.",
         "Prefer begin_task for substantive work, load no more than three routed skills, and require verification evidence before completion.",
         "For frontend product or visual work, use Frontend Product Quality v2 and do not allow implementation before visual direction and design-system approval.",
-        "When no visual reference exists, use Reference Factory manifests; the client must actually call ImageGen or Figma and inspect every PNG before registration.",
-        "Never expose or summarize password notes through MCP resources."
+        "When no visual reference exists, use Reference Factory manifests; the client must actually call ImageGen or Figma and inspect every PNG before registration."
       ].join(" ")
     }
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: legacyTools.map(toolDefinition)
+    tools: tools.map(toolDefinition)
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args = {} } = request.params;
-    if (!legacyTools.some((tool) => tool.name === name)) {
+    if (!tools.some((tool) => tool.name === name)) {
       throw new McpError(ErrorCode.InvalidParams, `Unknown tool: ${name}`);
+    }
+    const validate = toolValidators.get(name);
+    if (!validate(args)) {
+      return {
+        content: [{
+          type: "text",
+          text: `Invalid arguments for ${name}: ${ajv.errorsText(validate.errors, { separator: "; " })}`
+        }],
+        isError: true
+      };
     }
     await reportProgress(extra, 0, 1, `Starting ${name}`);
     try {

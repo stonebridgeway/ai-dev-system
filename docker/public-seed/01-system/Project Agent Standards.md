@@ -4,11 +4,14 @@ These standards should appear in every project-level `AGENTS.md` either directly
 
 ## Startup
 
-1. Read root `AGENTS.md`.
-2. Read `.ai-dev/project-map.md`.
-3. Read `.ai-dev/quality-gate.md`.
-4. Inspect nearby code before editing.
-5. Use MCP for skills, knowledge, and auto-command routing.
+1. Read `AGENTS.md` when present.
+2. If `.ai-dev/project-brief.md`, `.ai-dev/project-map.md`, or `.ai-dev/quality-gate.md` is missing, call `prepare_project` with `overwrite=false`.
+3. Call `begin_task(project_path, task)`, then read its compiled context pack and no more than three routed skills.
+4. Implement in small steps and record criterion evidence with `checkpoint_task` after meaningful progress.
+5. Call `verify_task` (with `run_frontend=true` for visible UI changes) and rerun it after later edits.
+6. Call `complete_task` only when every criterion is met or explicitly waived.
+
+`match_auto_command` is an optional shortcut for recognised phrases; it does not replace the task lifecycle.
 
 ## Scope Control
 

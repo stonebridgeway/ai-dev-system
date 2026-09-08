@@ -10,8 +10,7 @@ deterministic project facts, task state, search, and verification in the server.
 
 ## Start
 
-1. Apply the always-on `grill-me` intent gate, then resolve the real repository root. Read
-   `AGENTS.md` when present.
+1. Restate the request as one sentence with scope, non-goals, and an observable result. If one of those is unknown and materially changes the work, ask one focused question. Then resolve the real repository root and read `AGENTS.md` when present.
 2. If `.ai-dev/project-brief.md`, `.ai-dev/project-map.md`, or `.ai-dev/quality-gate.md` is missing,
    call `prepare_project` with `overwrite=false` before changing application code.
 3. Call `begin_task` with the concrete request and repository root.
@@ -23,8 +22,6 @@ Do not replace `begin_task` with a broad vault dump. If the lifecycle tools are 
 
 ## Load Context
 
-- Treat `grill-me` as a supplemental session protocol. It applies before and alongside MCP routing
-  and does not count toward the three routed-skill limit.
 - Use the Project Brief first, then only relevant Project Map sections and nearby source files.
 - Load no more than the three skills returned by `begin_task`.
 - Prefer repository code, tests, and current configuration over stale notes.

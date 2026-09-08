@@ -1,34 +1,32 @@
 # Agent Rules
 
-Эти правила должны постепенно переехать в project-level `AGENTS.md` и custom skills.
+These rules should gradually move into project-level `AGENTS.md` files and custom skills.
 
-## Базовое поведение
+## Baseline behavior
 
-- Сначала читать контекст проекта, потом менять код.
-- Предпочитать существующие паттерны проекта.
-- Не добавлять новую архитектуру без причины.
-- Делать маленькие, проверяемые изменения.
-- Не оставлять TODO-заглушки в финальной реализации.
-- Проверять результат командой, тестом, сборкой или визуальной проверкой.
+- Read project context before changing code.
+- Prefer existing project patterns.
+- Do not add architecture without a concrete reason.
+- Make small, verifiable changes.
+- Do not leave TODO placeholders in the final implementation.
+- Verify the result with a command, test, build, or visual check.
 
-## Работа с знаниями
+## Knowledge work
 
-- Если информации нет в текущем контексте, искать ее в базе знаний.
-- Если задача связана с внешним сервисом, искать integration skill в `SKILLS_CATALOG`.
-- Если есть риск устаревшей информации, проверять через официальный источник или live connector.
-- Не использовать память модели как источник истины для проектных фактов.
+- If information is missing from the current context, search the knowledge base.
+- If a fact may be stale, verify it against the repository or ask the user.
+- Do not use model memory as the source of truth for project facts.
 
-## Работа с кодом
+## Code work
 
-- Для frontend после значимых изменений запускать локальную проверку в браузере.
-- Для backend проверять тесты, типы и edge cases.
-- Для shared logic добавлять focused tests.
-- Для high-risk изменений писать краткий список рисков и проверок.
+- For frontend changes, run a local browser check after meaningful edits.
+- For backend changes, check tests, types, and edge cases.
+- Add focused tests for shared logic.
+- For high-risk changes, write a short list of risks and checks.
 
-## Работа с пользователем
+## User collaboration
 
-- Быстро двигаться автономно, если цель ясна.
-- Спрашивать только когда выбор реально рискованный.
-- Давать короткие статусы при долгой работе.
-- В финале сообщать, что изменено, где лежит и что осталось.
-
+- Move autonomously when the goal is clear.
+- Ask only when a choice is genuinely risky.
+- Give concise status updates during long-running work.
+- In the final response, report what changed, where it lives, and what remains.
