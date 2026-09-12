@@ -15,6 +15,15 @@ Their license files remain alongside their sources in the image.
 - Included revision: `1307d97a72e6c1cda572cb65471ae5ce82995218`
 - License: MIT
 
+## ECC (Everything Claude Code)
+
+- Source: https://github.com/affaan-m/ECC (selective import: 101 of the
+  repository's 291 `skills/<name>` directories, chosen by
+  `ai-dev-mcp-server/src/core/skill-import-policy.mjs`)
+- Included revision: `c9148d0bb239ed01a95724a5928b98cdf9c30658`
+- License: MIT
+- Selection record: `03-skills-catalog/sources/external/ecc/upstream.json`
+
 ## Archify
 
 - Source: https://github.com/tt-a1i/archify (vendored from the repository's

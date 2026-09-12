@@ -201,7 +201,7 @@ function relevantCommands(commands, domains) {
  * acceptance criteria, routed skills, and the project brief/map/quality-gate,
  * all fingerprinted against the current project state for freshness checks.
  *
- * @param {{ projectRoot: string, task: string, project?: object, identity?: object, acceptanceCriteria?: string[], skills?: object[], projectState?: object, agentRules?: string, projectBrief?: string, projectMap?: string, qualityGate?: string, extras?: { sections?: object[] }, maxSourceFiles?: number, maxChars?: number, now?: string }} input
+ * @param {{ projectRoot: string, task: string, project?: object, identity?: object, acceptanceCriteria?: string[], skills?: object[], projectState?: object, agentRules?: string, projectBrief?: string, projectMap?: string, qualityGate?: string, extras?: { sections?: Array<{ id?: string, title?: string, markdown: string, items?: object[] }> }, maxSourceFiles?: number, maxChars?: number, now?: string }} input
  * @returns {Promise<object>} Context pack.
  */
 export async function compileContextPack({
@@ -286,7 +286,14 @@ export async function compileContextPack({
     },
     acceptance_criteria: criteria,
     routed_skills: skills.slice(0, 3),
-    extra_sections: (extras?.sections ?? []).filter((section) => section?.markdown).map((section) => ({ id: String(section.id || "extra"), title: String(section.title || "Additional Context"), markdown: String(section.markdown), items: section.items ?? [] })),
+    extra_sections: (extras?.sections ?? [])
+      .filter((section) => section?.markdown)
+      .map((section) => ({
+        id: String(section.id || "extra"),
+        title: String(section.title || "Additional Context"),
+        markdown: String(section.markdown),
+        items: section.items ?? []
+      })),
     commands,
     quality_gaps: project.quality_gaps ?? [],
     risk_signals: project.risk_signals ?? [],
@@ -328,6 +335,13 @@ export async function compileContextPack({
     for (const key of Object.keys(pack.context_sources)) {
       pack.context_sources[key] = pack.context_sources[key].slice(0, 600);
     }
+    markdown = renderContextPack(pack);
+  }
+  if (markdown.length > maxChars) {
+    pack.extra_sections = pack.extra_sections.map((section) => ({
+      ...section,
+      markdown: section.markdown.slice(0, 400)
+    }));
     markdown = renderContextPack(pack);
   }
   if (markdown.length > maxChars) {

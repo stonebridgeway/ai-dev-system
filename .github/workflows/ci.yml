@@ -46,6 +46,14 @@ jobs:
         working-directory: ai-dev-mcp-server
         run: npm run packaging:check
 
+      - name: Tool reference is current
+        working-directory: ai-dev-mcp-server
+        run: npm run docs:tools:check
+
+      - name: Public seed matches its manifest
+        working-directory: ai-dev-mcp-server
+        run: npm run docker:seed:verify
+
       - name: Core unit tests
         working-directory: ai-dev-mcp-server
         run: npm run test:core
@@ -115,7 +123,7 @@ jobs:
         run: npm run lifecycle:smoke
 
   windows:
-    name: Windows (PowerShell syntax, bootstrap plan, installer, core tests)
+    name: Windows (PowerShell syntax, bootstrap plan, installer, core + hook tests)
     runs-on: windows-latest
     steps:
       - name: Check out repository
@@ -166,3 +174,11 @@ jobs:
       - name: Core unit tests
         working-directory: ai-dev-mcp-server
         run: npm run test:core
+
+      # The hook pack runs on the developer's machine, so Windows is a first-class
+      # target for it: these spawn the installed hooks and assert on the paths and
+      # ids they write. agent-hooks.test.mjs is inside the test:core glob as well;
+      # naming both files keeps the hook coverage explicit and independent of it.
+      - name: Agent hook tests
+        working-directory: ai-dev-mcp-server
+        run: node --import ./test/setup.mjs --test src/core/agent-hooks.test.mjs src/extensions/hooks.test.mjs

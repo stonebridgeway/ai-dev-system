@@ -84,6 +84,37 @@ test("repository commit makes an upstream skill auditable", () => {
   assert.equal(enriched.trust_level, "pinned-upstream");
 });
 
+test("a declared trust level outranks the commit pin for a bulk-imported catalogue", () => {
+  // A selective import pins the commit but nobody has read the skills yet, so
+  // `upstream.json` declares `known-upstream` and that has to survive enrichment.
+  const enriched = enrichSkillQuality({
+    name: "vendor-workflow",
+    source: "external/vendor",
+    type: "development-workflow",
+    description: "Use when reviewing a vendor workflow with a pinned repository revision and explicit verification.",
+    repository: "https://example.test/vendor/repository.git",
+    commit: "0123456789abcdef",
+    trust_level: "known-upstream",
+    instruction_policy: "data-until-review"
+  }, strongMarkdown.replaceAll("backend-api-engineer", "vendor-workflow"));
+  assert.equal(enriched.trust_level, "known-upstream");
+  assert.equal(enriched.instruction_policy, "data-until-review");
+});
+
+test("an unknown declared trust level falls back to the inferred one", () => {
+  const enriched = enrichSkillQuality({
+    name: "vendor-workflow",
+    source: "external/vendor",
+    type: "development-workflow",
+    description: "Use when reviewing a vendor workflow with a pinned repository revision and explicit verification.",
+    repository: "https://example.test/vendor/repository.git",
+    commit: "0123456789abcdef",
+    trust_level: "totally-trusted"
+  }, strongMarkdown.replaceAll("backend-api-engineer", "vendor-workflow"));
+  assert.equal(enriched.trust_level, "pinned-upstream");
+  assert.equal(enriched.instruction_policy, undefined);
+});
+
 test("integration quality distinguishes a generic catalog description", () => {
   const markdown = `---
 name: sample-app

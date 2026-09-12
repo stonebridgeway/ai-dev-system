@@ -28,6 +28,10 @@ docker/compose.local.yaml
 docker/public-seed/03-skills-catalog/registries/
 docker/public-seed/03-skills-catalog/cards/
 docker/public-seed/03-skills-catalog/groups/
+docker/public-seed/03-skills-catalog/Skill Quality Dashboard.md
+docker/public-seed/02-knowledge/Projects/
+docker/public-seed/01-system/System Dashboard.md
+docker/public-seed/01-system/system-dashboard.json
 
 # Generated live-state (machine-specific absolute paths); regenerated locally by
 # `node scripts/ai-dev.mjs distribution` and the project-prep MCP tools.

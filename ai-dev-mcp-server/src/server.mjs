@@ -21,11 +21,9 @@ import {
   extensionReadOnlyTools,
   shutdownBgeWorkers,
   tools as legacyTools,
-  usageLedger,
   vaultRoot
 } from "./mcp-stdio.mjs";
 import { isDirectExecution } from "./core/direct-execution.mjs";
-import { usageHintsFromArgs } from "./core/usage-ledger.mjs";
 
 const serverFile = fileURLToPath(import.meta.url);
 const serverRoot = path.resolve(path.dirname(serverFile), "..");
@@ -39,7 +37,6 @@ const READ_ONLY_TOOLS = new Set([
   "read_knowledge",
   "search_skills",
   "read_skill",
-  "recommend_skills",
   "query_ui_ux_knowledge",
   "list_skill_groups",
   "browse_skill_group",
@@ -47,21 +44,7 @@ const READ_ONLY_TOOLS = new Set([
   "list_skill_cards",
   "search_skill_cards",
   "read_skill_card",
-  "search_index_status",
-  "search_all",
-  "hybrid_search",
-  "list_search_presets",
-  "preset_search",
-  "explain_search",
-  "run_search_eval",
-  "embed_texts",
-  "embedding_status",
-  "system_health_check",
-  "system_dashboard_status",
   "runtime_distribution_status",
-  "search_projects",
-  "search_notes",
-  "search_skill_registry",
   "list_auto_commands",
   "match_auto_command",
   "read_auto_command",
@@ -84,6 +67,15 @@ const READ_ONLY_TOOLS = new Set([
 ]);
 
 for (const name of extensionReadOnlyTools) READ_ONLY_TOOLS.add(name);
+
+/**
+ * The tools annotated with `readOnlyHint`, in a stable order. Exported so the
+ * tool reference (`scripts/render-tool-reference.mjs`) documents the same set
+ * the server advertises instead of keeping a second copy of it.
+ *
+ * @type {readonly string[]}
+ */
+export const READ_ONLY_TOOL_NAMES = Object.freeze([...READ_ONLY_TOOLS].sort());
 
 const OPEN_WORLD_TOOLS = new Set(["import_skill_repo"]);
 
@@ -126,7 +118,12 @@ const FIXED_RESOURCES = [
   }
 ];
 
-const PROMPTS = [
+/**
+ * MCP prompt catalogue. Exported so the static quality gate can check it for
+ * duplicate names the way it checks the tool list: `GetPrompt` resolves by
+ * `find`, so a second entry under an existing name is silently dead.
+ */
+export const PROMPTS = [
   {
     name: "format_project_for_ai",
     title: "Оформи проект для ИИ",
@@ -172,21 +169,6 @@ const PROMPTS = [
     ].join("\n")
   },
   {
-    name: "learn_from_task",
-    title: "Извлеки уроки из задачи",
-    description: "Turn durable corrections, decisions, and handoff state into project memory.",
-    arguments: [
-      { name: "project_path", description: "Absolute repository path.", required: true },
-      { name: "task_id", description: "Optional task lifecycle id.", required: false }
-    ],
-    render: ({ project_path, task_id = "" }) => [
-      `Проект: ${project_path}${task_id ? `, задача: ${task_id}` : ""}`,
-      "Сначала проверь list_instincts; повторяющиеся подтвержденные паттерны запиши через record_instinct, а архитектурные выборы — через record_decision.",
-      "Сохрани save_session с точным next_step и неудачными подходами, если работа продолжится в другой сессии.",
-      "Не записывай единичные случаи, код или секреты в долговременную память."
-    ].join("\n")
-  },
-  {
     name: "build_frontend_product",
     title: "Build Frontend Product",
     description: "Build or redesign a frontend through design approval, visual references, independent review, and technical verification.",
@@ -226,6 +208,22 @@ const PROMPTS = [
       "Present the materially distinct concepts and approve one direction. Then plan and register stage=coverage for only the approved direction.",
       "Do not approve the design system until Reference Factory coverage is registered."
     ].filter(Boolean).join("\n")
+  },
+  {
+    name: "learn_from_task",
+    title: "Извлеки уроки из задачи",
+    description: "After a task, turn corrections, resolved errors, repeated workflows, and decisions into durable memory: instincts, decisions, and a session handoff.",
+    arguments: [
+      { name: "project_path", description: "Absolute repository path.", required: true },
+      { name: "task_id", description: "Task lifecycle id to learn from (optional).", required: false }
+    ],
+    render: ({ project_path, task_id = "" }) => [
+      `Проект: ${project_path}${task_id ? `, задача: ${task_id}` : ""}`,
+      "Просмотри ход работы и выдели: исправления пользователя, ошибки, которые решались одинаково дважды и больше, повторяющиеся последовательности действий, архитектурные решения.",
+      "Для каждого устойчивого паттерна (3+ наблюдения или явное исправление) вызови record_instinct с коротким trigger/action, domain и note без кода и секретов; scope=project по умолчанию, global только для универсальных практик.",
+      "Архитектурные выборы запиши через record_decision. Если задача продолжится в другой сессии, сохрани handoff через save_session с точным next_step и списком неудачных подходов.",
+      "Не создавай инстинкты из единичных случаев и не дублируй уже существующие: сначала list_instincts, потом update_instinct action=confirm для совпадений."
+    ].join("\n")
   },
   {
     name: "refresh_project_context",
@@ -395,21 +393,23 @@ export function createAiDevServer() {
     if (!legacyTools.some((tool) => tool.name === name)) {
       throw new McpError(ErrorCode.InvalidParams, `Unknown tool: ${name}`);
     }
-    await reportProgress(extra, 0, 1, `Starting ${name}`);
+    // `callTool` records the call itself, so every caller — this transport, the
+    // CLI, the smoke scripts — lands in the usage ledger exactly once. All this
+    // handler contributes is the transport overhead it just spent.
     const startedAt = Date.now();
-    const hints = usageHintsFromArgs(args);
+    await reportProgress(extra, 0, 1, `Starting ${name}`);
+    const transportMs = Date.now() - startedAt;
     try {
-      const result = structuredResult(await callTool(name, args));
+      const result = structuredResult(await callTool(name, args, { transportMs }));
       await reportProgress(extra, 1, 1, `Completed ${name}`);
-      usageLedger.recordToolCall({ tool: name, ok: true, durationMs: Date.now() - startedAt, ...hints }).catch(() => undefined);
       return result;
     } catch (error) {
       await reportProgress(extra, 1, 1, `Failed ${name}`).catch(() => undefined);
-      usageLedger.recordToolCall({ tool: name, ok: false, durationMs: Date.now() - startedAt, error: error instanceof Error ? error.message : String(error), ...hints }).catch(() => undefined);
+      const message = error instanceof Error ? error.message : String(error);
       return {
         content: [{
           type: "text",
-          text: error instanceof Error ? error.message : String(error)
+          text: message
         }],
         isError: true
       };

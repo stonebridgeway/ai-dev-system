@@ -45,6 +45,7 @@ function runGit(args) {
   if (result.status !== 0) {
     throw new Error(`Git fixture setup failed: ${result.stderr || result.stdout}`);
   }
+  return result.stdout.trim();
 }
 
 runGit(["init"]);
@@ -102,12 +103,48 @@ try {
       note: "Satisfied by the isolated lifecycle smoke fixture.",
       evidence: ["lifecycle-smoke"]
     }));
-  await call("checkpoint_task", {
+  const checkpointed = await call("checkpoint_task", {
     task_id: begun.id,
     summary: "Fixture implementation and regression test are present.",
     changed_files: ["sum.mjs", "sum.test.mjs"],
     criteria: manualCriteria
   });
+
+  // The checkpoint snapshots the turn it recorded, without writing to the
+  // fixture's branch: the ref is there and `main` still has its one commit.
+  assert.equal(checkpointed.snapshot.status, "created");
+  assert.equal(checkpointed.snapshot.snapshot_id, "snapshot-1");
+  assert.equal(runGit(["rev-parse", `refs/ai-dev/snapshots/${begun.id}/1`]), checkpointed.snapshot.commit);
+  assert.equal(runGit(["rev-list", "--count", "HEAD"]), "1");
+  assert.equal(runGit(["stash", "list"]), "");
+
+  // A turn that went wrong, then the way back from it: the edit is undone and
+  // the file that turn added is gone.
+  await fs.writeFile(path.join(projectRoot, "sum.mjs"), "export const sum = () => { throw new Error('half a thought'); };\n", "utf8");
+  await fs.writeFile(path.join(projectRoot, "scratch.mjs"), "// left behind\n", "utf8");
+  const rolledBack = await call("rollback_task", { task_id: begun.id, snapshot_id: "snapshot-1" });
+  assert.deepEqual(rolledBack.removed_files, ["scratch.mjs"]);
+  assert.equal(await fs.readFile(path.join(projectRoot, "sum.mjs"), "utf8"), "export const sum = (left, right) => left + right;\n");
+  assert.equal(await fs.access(path.join(projectRoot, "scratch.mjs")).then(() => true, () => false), false);
+  // And the rollback is itself reversible, so nothing was lost by taking it.
+  const listedSnapshots = await call("list_task_snapshots", { task_id: begun.id });
+  assert.equal(listedSnapshots.available, 2);
+  assert.equal(listedSnapshots.snapshots[1].snapshot_id, rolledBack.undo_snapshot.snapshot_id);
+
+  // The completion-statement linter, over the wire: a report that rationalizes
+  // past a check nobody ran is refused, and refusing it records nothing.
+  const rationalized = await client.callTool({
+    name: "checkpoint_task",
+    arguments: {
+      task_id: begun.id,
+      summary: "Implementation is done.",
+      notes: "Tests are failing but I'll fix them later."
+    }
+  });
+  assert.equal(rationalized.isError, true, "a rationalized checkpoint must be refused");
+  const refusal = rationalized.content?.map((item) => item.text || "").join("\n") ?? "";
+  assert.match(refusal, /tests_failing_deferred/);
+  assert.equal((await call("get_task", { task_id: begun.id })).checkpoints.length, 1);
 
   const verified = await call("verify_task", {
     task_id: begun.id,
@@ -140,6 +177,20 @@ try {
     write_report: false
   });
   assert.equal(completed.task.status, "complete");
+  // Completion prepares the pull request text from the task's own evidence and
+  // links it; it must exist on disk and say nothing was pushed.
+  assert.equal(completed.pull_request.path, `.ai-dev/pr/${begun.id}.md`);
+  assert.match(completed.next_step, /\.ai-dev\/pr\//);
+  const pullRequestBody = await fs.readFile(path.join(projectRoot, ".ai-dev", "pr", `${begun.id}.md`), "utf8");
+  assert.match(pullRequestBody, /## Summary/);
+  assert.match(pullRequestBody, /## Acceptance criteria/);
+  assert.match(pullRequestBody, /## Verification/);
+  assert.match(completed.pull_request.commands[0], /^git push -u origin /);
+  // A closed task keeps no snapshots: the refs are deleted, the record of the
+  // turns stays readable.
+  assert.equal(completed.snapshots.status, "pruned");
+  assert.equal(runGit(["for-each-ref", "--format=%(refname)", `refs/ai-dev/snapshots/${begun.id}`]), "");
+  assert.equal((await call("list_task_snapshots", { task_id: begun.id })).available, 0);
   const outcomes = await call("skill_outcome_status", {});
   assert.equal(outcomes.events, 1);
   process.stdout.write(`${JSON.stringify({
@@ -148,6 +199,8 @@ try {
     routed_skills: begun.skills.map((item) => item.name),
     quality_status: verified.verification.checks[0].result.status,
     task_status: completed.task.status,
+    snapshots: `${completed.snapshots.status} (${completed.snapshots.deleted})`,
+    pull_request: completed.pull_request.path,
     outcome_events: outcomes.events
   }, null, 2)}\n`);
 } catch (error) {

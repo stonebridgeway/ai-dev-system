@@ -1,0 +1,11 @@
+{
+  "inputs": [{ "id": "jira-token", "type": "promptString", "password": true }],
+  "servers": {
+    "jira": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./tools/jira-mcp.mjs", "--token=${input:jira-token}"],
+      "env": { "JIRA_PROJECT_DIR": "${workspaceFolder}" }
+    }
+  }
+}

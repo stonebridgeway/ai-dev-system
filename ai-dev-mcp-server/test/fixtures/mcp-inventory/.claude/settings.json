@@ -1,0 +1,4 @@
+{
+  "enabledMcpjsonServers": ["ai-dev"],
+  "disabledMcpjsonServers": ["legacy-notes"]
+}

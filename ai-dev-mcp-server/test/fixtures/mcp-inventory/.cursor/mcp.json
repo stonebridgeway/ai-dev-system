@@ -1,0 +1,7 @@
+{
+  // Cursor runs the published package instead of the checkout.
+  "mcpServers": {
+    "ai-dev": { "command": "npx", "args": ["-y", "ai-dev-mcp-server"] },
+    "sqlite": { "command": "bash", "args": ["-c", "cd $HOME/db && exec mcp-sqlite notes.db"] },
+  },
+}

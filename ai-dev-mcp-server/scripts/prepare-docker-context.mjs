@@ -59,7 +59,7 @@ async function copyApplication(stage) {
       || relative.replaceAll("\\", "/") === "core/public-distribution.mjs"
     )
   });
-  // Hook scripts are deliberately portable assets copied into connected repositories.
+  // Agent hook scripts are copied into user repositories by install_agent_hooks.
   await copyDistributionTree(path.join(serverRoot, "hooks"), path.join(stage, "app", "hooks"));
   for (const name of [
     "ai-dev.mjs",

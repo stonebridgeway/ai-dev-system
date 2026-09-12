@@ -126,6 +126,22 @@ async function copySkillSources(vaultRoot, stage) {
     { exclude: excludedSource }
   );
 
+  // The ECC catalogue is a selective import: `skills/` already holds only the
+  // directories that passed src/core/skill-import-policy.mjs, so the seed copies
+  // it as it stands in the vault rather than re-running the policy here.
+  const eccSource = path.join(vaultRoot, "03-skills-catalog", "sources", "external", "ecc");
+  const eccTarget = path.join(catalogTarget, "external", "ecc");
+  if (await fs.access(eccSource).then(() => true).catch(() => false)) {
+    await copyDistributionTree(
+      path.join(eccSource, "skills"),
+      path.join(eccTarget, "skills"),
+      { exclude: excludedSource }
+    );
+    for (const file of ["LICENSE", "upstream.json"]) {
+      await copyDistributionFile(path.join(eccSource, file), path.join(eccTarget, file));
+    }
+  }
+
   // Archify is a locally executed CLI, so the clean seed must carry its pinned
   // runtime dependencies. This is the sole approved node_modules exception in
   // the distribution policy; copying an arbitrary source tree would weaken the

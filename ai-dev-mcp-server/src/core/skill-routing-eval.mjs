@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { routeSkills } from "./skill-router.mjs";
+import { RESERVED_ROUTING_ROLES, routeSkills } from "./skill-router.mjs";
 
 function list(value) {
   return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
@@ -48,7 +48,7 @@ export function evaluateSkillRoutingCase(testCase, router = routeSkills) {
     maxSkills: 3
   });
   const names = route.skills.map((item) => item.name);
-  const conventional = route.skills.filter((item) => item.role !== "capability");
+  const conventional = route.skills.filter((item) => !RESERVED_ROUTING_ROLES.includes(item.role));
   const expectedAll = list(testCase.expected_all);
   const expectedAny = list(testCase.expected_any);
   const mustNot = list(testCase.must_not);
@@ -110,7 +110,7 @@ export function evaluateSkillRoutingSuite(cases, router = routeSkills) {
     expected_skills: expectedSkills.size,
     observed_expected_skills: observedExpectedSkills.size,
     uncovered_expected_skills: [...expectedSkills].filter((name) => !observedExpectedSkills.has(name)).sort(),
-    max_three_violations: results.filter((item) => item.selected.filter((skill) => skill.role !== "capability").length > 3).length,
+    max_three_violations: results.filter((item) => item.selected.filter((skill) => !RESERVED_ROUTING_ROLES.includes(skill.role)).length > 3).length,
     empty_route_violations: results.filter((item) => item.selected.length === 0).length
   };
   return {

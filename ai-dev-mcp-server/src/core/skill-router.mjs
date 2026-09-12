@@ -279,10 +279,25 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
 }
 
 /**
+ * Roles that get a slot of their own instead of competing for the three
+ * conventional ones.
+ *
+ * `capability` is an add-on tool (Archify), which is not an alternative to a
+ * workflow skill. `specialist` is an imported skill that matched the task by
+ * `use_when` (`pickTaskSpecialist` in `skill-recommendation.mjs`): it is offered
+ * *beside* the routed core, never instead of it, because the routed core is the
+ * part with our verification contract on it. Without a reserved slot an
+ * imported skill can only appear by pushing one of ours out, which is why all
+ * 101 of them were invisible (docs/ecc-upgrades/DEBTS.md, Д-1).
+ */
+export const RESERVED_ROUTING_ROLES = Object.freeze(["capability", "specialist"]);
+
+/**
  * Merge routed skills into a scored recommendation list: routed entries come
  * first (keeping registry metadata when found, otherwise synthesised as a
- * high-score custom skill). Capability entries do not consume the `maxSkills`
- * (≤ 3) allowance for conventional workflow/domain/verification skills.
+ * high-score custom skill). Entries in {@link RESERVED_ROUTING_ROLES} do not
+ * consume the `maxSkills` (≤ 3) allowance for conventional
+ * workflow/domain/verification skills, and come after it.
  *
  * @param {Array<{ name: string }>} recommendations - Registry recommendations.
  * @param {{ skills: Array<{ name: string, role: string, rule: string, reason: string }> }} route - Result of {@link routeSkills}.
@@ -292,17 +307,17 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
 export function prioritizeRoutedRecommendations(recommendations, route, maxSkills = 3) {
   const byName = new Map(recommendations.map((item) => [item.name, item]));
   const conventional = [];
-  const capabilities = [];
+  const reserved = [];
   const seen = new Set();
   const safeLimit = Math.max(1, Math.min(Number(maxSkills) || 3, 3));
   for (const routed of route.skills) {
     const existing = byName.get(routed.name);
     const candidate = existing
       ? { ...existing, routing_role: routed.role, routing_rule: routed.rule, reason: routed.reason }
-      : { ...routed, type: "custom-skill", score: 200 };
+      : { ...routed, type: "custom-skill", score: 200, routing_role: routed.role, routing_rule: routed.rule };
     if (!seen.has(candidate.name)) {
       seen.add(candidate.name);
-      if (routed.role === "capability") capabilities.push(candidate);
+      if (RESERVED_ROUTING_ROLES.includes(routed.role)) reserved.push(candidate);
       else if (conventional.length < safeLimit) conventional.push(candidate);
     }
   }
@@ -312,5 +327,5 @@ export function prioritizeRoutedRecommendations(recommendations, route, maxSkill
     seen.add(recommendation.name);
     conventional.push(recommendation);
   }
-  return [...conventional, ...capabilities];
+  return [...conventional, ...reserved];
 }

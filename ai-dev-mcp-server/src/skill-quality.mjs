@@ -92,6 +92,10 @@ export function inferSkillProfile(item) {
 
 export function inferTrustLevel(item) {
   const source = String(item?.source || "");
+  // A vendored repository can declare its own trust level in `upstream.json`.
+  // A bulk import of an upstream catalogue is `known-upstream` even though it is
+  // pinned to a commit: the pin proves what was copied, not that anyone read it.
+  if (SKILL_TRUST_LEVELS.includes(String(item?.trust_level || ""))) return item.trust_level;
   if (source === "custom") return "trusted-local";
   if (item?.commit && item?.repository) return "pinned-upstream";
   if (source.includes("membrane")) return "known-upstream";
@@ -264,6 +268,7 @@ export function enrichSkillQuality(item, markdown) {
     languages: unique([...(item?.languages || []), ...inferLanguages(combinedText)]),
     maturity: inferMaturity(item, evaluation),
     trust_level: inferTrustLevel(item),
+    instruction_policy: String(item?.instruction_policy || "") || undefined,
     quality_profile: evaluation.profile,
     structure_score: evaluation.score,
     structure_grade: evaluation.grade,

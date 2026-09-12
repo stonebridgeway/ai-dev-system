@@ -32,7 +32,18 @@ function parseArgs(argv) {
   return options;
 }
 
+// Where this script's own server is. A vault install has it at
+// `<vault>/09-mcp/ai-dev-mcp-server/`; a plain checkout has it right here, and
+// computing the path from a vault root that does not exist produced
+// `<home>/09-mcp/ai-dev-mcp-server/src/server.mjs` and a refusal to install
+// anything — for the one command a new user is told to run.
+const localServerPath = path.resolve(fileURLToPath(new URL("../src/server.mjs", import.meta.url)));
 const repoVaultRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
+
+/** The Obsidian layout, by the two directories the server itself looks for. */
+function looksLikeVault(root) {
+  return existsSync(path.join(root, "03-skills-catalog")) || existsSync(path.join(root, "01-system"));
+}
 
 function resolvePython(nodeExecutable) {
   if (process.env.AI_DEV_PYTHON) return process.env.AI_DEV_PYTHON;
@@ -47,20 +58,26 @@ function resolvePython(nodeExecutable) {
   return existsSync(bundled) ? bundled : "python3";
 }
 
-function portablePaths({
+/**
+ * Where Node, the server and Python are, for the client configuration.
+ *
+ * Exported for the test: the server path is the one thing here that used to be
+ * computed from a vault that a plain checkout does not have.
+ */
+export function portablePaths({
   home = os.homedir(),
   appData = process.env.APPDATA || path.join(home, "AppData", "Roaming"),
   nodeExecutable = process.execPath,
-  vaultRoot = process.env.AI_DEV_VAULT_ROOT || repoVaultRoot
+  vaultRoot = process.env.AI_DEV_VAULT_ROOT
+    || (looksLikeVault(repoVaultRoot) ? repoVaultRoot : "")
 } = {}) {
-  const linkedVaultRoot = path.resolve(vaultRoot);
-  const serverPath = path.join(
-    linkedVaultRoot,
-    "09-mcp",
-    "ai-dev-mcp-server",
-    "src",
-    "server.mjs"
-  );
+  // Without a vault the server finds the bundled seed itself, so the client
+  // config carries no AI_DEV_VAULT_ROOT rather than a guess at one.
+  const linkedVaultRoot = vaultRoot ? path.resolve(vaultRoot) : "";
+  const vaultServerPath = linkedVaultRoot
+    ? path.join(linkedVaultRoot, "09-mcp", "ai-dev-mcp-server", "src", "server.mjs")
+    : "";
+  const serverPath = vaultServerPath && existsSync(vaultServerPath) ? vaultServerPath : localServerPath;
   const pythonExecutable = resolvePython(nodeExecutable);
   return {
     home,
@@ -77,7 +94,7 @@ export function buildClientServerConfig(client, paths = portablePaths()) {
     command: paths.nodeExecutable,
     args: [paths.serverPath],
     env: {
-      AI_DEV_VAULT_ROOT: paths.linkedVaultRoot,
+      ...(paths.linkedVaultRoot ? { AI_DEV_VAULT_ROOT: paths.linkedVaultRoot } : {}),
       AI_DEV_PYTHON: paths.pythonExecutable
     }
   };
@@ -148,7 +165,7 @@ export async function installLocalMcpClients(options = {}) {
   for (const [label, candidate] of [
     ["Node.js", paths.nodeExecutable],
     ["MCP entrypoint", paths.serverPath],
-    ["AI Dev vault link", paths.linkedVaultRoot]
+    ...(paths.linkedVaultRoot ? [["AI Dev vault link", paths.linkedVaultRoot]] : [])
   ]) {
     try {
       await fs.access(candidate);

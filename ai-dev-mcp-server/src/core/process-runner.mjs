@@ -19,6 +19,19 @@ async function fileExists(filePath) {
   return fs.stat(filePath).then((stat) => stat.isFile()).catch(() => false);
 }
 
+/**
+ * Where an executable would be found, or "" when it is not on the PATH.
+ *
+ * `run_security_scan` asks before it runs: a scanner that is not installed is a
+ * `skipped` result with a reason, not a failed process.
+ *
+ * @param {string} executable - Name, or an absolute path (returned as given).
+ * @returns {Promise<string>}
+ */
+export async function locateExecutable(executable) {
+  return findExecutableOnPath(String(executable ?? ""));
+}
+
 async function findExecutableOnPath(executable) {
   if (path.isAbsolute(executable)) return executable;
   const pathEntries = String(process.env.PATH || "").split(path.delimiter).filter(Boolean);

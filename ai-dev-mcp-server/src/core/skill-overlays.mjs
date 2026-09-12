@@ -1,3 +1,5 @@
+import { SKILL_GROUPS } from "../skill-taxonomy.mjs";
+
 export const SKILL_OVERLAY_SCHEMA_VERSION = 1;
 
 const ARRAY_FIELDS = new Set([
@@ -159,6 +161,29 @@ export function applySkillOverlay(item, document) {
     key: skillOverlayKey(item?.source, item?.name)
   };
   return result;
+}
+
+/**
+ * Apply the overlay document to a whole registry and re-attach the taxonomy
+ * label an overlaid `primary_group` implies, so an overridden group shows the
+ * same label and related groups as a classified one.
+ *
+ * @param {object[]} items - Skill records.
+ * @param {object} document - Overlay document.
+ * @returns {object[]} Overlaid records.
+ */
+export function applySkillOverlays(items, document) {
+  return items.map((item) => {
+    const overlaid = applySkillOverlay(item, document);
+    const group = SKILL_GROUPS.find((candidate) => candidate.id === overlaid.primary_group);
+    return group
+      ? {
+        ...overlaid,
+        primary_group_label: group.label,
+        related_groups: group.related_groups
+      }
+      : overlaid;
+  });
 }
 
 /**

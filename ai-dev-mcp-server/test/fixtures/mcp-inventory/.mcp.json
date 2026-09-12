@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "ai-dev": {
+      "command": "node",
+      "args": ["/opt/ai-dev/src/server.mjs"],
+      "env": {
+        "AI_DEV_VAULT_ROOT": "${AI_DEV_VAULT_ROOT}",
+        "AI_DEV_LOG": "info"
+      }
+    },
+    "design-docs": {
+      "type": "http",
+      "url": "https://docs.example.com/mcp",
+      "headers": { "Authorization": "Bearer ${env:DOCS_TOKEN}" }
+    },
+    "legacy-notes": {
+      "type": "sse",
+      "url": "http://notes.internal:8080/sse"
+    }
+  }
+}

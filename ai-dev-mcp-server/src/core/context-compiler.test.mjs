@@ -38,3 +38,40 @@ test("context compiler selects task files, excludes secrets, and stays bounded",
   assert.equal(contextPackFreshness(pack, { fingerprint: "state-one" }).fresh, true);
   assert.equal(contextPackFreshness(pack, { fingerprint: "state-two" }).fresh, false);
 });
+
+test("context compiler renders extra sections after routed skills and trims them under pressure", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "context-compiler-extras-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, "index.ts"), "export const x = 1;\n");
+  const extras = {
+    sections: [
+      { id: "decisions", title: "Recent Decisions", markdown: "- ADR-0001: Keep SQLite", items: [{ id: "ADR-0001" }] },
+      { id: "empty", title: "Ignored", markdown: "" }
+    ]
+  };
+  const pack = await compileContextPack({
+    projectRoot: root,
+    task: "Refactor index",
+    project: { project_name: "Fixture", project_types: ["backend"], commands: [] },
+    projectState: { fingerprint: "s1", dirty_files: [] },
+    extras,
+    maxChars: 12_000
+  });
+  assert.deepEqual(pack.extra_sections.map((section) => section.id), ["decisions"]);
+  const skillsIndex = pack.markdown.indexOf("## Routed Skills");
+  const decisionsIndex = pack.markdown.indexOf("## Recent Decisions");
+  const shapeIndex = pack.markdown.indexOf("## Project Shape");
+  assert.ok(skillsIndex < decisionsIndex && decisionsIndex < shapeIndex);
+  assert.match(pack.markdown, /- ADR-0001: Keep SQLite/);
+
+  const squeezed = await compileContextPack({
+    projectRoot: root,
+    task: "Refactor index",
+    project: { project_name: "Fixture", project_types: ["backend"], commands: [] },
+    projectState: { fingerprint: "s1", dirty_files: [] },
+    extras: { sections: [{ id: "big", title: "Big", markdown: "x".repeat(9_000) }] },
+    maxChars: 8_000
+  });
+  assert.ok(squeezed.extra_sections[0].markdown.length <= 400);
+  assert.ok(squeezed.budget.actual_chars <= 8_000 || squeezed.selected_files.length === 0);
+});

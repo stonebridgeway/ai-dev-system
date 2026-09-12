@@ -114,10 +114,61 @@ function sanitizeRemote(raw) {
   }
 }
 
+async function canonicalGitPath(cwd, raw) {
+  const absolute = path.isAbsolute(raw) ? raw : path.resolve(cwd, raw);
+  return fs.realpath(absolute).catch(() => path.resolve(absolute));
+}
+
+/**
+ * Hash the clone (its `--git-common-dir`, shared by every linked worktree) plus
+ * the project's path inside its own worktree, which reads the same in the main
+ * checkout and in any worktree of that clone.
+ *
+ * @param {string} commonDir - Canonical `--git-common-dir`.
+ * @param {string} subPath - Project root relative to its worktree root.
+ * @returns {string}
+ */
+function repositoryKey(commonDir, subPath) {
+  // A path that escapes the worktree is not a sub-project of it: key on the
+  // clone alone rather than inventing a scope out of `..` segments.
+  const scope = String(subPath || "").replaceAll("\\", "/").replace(/^\/+|\/+$/g, "");
+  const key = `git-common:${normalizePath(commonDir)}${!scope || scope.startsWith("..") ? "" : `#${scope}`}`;
+  return `repository-${hash(process.platform === "win32" ? key.toLowerCase() : key).slice(0, 20)}`;
+}
+
+/**
+ * Identity of the Git clone a project belongs to. `git rev-parse
+ * --git-common-dir` resolves to the same directory in the main checkout and in
+ * every linked worktree, so memory keyed by this id (session handoffs,
+ * instincts, context extras) survives `begin_task_in_worktree` and the
+ * "task = worktree" scheme, while tasks stay keyed by `project_id`. Packages of
+ * a monorepo keep their own id: the key carries the project's path inside its
+ * worktree too.
+ *
+ * @param {string} projectRoot - Absolute path inside a Git working tree.
+ * @returns {Promise<string | null>} `repository-<hash>`, or null outside Git.
+ */
+export async function repositoryId(projectRoot) {
+  const root = path.resolve(projectRoot);
+  const [commonDirResult, toplevelResult] = await Promise.all([
+    git(root, ["rev-parse", "--git-common-dir"]),
+    git(root, ["rev-parse", "--show-toplevel"])
+  ]);
+  const rawCommonDir = commonDirResult.ok ? commonDirResult.stdout.trim() : "";
+  if (!rawCommonDir) return null;
+  const canonicalRoot = await fs.realpath(root).catch(() => root);
+  const worktreeRoot = toplevelResult.ok && toplevelResult.stdout.trim()
+    ? await canonicalGitPath(root, toplevelResult.stdout.trim())
+    : canonicalRoot;
+  const commonDir = await canonicalGitPath(root, rawCommonDir);
+  return repositoryKey(commonDir, path.relative(worktreeRoot, canonicalRoot));
+}
+
 /**
  * Derive a stable identity for a project directory: canonical (realpath) root,
  * git detection, sanitised `origin` remote (credentials and `.git` stripped),
- * a content-hashed `project_id` / `repository_id`, and every known path alias.
+ * a content-hashed `project_id` (this working tree) and `repository_id` (the
+ * clone behind it, see {@link repositoryId}), and every known path alias.
  *
  * @param {string} projectPath - Absolute path to a project directory.
  * @returns {Promise<{ schema_version: number, project_id: string, repository_id: string | null, kind: "git" | "filesystem", project_root: string, canonical_path: string, requested_path: string, aliases: string[], git: { detected: boolean, root: string | null, common_dir: string | null, remote: string | null } }>}
@@ -153,10 +204,7 @@ export async function resolveProjectIdentity(projectPath) {
     remote = remoteResult.ok ? sanitizeRemote(remoteResult.stdout) : "";
     if (commonDirResult.ok && commonDirResult.stdout.trim()) {
       const rawCommonDir = commonDirResult.stdout.trim();
-      const absoluteCommonDir = path.isAbsolute(rawCommonDir)
-        ? rawCommonDir
-        : path.resolve(projectRoot, rawCommonDir);
-      commonGitDir = await fs.realpath(absoluteCommonDir).catch(() => path.resolve(absoluteCommonDir));
+      commonGitDir = await canonicalGitPath(projectRoot, rawCommonDir);
     }
   }
 
@@ -164,7 +212,7 @@ export async function resolveProjectIdentity(projectPath) {
   return {
     schema_version: PROJECT_ID_VERSION,
     project_id: `project-${hash(canonicalKey).slice(0, 20)}`,
-    repository_id: remote ? `repository-${hash(remote).slice(0, 20)}` : null,
+    repository_id: commonGitDir ? repositoryKey(commonGitDir, path.relative(gitRoot, projectRoot)) : null,
     kind: isGit ? "git" : "filesystem",
     project_root: projectRoot,
     canonical_path: projectRoot,
@@ -206,4 +254,28 @@ export function projectIdentityKey(identityOrPath) {
     return identityOrPath.project_id;
   }
   return `project-${hash(`filesystem:${normalizePath(identityOrPath)}`).slice(0, 20)}`;
+}
+
+/**
+ * Storage keys for cross-worktree memory, in read order: the `repository_id`
+ * every worktree of one clone shares, then the `project_id` records were
+ * written under before repository ids existed. A write uses the first key and
+ * migrates the rest into it; a read merges all of them.
+ *
+ * Accepts an identity object (`repository_id` / `project_id`), the camelCase
+ * form the stores take, or a bare key.
+ *
+ * @param {{ repositoryId?: string | null, repository_id?: string | null, projectId?: string | null, project_id?: string | null } | string} scope
+ * @returns {string[]}
+ */
+export function memoryScopeKeys(scope) {
+  const candidates = scope && typeof scope === "object"
+    ? [scope.repositoryId ?? scope.repository_id, scope.projectId ?? scope.project_id]
+    : [scope];
+  const keys = [];
+  for (const candidate of candidates) {
+    const key = String(candidate ?? "").trim();
+    if (key && !keys.includes(key)) keys.push(key);
+  }
+  return keys;
 }

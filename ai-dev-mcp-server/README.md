@@ -63,6 +63,10 @@ The canonical agent skill is `03-skills-catalog/sources/custom/ai-dev-orchestrat
 
 ## Capabilities
 
+Every tool, grouped and with its read-only flag and required arguments, is listed in
+[`docs/TOOLS.md`](docs/TOOLS.md) — generated from the server's own definitions by
+`npm run docs:tools` and checked in CI. The summary below is the map, that file is the index.
+
 Project intelligence:
 
 - `analyze_project`

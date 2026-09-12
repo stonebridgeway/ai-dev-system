@@ -1,6 +1,6 @@
 {
   "name": "ai-dev-mcp-server",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "Local MCP server for the AI Dev System Obsidian vault and skill registry.",
@@ -10,6 +10,7 @@
   "packageManager": "npm@11.17.0",
   "scripts": {
     "start": "node src/server.mjs",
+    "setup": "node scripts/first-run.mjs",
     "doctor": "node scripts/ai-dev.mjs doctor",
     "dashboard": "node scripts/ai-dev.mjs dashboard",
     "refresh": "node scripts/ai-dev.mjs refresh",
@@ -17,6 +18,7 @@
     "acceptance": "node scripts/ai-dev.mjs acceptance",
     "distribution": "node scripts/ai-dev.mjs distribution",
     "docker:seed": "node scripts/refresh-public-seed.mjs --replace",
+    "docker:seed:verify": "node scripts/verify-public-seed.mjs",
     "docker:prepare": "node scripts/prepare-docker-context.mjs",
     "docker:audit": "node scripts/audit-docker-context.mjs",
     "docker:build": "node scripts/prepare-docker-context.mjs && docker build --tag ai-dev-system:local ../.docker/build-context",
@@ -25,6 +27,8 @@
     "skills:ensure-index": "node scripts/ensure-skill-index.mjs",
     "test:vault": "node scripts/ensure-skill-index.mjs && node --import ./test/setup.mjs --test",
     "packaging:check": "node scripts/validate-packaging.mjs",
+    "docs:tools": "node scripts/render-tool-reference.mjs",
+    "docs:tools:check": "node scripts/render-tool-reference.mjs --check",
     "clients:install": "node scripts/install-local-mcp-clients.mjs --apply",
     "start:legacy": "node src/mcp-stdio.mjs",
     "test": "node --import ./test/setup.mjs --test",

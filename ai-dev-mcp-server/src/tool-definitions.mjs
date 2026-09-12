@@ -5,34 +5,9 @@ export function buildToolDefinitions({
   FRONTEND_PRODUCT_MODES,
   PILOT_DIMENSIONS,
   PILOT_TASK_TYPES,
-  PRODUCT_DESIGN_SCORECARD_DIMENSIONS,
-  REFERENCE_FACTORY_GENERATORS,
-  REFERENCE_FACTORY_SURFACES,
   UI_UX_PRO_MAX_DOMAINS,
   UI_UX_PRO_MAX_STACKS
 }) {
-  const ARCHIFY_EVIDENCE_SCHEMA = {
-    type: "array",
-    default: [],
-    description: "Archify deliverables backing acceptance criteria. Pass the `evidence` object returned by archify_deliver / archify_visual_check verbatim.",
-    items: {
-      type: "object",
-      properties: {
-        kind: { type: "string", enum: ["archify_deliver", "archify_visual_check"] },
-        html_path: { type: "string" },
-        spec_sha256: { type: "string" },
-        artifact_sha256: { type: "string" },
-        quality: { type: "string" },
-        errors: { type: "number" },
-        warnings: { type: "number" },
-        checks_passed: { type: "number" },
-        check_count: { type: "number" },
-        status: { type: "string" },
-        containment_status: { type: "string" }
-      },
-      required: ["kind", "html_path"]
-    }
-  };
   return [
   {
     name: "search_knowledge",
@@ -87,28 +62,6 @@ export function buildToolDefinitions({
     }
   },
   {
-    name: "recommend_skills",
-    description: "Recommend a minimal project-aware set of skills for a development, design, integration, review, or quality task.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        task: { type: "string" },
-        limit: { type: "number", default: 3, maximum: 3 },
-        project: { type: "string" },
-        project_path: { type: "string" },
-        membrane_policy: { type: "string", default: "auto" },
-        include_membrane: { type: "boolean", default: false },
-        preferred_groups: {
-          type: "array",
-          items: { type: "string" },
-          default: [],
-          description: "Optional preferred taxonomy groups. Automatic task-based group routing is still applied."
-        }
-      },
-      required: ["task"]
-    }
-  },
-  {
     name: "query_ui_ux_knowledge",
     description: "Query the pinned local UI UX Pro Max dataset for focused product, UX, style, color, typography, chart, icon, motion, web, or stack guidance. Results are recommendations, not visual proof.",
     inputSchema: {
@@ -136,32 +89,6 @@ export function buildToolDefinitions({
           maximum: 10,
           default: 3
         }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "generate_ui_ux_design_system",
-    description: "Generate a product-specific UI/UX design-system draft from the pinned local dataset. Optionally persist it only to .ai-dev/frontend/design-system.md inside a validated project. Rendering and browser QA remain required.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: {
-          type: "string",
-          minLength: 1,
-          maxLength: 500,
-          description: "Product type, industry, audience, main task, tone, density, motion, and constraints."
-        },
-        project_name: { type: "string", maxLength: 120 },
-        variance: { type: "number", minimum: 1, maximum: 10 },
-        motion: { type: "number", minimum: 1, maximum: 10 },
-        density: { type: "number", minimum: 1, maximum: 10 },
-        project_path: {
-          type: "string",
-          description: "Absolute project root. Required only when persist=true."
-        },
-        persist: { type: "boolean", default: false },
-        overwrite: { type: "boolean", default: false }
       },
       required: ["query"]
     }
@@ -203,24 +130,6 @@ export function buildToolDefinitions({
       type: "object",
       properties: {
         sync_cards: { type: "boolean", default: true }
-      }
-    }
-  },
-  {
-    name: "validate_skill_library",
-    description: "Validate source SKILL.md files with Schema v2, source-aware quality scoring, relationship checks, and duplicate analysis; optionally write the Obsidian quality dashboard.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        source: { type: "string", description: "Optional source substring such as custom or membrane." },
-        group: { type: "string", description: "Optional taxonomy group or alias." },
-        min_score: { type: "number", default: 0 },
-        include_duplicates: { type: "boolean", default: true },
-        include_semantic_duplicates: { type: "boolean", default: false, description: "Use BGE-M3 only to refine lexically suspicious non-Membrane pairs." },
-        duplicate_threshold: { type: "number", default: 0.82 },
-        max_issues: { type: "number", default: 200 },
-        write_report: { type: "boolean", default: true },
-        refresh_registry: { type: "boolean", default: false }
       }
     }
   },
@@ -385,268 +294,6 @@ export function buildToolDefinitions({
     }
   },
   {
-    name: "search_index_status",
-    description: "Inspect search-index freshness against current vault/project sources, including added, changed, deleted, and pending dense documents.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        include_external_project_files: { type: "boolean", default: true }
-      }
-    }
-  },
-  {
-    name: "rebuild_search_index",
-    description: "Rebuild the local SQLite FTS search index for knowledge notes, project cards, project AI-dev files, and skill metadata.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        include_external_project_files: { type: "boolean", default: true },
-        dense_embeddings: { type: "boolean", default: false },
-        dense_model_dir: { type: "string" },
-        dense_device: { type: "string", default: "cpu" },
-        dense_batch_size: { type: "number", default: 8 },
-        dense_text_limit: { type: "number", default: 1200 },
-        dense_include_membrane: { type: "boolean", default: false },
-        dense_incremental: { type: "boolean", default: true },
-        preserve_dense: { type: "boolean", default: true }
-      }
-    }
-  },
-  {
-    name: "search_all",
-    description: "Search the self-refreshing local SQLite FTS index across knowledge, projects, workflows, quality notes, and skills.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string" },
-        scope: { type: "string", default: "all" },
-        limit: { type: "number", default: 10 },
-        project: { type: "string" },
-        source: { type: "string" },
-        categories: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        folders: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "hybrid_search",
-    description: "Hybrid semantic plus keyword search across knowledge, projects, workflows, quality notes, and skills. Optional preset applies task-specific weights and scope defaults.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string" },
-        preset: { type: "string", default: "balanced" },
-        scope: { type: "string" },
-        limit: { type: "number" },
-        project: { type: "string" },
-        source: { type: "string" },
-        categories: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        folders: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        semantic_weight: { type: "number" },
-        keyword_weight: { type: "number" },
-        dense_weight: { type: "number" },
-        intent_routing: { type: "boolean", description: "Prepend up to three deterministic custom-skill candidates for development intent." },
-        rerank: { type: "boolean", default: true, description: "Apply Search Ranking v2 intent, scope, curation, and hard-negative reranking." },
-        dense_model_dir: { type: "string" },
-        dense_device: { type: "string", default: "cpu" }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "list_search_presets",
-    description: "List task-specific search presets with default scopes and keyword/sparse/dense weights.",
-    inputSchema: {
-      type: "object",
-      properties: {}
-    }
-  },
-  {
-    name: "preset_search",
-    description: "Run hybrid search through a named preset such as balanced, code, docs, skills, projects, debug, frontend, or quality.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string" },
-        preset: { type: "string", default: "balanced" },
-        explain: { type: "boolean", default: false },
-        scope: { type: "string" },
-        limit: { type: "number" },
-        project: { type: "string" },
-        source: { type: "string" },
-        categories: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        folders: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        semantic_weight: { type: "number" },
-        keyword_weight: { type: "number" },
-        dense_weight: { type: "number" },
-        intent_routing: { type: "boolean" },
-        rerank: { type: "boolean", default: true },
-        dense_model_dir: { type: "string" },
-        dense_device: { type: "string", default: "cpu" }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "explain_search",
-    description: "Explain why hybrid_search ranked results the way it did, including preset, keyword, sparse semantic, dense BGE-M3, and adjustment signals.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string" },
-        preset: { type: "string", default: "balanced" },
-        scope: { type: "string" },
-        limit: { type: "number" },
-        project: { type: "string" },
-        source: { type: "string" },
-        categories: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        folders: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        semantic_weight: { type: "number" },
-        keyword_weight: { type: "number" },
-        dense_weight: { type: "number" },
-        intent_routing: { type: "boolean" },
-        rerank: { type: "boolean", default: true },
-        dense_model_dir: { type: "string" },
-        dense_device: { type: "string", default: "cpu" }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "run_search_eval",
-    description: "Run golden search evaluation cases against preset/hybrid search and report pass/fail ranking quality.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        cases_path: {
-          type: "string",
-          description: "Optional path to a JSON cases file. Relative to the AI Dev System root unless absolute inside the vault."
-        },
-        case_ids: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        presets: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        include_dense: { type: "boolean", default: true },
-        rerank: { type: "boolean", default: true },
-        max_cases: { type: "number", default: 50 },
-        fail_fast: { type: "boolean", default: false },
-        dense_model_dir: { type: "string" },
-        dense_device: { type: "string", default: "cpu" }
-      }
-    }
-  },
-  {
-    name: "embed_texts",
-    description: "Generate local BGE-M3 embeddings for short texts using the installed CPU backend.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        texts: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        text: { type: "string" },
-        prefix: { type: "string", default: "" },
-        normalize: { type: "boolean", default: true },
-        batch_size: { type: "number", default: 8 },
-        precision: { type: "number", default: 6 },
-        include_embeddings: { type: "boolean", default: true },
-        model_dir: { type: "string" },
-        device: { type: "string", default: "cpu" },
-        timeout_ms: { type: "number", default: 180000 },
-        use_worker: { type: "boolean", default: true }
-      }
-    }
-  },
-  {
-    name: "embedding_status",
-    description: "Inspect the local BGE-M3 embedding backend, model files, search index, and warm worker state without loading the model.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        model_dir: { type: "string" },
-        device: { type: "string", default: "cpu" }
-      }
-    }
-  },
-  {
-    name: "system_health_check",
-    description: "Run an AI Dev System health check for vault paths, search index, skill/project registries, search presets, BGE-M3 backend, worker state, and optional search smoke tests.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        include_search_smoke: { type: "boolean", default: true },
-        include_dense_smoke: { type: "boolean", default: false },
-        include_embedding_status: { type: "boolean", default: true },
-        include_registry: { type: "boolean", default: true },
-        include_skill_cards: { type: "boolean", default: true },
-        include_projects: { type: "boolean", default: true },
-        include_auto_commands: { type: "boolean", default: true },
-        include_presets: { type: "boolean", default: true },
-        include_search_eval: { type: "boolean", default: false },
-        smoke_limit: { type: "number", default: 2 }
-      }
-    }
-  },
-  {
-    name: "rebuild_system_dashboard",
-    description: "Regenerate the Obsidian System Dashboard and machine snapshot from live MCP, skill, project, search, outcome, pilot, and overlay state.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        rebuild_search: { type: "boolean", default: false }
-      }
-    }
-  },
-  {
-    name: "system_dashboard_status",
-    description: "Compare the generated System Dashboard fingerprint with current runtime and registry sources.",
-    inputSchema: {
-      type: "object",
-      properties: {}
-    }
-  },
-  {
     name: "prepare_runtime_distribution",
     description: "Validate and document the local-first runtime, launchers, recovery scripts, secret-free profile, and blocked-by-default future VPS boundary.",
     inputSchema: {
@@ -663,72 +310,18 @@ export function buildToolDefinitions({
     }
   },
   {
-    name: "search_projects",
-    description: "Search registered project cards and indexed repo-local AI-dev files.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string" },
-        project: { type: "string" },
-        limit: { type: "number", default: 10 }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "search_notes",
-    description: "Search indexed AI Dev System Markdown notes, optionally restricted to folders.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string" },
-        folders: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        scope: { type: "string", default: "knowledge" },
-        limit: { type: "number", default: 10 }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "search_skill_registry",
-    description: "Search the indexed skill registry with optional source and category filters.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string" },
-        source: { type: "string" },
-        categories: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        limit: { type: "number", default: 10 }
-      },
-      required: ["query"]
-    }
-  },
-  {
-    name: "rebuild_index",
-    description: "Rebuild machine-readable and Markdown skill registries from skills stored in the vault.",
-    inputSchema: {
-      type: "object",
-      properties: {}
-    }
-  },
-  {
     name: "import_skill_repo",
-    description: "Clone or update a GitHub skill repository into the vault and rebuild the skill index.",
+    description: "Clone or update a GitHub skill repository into the vault and rebuild the skill index. With select_skills, import only the skills/<name> directories that pass the import policy: taxonomy exclusions, a name already owned by a local skill, the public-seed privacy audit, and a minimum quality score.",
     inputSchema: {
       type: "object",
       properties: {
         repository_url: { type: "string" },
         source_group: { type: "string", default: "external" },
         name: { type: "string" },
-        update_if_exists: { type: "boolean", default: false }
+        update_if_exists: { type: "boolean", default: false },
+        select_skills: { type: "boolean", default: false },
+        min_quality_score: { type: "number", default: 75 },
+        dry_run: { type: "boolean", default: false }
       },
       required: ["repository_url"]
     }
@@ -781,57 +374,6 @@ export function buildToolDefinitions({
         task: { type: "string" }
       },
       required: ["project_path"]
-    }
-  },
-  {
-    name: "plan_frontend_references",
-    description: "Plan Reference Factory concept images or approved-direction baseline coverage without pretending the MCP server can invoke ImageGen or Figma itself.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        project_path: { type: "string" },
-        task: { type: "string" },
-        stage: { type: "string", enum: ["auto", "concepts", "coverage"], default: "auto" },
-        surface: { type: "string", enum: [...REFERENCE_FACTORY_SURFACES] },
-        generator: { type: "string", enum: [...REFERENCE_FACTORY_GENERATORS], default: "imagegen" },
-        direction_count: { type: "number", minimum: 2, maximum: 3, default: 3 },
-        artifact_budget: { type: "number", minimum: 4, maximum: 64, default: 32 }
-      },
-      required: ["project_path"]
-    }
-  },
-  {
-    name: "register_frontend_references",
-    description: "Validate generated PNG signatures, dimensions, hashes, prompt binding, and visual-inspection evidence, then register them in Frontend Product Quality v2.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        project_path: { type: "string" },
-        manifest_id: { type: "string" },
-        outputs: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              artifact_id: { type: "string" },
-              path: { type: "string" },
-              prompt_sha256: { type: "string" },
-              inspection: {
-                type: "object",
-                properties: {
-                  status: { type: "string", enum: ["pass", "reject"] },
-                  method: { type: "string", enum: ["view_image", "browser", "figma"] },
-                  observations: { type: "string" },
-                  blocking_findings: { type: "array", items: { type: "string" } }
-                },
-                required: ["status", "method", "observations"]
-              }
-            },
-            required: ["artifact_id", "path", "prompt_sha256", "inspection"]
-          }
-        }
-      },
-      required: ["project_path", "manifest_id", "outputs"]
     }
   },
   {
@@ -1058,123 +600,6 @@ export function buildToolDefinitions({
     }
   },
   {
-    name: "run_visual_reference_qa",
-    description: "Run strict desktop/mobile Playwright QA against approved visual baselines, capture every required UI state, evaluate anti-slop rules, and wait for independent visual review.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        project_path: { type: "string" },
-        project_name: { type: "string" },
-        app_subdir: { type: "string" },
-        url: { type: "string" },
-        dev_command: { type: "string" },
-        start_dev_server: { type: "boolean", default: true },
-        routes: { type: "array", items: { type: "string" }, default: ["/"] },
-        viewports: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              width: { type: "number" },
-              height: { type: "number" }
-            },
-            required: ["name", "width", "height"]
-          }
-        },
-        scenarios: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              state: { type: "string" },
-              route: { type: "string", default: "/" },
-              capture_screenshot: { type: "boolean", default: true },
-              actions: {
-                type: "array",
-                items: {
-                  type: "object",
-                  additionalProperties: true,
-                  properties: {
-                    action: { type: "string" },
-                    selector: { type: "string" },
-                    value: {},
-                    text: { type: "string" },
-                    key: { type: "string" },
-                    contains: { type: "string" },
-                    timeout_ms: { type: "number" }
-                  },
-                  required: ["action"]
-                }
-              }
-            },
-            required: ["name", "state", "actions"]
-          }
-        },
-        max_pixel_diff_ratio: { type: "number", default: 0.01 },
-        allowed_http_errors: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              status: { type: "number" },
-              url_pattern: { type: "string" }
-            },
-            required: ["status", "url_pattern"]
-          }
-        },
-        server_ready_timeout_ms: { type: "number", default: 60000 },
-        navigation_timeout_ms: { type: "number", default: 30000 },
-        timeout_ms: { type: "number", default: 300000 }
-      },
-      required: ["project_path"]
-    }
-  },
-  {
-    name: "record_visual_review",
-    description: "Record independent, hash-bound inspection of every screenshot, baseline, and diff plus a ten-dimension Product Design Scorecard. No overall score is accepted.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        project_path: { type: "string" },
-        reviewer: { type: "string" },
-        reviewer_role: { type: "string" },
-        inspections: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              path: { type: "string" },
-              inspection_method: { type: "string", enum: ["browser", "view_image", "human"] },
-              observations: { type: "string" }
-            },
-            required: ["path", "inspection_method", "observations"]
-          }
-        },
-        scorecard: {
-          type: "object",
-          properties: Object.fromEntries(PRODUCT_DESIGN_SCORECARD_DIMENSIONS.map((dimension) => [
-            dimension.id,
-            {
-              type: "object",
-              properties: {
-                status: { type: "string", enum: ["pass", "fail"] },
-                score: { type: "integer", minimum: 1, maximum: 5 },
-                evidence: { type: "string" },
-                findings: { type: "array", items: { type: "string" } }
-              },
-              required: ["status", "score", "evidence", "findings"]
-            }
-          ])),
-          required: PRODUCT_DESIGN_SCORECARD_DIMENSIONS.map((dimension) => dimension.id),
-          additionalProperties: false
-        }
-      },
-      required: ["project_path", "reviewer", "inspections", "scorecard"]
-    }
-  },
-  {
     name: "list_auto_commands",
     description: "List repeatable AI Dev System command workflows such as prepare repository, start feature, investigate bug, review code, improve frontend, and update knowledge.",
     inputSchema: {
@@ -1207,7 +632,7 @@ export function buildToolDefinitions({
   },
   {
     name: "project_identity",
-    description: "Resolve an absolute path or nested package to one canonical local project identity, Git root, aliases, and sanitized repository identity.",
+    description: "Resolve an absolute path or nested package to one canonical local project identity (project_id), the repository identity every worktree of that clone shares (repository_id, the key of session and instinct memory), the Git root, aliases, and the sanitized origin remote.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1315,149 +740,6 @@ export function buildToolDefinitions({
     }
   },
   {
-    name: "run_quality_gate",
-    description: "Run safe verification commands from a project's .ai-dev/quality-gate.md and return a structured report.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        project_path: { type: "string" },
-        labels: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        dry_run: { type: "boolean", default: false },
-        timeout_ms: { type: "number", default: 120000 },
-        max_commands: { type: "number", default: 6 },
-        diagram_specs: { type: "string", description: "Optional project-relative glob for Archify diagram specs; disabled when omitted." },
-        continue_on_failure: { type: "boolean", default: true },
-        update_registry: { type: "boolean", default: true },
-        register_if_missing: { type: "boolean", default: false }
-      },
-      required: ["project_path"]
-    }
-  },
-  {
-    name: "run_frontend_qa",
-    description: "Run browser-based frontend QA with Playwright: desktop/mobile screenshots, interaction scenarios, console/network errors, overflow, axe accessibility, and visual regression baselines.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        project_path: { type: "string" },
-        project_name: { type: "string" },
-        app_subdir: { type: "string", description: "Safe project-relative frontend directory such as frontend or apps/web." },
-        url: { type: "string" },
-        dev_command: { type: "string" },
-        start_dev_server: { type: "boolean", default: true },
-        routes: {
-          type: "array",
-          items: { type: "string" },
-          default: ["/"]
-        },
-        viewports: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              width: { type: "number" },
-              height: { type: "number" }
-            }
-          },
-          default: []
-        },
-        scenarios: {
-          type: "array",
-          description: "Optional route-bound interaction journeys. Supported actions: click, fill, press, check, uncheck, select, hover, wait_for, wait, expect_visible, expect_text, expect_url.",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              state: { type: "string", description: "Stable UI state name such as loading, empty, error, or success." },
-              route: { type: "string", default: "/" },
-              capture_screenshot: { type: "boolean", default: true },
-              actions: {
-                type: "array",
-                items: {
-                  type: "object",
-                  additionalProperties: true,
-                  properties: {
-                    action: { type: "string" },
-                    selector: { type: "string" },
-                    value: {},
-                    text: { type: "string" },
-                    key: { type: "string" },
-                    contains: { type: "string" },
-                    timeout_ms: { type: "number" }
-                  },
-                  required: ["action"]
-                }
-              }
-            },
-            required: ["name", "actions"]
-          },
-          default: []
-        },
-        check_console: { type: "boolean", default: true },
-        check_overflow: { type: "boolean", default: true },
-        check_accessibility_basic: { type: "boolean", default: true },
-        check_accessibility_axe: { type: "boolean", default: true },
-        check_anti_slop: { type: "boolean", default: false },
-        anti_slop_exceptions: {
-          type: "array",
-          items: {
-            oneOf: [
-              { type: "string" },
-              {
-                type: "object",
-                properties: {
-                  rule_id: { type: "string" },
-                  rationale: { type: "string" },
-                  approver: { type: "string" }
-                },
-                required: ["rule_id"]
-              }
-            ]
-          }
-        },
-        required_states: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        check_visual_regression: { type: "boolean", default: true },
-        visual_baseline_dir: { type: "string", description: "Project-relative baseline directory, or an absolute path inside approved artifact roots." },
-        update_visual_baselines: { type: "boolean", default: false, description: "Explicitly replace visual baselines with this run's screenshots." },
-        max_pixel_diff_ratio: { type: "number", default: 0.01 },
-        scenario_timeout_ms: { type: "number", default: 10000 },
-        load_project_config: { type: "boolean", default: true },
-        config_path: { type: "string", default: ".ai-dev/frontend-qa.json" },
-        take_screenshots: { type: "boolean", default: true },
-        screenshot_dir: { type: "string" },
-        artifact_location: { type: "string", enum: ["system", "project"], default: "system" },
-        allowed_http_errors: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              status: { type: "number" },
-              url_pattern: { type: "string" }
-            },
-            required: ["status", "url_pattern"]
-          },
-          default: []
-        },
-        write_report: { type: "boolean", default: true },
-        update_registry: { type: "boolean", default: true },
-        register_if_missing: { type: "boolean", default: false },
-        server_ready_timeout_ms: { type: "number", default: 60000 },
-        navigation_timeout_ms: { type: "number", default: 30000 },
-        timeout_ms: { type: "number", default: 300000 }
-      },
-      required: ["project_path"]
-    }
-  },
-  {
     name: "analyze_project",
     description: "Analyze a repository or monorepo recursively and return components, stacks, commands, source/test roots, entry points, API/data surfaces, CI, and quality gaps.",
     inputSchema: {
@@ -1500,24 +782,6 @@ export function buildToolDefinitions({
         project_path: { type: "string" }
       },
       required: ["project_path"]
-    }
-  },
-  {
-    name: "begin_task",
-    description: "Start a bounded engineering task with a compiled task-specific context pack, at most three routed skills, explicit acceptance criteria, risk, and a Git-bound baseline.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        project_path: { type: "string" },
-        project_name: { type: "string" },
-        task: { type: "string" },
-        acceptance_criteria: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        }
-      },
-      required: ["project_path", "task"]
     }
   },
   {
@@ -1647,71 +911,6 @@ export function buildToolDefinitions({
     }
   },
   {
-    name: "checkpoint_task",
-    description: "Record implementation progress, changed files, and acceptance-criterion evidence before verification.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        task_id: { type: "string" },
-        summary: { type: "string" },
-        changed_files: {
-          type: "array",
-          items: { type: "string" },
-          default: []
-        },
-        criteria: {
-          type: "array",
-          default: [],
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              status: { type: "string", enum: ["pending", "met", "blocked", "waived"] },
-              note: { type: "string" },
-              evidence: { type: "array", items: { type: "string" } }
-            },
-            required: ["id", "status"]
-          }
-        },
-        notes: { type: "string" }
-      },
-      required: ["task_id", "summary"]
-    }
-  },
-  {
-    name: "verify_task",
-    description: "Run the project quality gate and optional Frontend QA, then bind machine-readable evidence to the current Git state.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        task_id: { type: "string" },
-        run_quality: { type: "boolean", default: true },
-        quality_labels: { type: "array", items: { type: "string" }, default: [] },
-        run_frontend: { type: "boolean", default: false },
-        frontend_options: { type: "object", additionalProperties: true, default: {} },
-        run_hygiene: { type: "boolean", default: true, description: "Scan added lines for secrets, debug leftovers, focused/skipped tests, conflict markers, weakened lint configs, and missing test changes. A block finding fails verification." },
-        hygiene_base_ref: { type: "string", default: "HEAD", description: "Git ref the hygiene scan diffs against; use the branch base to include committed work." },
-        evidence: ARCHIFY_EVIDENCE_SCHEMA
-      },
-      required: ["task_id"]
-    }
-  },
-  {
-    name: "complete_task",
-    description: "Complete a task only when all acceptance criteria are resolved and passing verification matches the current project state.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        task_id: { type: "string" },
-        summary: { type: "string" },
-        allow_waived: { type: "boolean", default: false },
-        write_report: { type: "boolean", default: true },
-        evidence: ARCHIFY_EVIDENCE_SCHEMA
-      },
-      required: ["task_id", "summary"]
-    }
-  },
-  {
     name: "write_knowledge_note",
     description: "Create or overwrite a Markdown note in an allowed AI Dev System knowledge folder.",
     inputSchema: {
@@ -1756,7 +955,7 @@ export function buildToolDefinitions({
   },
   {
     name: "archify_validate",
-    description: "Validate an Archify JSON specification and return structured diagnostics without delivering an artifact.",
+    description: "Validate an Archify JSON specification and return structured diagnostics without delivering an artifact. Provide exactly one of spec (inline) or spec_path (a file).",
     inputSchema: {
       type: "object",
       properties: {
@@ -1773,7 +972,7 @@ export function buildToolDefinitions({
   },
   {
     name: "archify_render",
-    description: "Render an Archify specification to HTML without the delivery quality gate.",
+    description: "Render an Archify specification to HTML without the delivery quality gate. Provide exactly one of spec (inline) or spec_path (a file).",
     inputSchema: {
       type: "object",
       properties: {
@@ -1787,7 +986,7 @@ export function buildToolDefinitions({
   },
   {
     name: "archify_deliver",
-    description: "Render, validate, and deliver a self-contained Archify HTML artifact with SHA-256 receipt.",
+    description: "Render, validate, and deliver a self-contained Archify HTML artifact with SHA-256 receipt. Provide exactly one of spec (inline) or spec_path (a file).",
     inputSchema: {
       type: "object",
       properties: {

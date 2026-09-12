@@ -819,6 +819,17 @@ async function frontendQaEnvironmentStatus(options) {
     } finally {
       await browser?.close().catch(() => {});
     }
+  } else {
+    // The commonest reason Frontend QA does nothing, and the one the status
+    // used to report as an empty string: Playwright resolved a browser path and
+    // there is no browser at it — a fresh install, or a shared browser
+    // directory holding a build this Playwright does not use.
+    const shared = process.env.PLAYWRIGHT_BROWSERS_PATH;
+    launchError = [
+      `Chromium is not at ${executablePath}.`,
+      shared ? `PLAYWRIGHT_BROWSERS_PATH is ${shared}, and this Playwright wants the build above.` : "",
+      "Install it with `npx playwright install chromium`, or point PLAYWRIGHT_BROWSERS_PATH at a directory that has this build."
+    ].filter(Boolean).join(" ");
   }
 
   return {

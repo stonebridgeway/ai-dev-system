@@ -95,7 +95,13 @@ export class TaskStore {
     const createdAt = now();
     const id = taskId(task, project.project_path);
     const risk = riskFor(task, project.project_types || []);
-    const planPolicy = classifyTaskComplexity({ task, risk, projectTypes: project.project_types || [], selectedFiles: context?.selected_files || [], acceptanceCriteria });
+    const planPolicy = classifyTaskComplexity({
+      task,
+      risk,
+      projectTypes: project.project_types || [],
+      selectedFiles: context?.selected_files || [],
+      acceptanceCriteria
+    });
     const record = {
       schema_version: 1,
       id,
@@ -116,8 +122,18 @@ export class TaskStore {
       risk,
       plan_policy: planPolicy,
       plan: null,
-      acceptance_criteria: normalizeCriteria(task, project.project_types || [], [...acceptanceCriteria, ...(planPolicy.plan_required ? [PLAN_CRITERION_TEXT] : [])]),
+      acceptance_criteria: normalizeCriteria(task, project.project_types || [], [
+        ...acceptanceCriteria,
+        ...(planPolicy.plan_required ? [PLAN_CRITERION_TEXT] : [])
+      ]),
       skills: skills || [],
+      // Epic links (src/core/task-epics.mjs). A task is a child when
+      // `parent_id` names one, a parent when `epic.children` lists any, and
+      // most tasks are neither. Older records carry none of the three, so every
+      // reader treats them as absent rather than required.
+      parent_id: "",
+      depends_on: [],
+      epic: null,
       context,
       baseline,
       checkpoints: [],

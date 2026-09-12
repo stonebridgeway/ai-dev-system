@@ -1,0 +1,9 @@
+model = "gpt-5"
+approval_policy = "on-request"
+
+[mcp_servers.ai-dev]
+command = "node"
+args = ["/opt/ai-dev/src/server.mjs"]
+env = { AI_DEV_VAULT_ROOT = "${AI_DEV_VAULT_ROOT}", AI_DEV_LOG = "info" }
+startup_timeout_sec = 120
+tool_timeout_sec = 3600

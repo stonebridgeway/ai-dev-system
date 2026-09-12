@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { callTool, usageLedger } from "./mcp-stdio.mjs";
 import { createAiDevServer } from "./server.mjs";
 
 async function connectedPair() {
@@ -112,4 +116,80 @@ test("SDK runtime exposes tools, resources, prompts, and structured results", as
   assert.equal(designSystem.isError, false);
   assert.ok(designSystem.structuredContent?.result?.design_system?.style);
   assert.equal(designSystem.structuredContent?.result?.persistence, null);
+});
+
+
+test("a tool that needs one of two arguments says so where a caller can read it", async (t) => {
+  // A schema's `required` cannot say "project_path or task_id", so these tools
+  // accepted a call that filled every required field and then refused it. The
+  // alternative has to be in the description, which is what a model reads.
+  const { client } = await connectedPair();
+  t.after(() => client.close());
+  const { tools } = await client.listTools();
+  const described = Object.fromEntries(tools.map((tool) => [tool.name, tool.description ?? ""]));
+
+  const contracts = [
+    ["record_decision", ["project_path", "task_id"]],
+    ["list_decisions", ["project_path", "task_id"]],
+    ["coverage_gaps", ["project_path", "task_id"]],
+    ["record_instinct", ["project_path", "task_id"]],
+    ["save_session", ["topic", "building"]],
+    ["record_usage", ["input_tokens", "output_tokens", "cost_usd"]],
+    ["archify_validate", ["spec", "spec_path"]],
+    ["archify_render", ["spec", "spec_path"]],
+    ["archify_deliver", ["spec", "spec_path"]]
+  ];
+  for (const [name, alternatives] of contracts) {
+    const description = described[name];
+    assert.ok(description, `${name} is not in the tool list`);
+    for (const alternative of alternatives) {
+      assert.ok(
+        description.includes(alternative),
+        `${name} refuses without one of ${alternatives.join(" / ")}, and its description never mentions ${alternative}`
+      );
+    }
+  }
+});
+
+test("the usage ledger records every caller once: direct calls, transport calls, failures", async (t) => {
+  const { client, server } = await connectedPair();
+  t.after(async () => {
+    await client.close();
+    await server.close();
+  });
+
+  const toolCalls = async (tool) => {
+    await usageLedger.flush();
+    return (await usageLedger.readEvents()).filter((event) => event.kind === "tool_call" && event.tool === tool);
+  };
+
+  // A direct call — scripts/ai-dev.mjs, the smoke scripts, a composed tool —
+  // used to be invisible to usage_report because only server.mjs recorded.
+  const before = (await toolCalls("list_search_presets")).length;
+  await callTool("list_search_presets", {});
+  const afterDirect = await toolCalls("list_search_presets");
+  assert.equal(afterDirect.length, before + 1);
+  assert.equal(afterDirect.at(-1).ok, true);
+
+  const viaTransport = await client.callTool({ name: "list_search_presets", arguments: {} });
+  assert.equal(viaTransport.isError, false);
+  assert.equal((await toolCalls("list_search_presets")).length, before + 2, "the transport must not record a second event");
+
+  // Project/task hints keep working now that they are read inside callTool.
+  const projectPath = await fs.mkdtemp(path.join(os.tmpdir(), "usage-hints-"));
+  t.after(() => fs.rm(projectPath, { recursive: true, force: true }));
+  await callTool("verify_change_hygiene", { project_path: projectPath });
+  const scans = await toolCalls("verify_change_hygiene");
+  assert.equal(scans.at(-1).project_path, projectPath);
+  assert.ok(scans.at(-1).duration_ms >= 0);
+
+  await assert.rejects(callTool("verify_change_hygiene", {}), /project_path or task_id is required/);
+  const failed = (await toolCalls("verify_change_hygiene")).at(-1);
+  assert.equal(failed.ok, false);
+  assert.match(failed.error, /project_path or task_id is required/);
+
+  const errored = await client.callTool({ name: "verify_change_hygiene", arguments: {} });
+  assert.equal(errored.isError, true);
+  const failures = (await toolCalls("verify_change_hygiene")).filter((event) => !event.ok);
+  assert.equal(failures.length, 2, "one failure per call, from whichever caller made it");
 });

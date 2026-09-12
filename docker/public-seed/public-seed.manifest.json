@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "policy": "explicit allowlist; no private vault zones or local runtime state",
-  "total_files": 922,
-  "total_bytes": 16886032,
-  "content_fingerprint": "0df2f5425349dafd60d9ffe6e8d1beb44f002d1a1f987e0dc11094decad8641c",
+  "total_files": 1040,
+  "total_bytes": 18083897,
+  "content_fingerprint": "3943408a26d7eae25195c84b251db44c447da16ccc595172e15f5e3ddf4a92c6",
   "files": [
     {
       "path": "01-system/Agent Rules.md",
@@ -32,18 +32,18 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/ai-dev-orchestrator/agents/openai.yaml",
-      "bytes": 262,
-      "sha256": "4e1cc65326c1b0737ee94e6587c74bc7ba05a4084101e2ce078cf0ce15361cca"
+      "bytes": 258,
+      "sha256": "609f1e6cada4bd97c9504e554ca695313a9d3306af9f224b316a03c0fb4598f0"
     },
     {
       "path": "03-skills-catalog/sources/custom/ai-dev-orchestrator/SKILL.md",
-      "bytes": 3503,
-      "sha256": "21a114bd710764e03c0902fd957ebd696afbe39992846b6ba9cf1702fd46bb27"
+      "bytes": 5542,
+      "sha256": "665a71617b1c2924ecdbcd1b84b072f7e37488b66534b7c394787fb70894dee1"
     },
     {
       "path": "03-skills-catalog/sources/custom/api-contract-reviewer/agents/openai.yaml",
-      "bytes": 243,
-      "sha256": "13611e077b1e1a2061817e23de807859ee77e7f80f8c9ee8f2776a72a0f7724a"
+      "bytes": 239,
+      "sha256": "bb3d9813a55e2887dfb8335038a3491c06c603d36282ea50f3a47ca26a874f6f"
     },
     {
       "path": "03-skills-catalog/sources/custom/api-contract-reviewer/SKILL.md",
@@ -52,8 +52,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/application-security-reviewer/agents/openai.yaml",
-      "bytes": 268,
-      "sha256": "2e701ff3f6cfb5244028c5ef12085b6e0270371d6fa3e4a4303ed2c6e6066a65"
+      "bytes": 264,
+      "sha256": "ce03110342989040f0e5f2cdef2cc92746a708ccdc2b2d8218cf18426f0efc48"
     },
     {
       "path": "03-skills-catalog/sources/custom/application-security-reviewer/SKILL.md",
@@ -62,8 +62,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/backend-api-engineer/agents/openai.yaml",
-      "bytes": 255,
-      "sha256": "653f1e4f7f2ce0f4661531e6ad2b0bbd6579a72e6e25b61f4e1dd6492781aad7"
+      "bytes": 251,
+      "sha256": "96cbf08ed583881d86d1636a619fbe026b17bc8e3cabc0fedb4256fde906f8ea"
     },
     {
       "path": "03-skills-catalog/sources/custom/backend-api-engineer/SKILL.md",
@@ -72,8 +72,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/beta-frontend-maintainer/agents/openai.yaml",
-      "bytes": 128,
-      "sha256": "1126426438f6fb8e479cf3ebd935669e52cb761e1a58a80864cfb82e95c5cc57"
+      "bytes": 125,
+      "sha256": "b624bd7636c6a34fed1516a16939e7139e4aea1c783e617da7235970139c74b3"
     },
     {
       "path": "03-skills-catalog/sources/custom/beta-frontend-maintainer/SKILL.md",
@@ -92,8 +92,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/container-deployment-reviewer/agents/openai.yaml",
-      "bytes": 279,
-      "sha256": "d702b34cf62afd864f7e0f6b4732fb294448503012e394d074a93aa6393ecba7"
+      "bytes": 275,
+      "sha256": "e6ca709d3cb68471157924747d101a719a05b7b6f1133521881db642a4319a0c"
     },
     {
       "path": "03-skills-catalog/sources/custom/container-deployment-reviewer/SKILL.md",
@@ -102,8 +102,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/data-pipeline-engineer/agents/openai.yaml",
-      "bytes": 268,
-      "sha256": "655e8083b93a6aa89e2daf0d95be23f98d31003535e45c911bcf4f20af130c2f"
+      "bytes": 264,
+      "sha256": "5b74a04d40abfcfd0ffd6a80211169e1312ab6a478efdda68840360e5e348a34"
     },
     {
       "path": "03-skills-catalog/sources/custom/data-pipeline-engineer/SKILL.md",
@@ -112,8 +112,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/database-migration-guardian/agents/openai.yaml",
-      "bytes": 263,
-      "sha256": "1c7e4e84d915d5f1e98213e09ec7b6d6693ba0b974b2ddee133b98fc6a8af222"
+      "bytes": 259,
+      "sha256": "53b20c24e8340476c6ad6c350b1c6b4d428b42c5bc03b0a377a0a99136952173"
     },
     {
       "path": "03-skills-catalog/sources/custom/database-migration-guardian/SKILL.md",
@@ -122,8 +122,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/devops-release-engineer/agents/openai.yaml",
-      "bytes": 247,
-      "sha256": "1646b14f0f2264e365cbd3bf88d04fc988c89bd2b48451fa7a90d3e69007aa55"
+      "bytes": 243,
+      "sha256": "1a47a2591d8ade4a560a27854a294e7f8942239bce0729b4cf1fa083ed35089f"
     },
     {
       "path": "03-skills-catalog/sources/custom/devops-release-engineer/SKILL.md",
@@ -152,8 +152,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/frontend-quality-gate/agents/openai.yaml",
-      "bytes": 121,
-      "sha256": "979bee86127c22b8430489e7b735827f96706cafd1a841600de231ef97d52175"
+      "bytes": 118,
+      "sha256": "7426adc58d8e03fcf51af5b3097b3eba953bea62d50b313ec7452993e25b294e"
     },
     {
       "path": "03-skills-catalog/sources/custom/frontend-quality-gate/SKILL.md",
@@ -167,8 +167,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/landing-conversion-reviewer/agents/openai.yaml",
-      "bytes": 130,
-      "sha256": "4cd16ef71d4ee02e63c16a1e6b0919cc38fc4fa12f7848100d96164b0dfe3027"
+      "bytes": 127,
+      "sha256": "177214fb9701130f6598e8c7e3b289b9c105a3d5b0fcfc1d339af5a7da26c661"
     },
     {
       "path": "03-skills-catalog/sources/custom/landing-conversion-reviewer/SKILL.md",
@@ -177,13 +177,23 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/llm-integration-engineer/agents/openai.yaml",
-      "bytes": 277,
-      "sha256": "b95f8621d5988f0f18c0a09113f5cf7cb73729d4945614ced8866c2501be00dd"
+      "bytes": 273,
+      "sha256": "63806fe8afbb1b5f49b61e29e6ce94b2ea0fc266da2590bf16cb37284ca9f35e"
     },
     {
       "path": "03-skills-catalog/sources/custom/llm-integration-engineer/SKILL.md",
       "bytes": 3605,
       "sha256": "87ed49ad81da0fcab4d0682bb12cb2d6f4d53f7f03301806b7e01d43df1a0f3d"
+    },
+    {
+      "path": "03-skills-catalog/sources/custom/memory-curator/SKILL.md",
+      "bytes": 3016,
+      "sha256": "5dce2e0b36c293cf05e6d865ccc8408c37509ba8884f243fb2af975743225cf8"
+    },
+    {
+      "path": "03-skills-catalog/sources/custom/planner/SKILL.md",
+      "bytes": 2729,
+      "sha256": "7dd372cc6380d6fcc2217ab7a513416dabd60fa15e61571ffda4b18bb475b1a2"
     },
     {
       "path": "03-skills-catalog/sources/custom/repo-onboarding/SKILL.md",
@@ -192,8 +202,8 @@
     },
     {
       "path": "03-skills-catalog/sources/custom/secrets-dependencies-auditor/agents/openai.yaml",
-      "bytes": 276,
-      "sha256": "acd68767fc812204f84838c56243dc0b12e97a734e32d1e6451070da403e2f23"
+      "bytes": 272,
+      "sha256": "e7989d7f6dc5932c94ff65d2f78b9660f8abf28a90608437f0f9ca003c8e4324"
     },
     {
       "path": "03-skills-catalog/sources/custom/secrets-dependencies-auditor/SKILL.md",
@@ -201,89 +211,109 @@
       "sha256": "758900f692f97fde1f1b567a1136874b093c7e5420b738f1d88315237ad610dc"
     },
     {
+      "path": "03-skills-catalog/sources/custom/security-reviewer/SKILL.md",
+      "bytes": 3154,
+      "sha256": "bb32fd3b82c8e8c0398422fc05b6a53d2d3f12e5fe663a6ad5f4c9f946f4dda2"
+    },
+    {
+      "path": "03-skills-catalog/sources/custom/self-evaluation/SKILL.md",
+      "bytes": 6061,
+      "sha256": "59678adb460e97cd1b1011e0d0b8b987e28ab540dfbdadbf4d735f2bbfb0bcb4"
+    },
+    {
+      "path": "03-skills-catalog/sources/custom/silent-failure-hunter/SKILL.md",
+      "bytes": 2647,
+      "sha256": "190e6645384963e81d08b89783555287f4b60bbe0cd366346c2828d659793fb2"
+    },
+    {
+      "path": "03-skills-catalog/sources/custom/verification-loop/SKILL.md",
+      "bytes": 2954,
+      "sha256": "73de19c36f9cf724e958f607401f35256dce5b0f7aaa731bbc429fddd67d977e"
+    },
+    {
       "path": "03-skills-catalog/sources/design/taste-skill/LICENSE",
-      "bytes": 1086,
-      "sha256": "3c9f63518df3378772203cc64d38d9e381d2a4723b93d2c3849b2bf3d464de0c"
+      "bytes": 1065,
+      "sha256": "4575a543ab88dad12ccea7d97e563d0bce5b448b06072e65d3264497dad326df"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/README.md",
-      "bytes": 13313,
-      "sha256": "996fd913fed93b89df104ad71d39397c4b98539d8e5a88f13c94f84eee2269ed"
+      "bytes": 13094,
+      "sha256": "895b67a0c5f86240ee61816c0b9a0b236f0bfc9ab3ca4dbdb4eceaa2ba9d8531"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/brandkit/SKILL.md",
-      "bytes": 17220,
-      "sha256": "5320ff983d8a0894efef6cf4f3a7880a864ccb4c26b5886e05a9412719fb7e36"
+      "bytes": 16425,
+      "sha256": "cc92e8883ca32d3de0404fb8bd2400f7fc8059f661042e23d75620914a9c236b"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/brutalist-skill/SKILL.md",
-      "bytes": 8961,
-      "sha256": "8073e8ccc90b62e1c037f7aa52519c0235ef9d02289e4a88cdbb6e01c31fd533"
+      "bytes": 8870,
+      "sha256": "fb76c7d02e33a60271cbe85568c764cdbd87ed656a95e726b6b6369f387aaaf1"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/gpt-tasteskill/SKILL.md",
-      "bytes": 7796,
-      "sha256": "da84f21f8f9da3fccf216b777a23bdf833e5e548e0daa71d0efb8b2f818e7c13"
+      "bytes": 7723,
+      "sha256": "0022b187fdf2b1f7739fa5f4fc050738ef8bec2a6f7652e8053ac5d618121ea3"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/image-to-code-skill/SKILL.md",
-      "bytes": 37670,
-      "sha256": "2944189b448e2a77cbbf55014030b1890a9ec5891acc9fa97fb8c215e0008407"
+      "bytes": 36442,
+      "sha256": "4c060a8064a8b13380bc2ef3d6e6a1d0b1e316aa093cd9807d0ce9e4eeb037fa"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/imagegen-frontend-mobile/SKILL.md",
-      "bytes": 41791,
-      "sha256": "3cadf1bfbe836d377832d090e5db8479f98903453a4d1342be9636178755f9dd"
+      "bytes": 40326,
+      "sha256": "8a33389979f3074fa0926678e266ad2eb9234624472254469fc1ad916b9caa24"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/imagegen-frontend-web/SKILL.md",
-      "bytes": 37841,
-      "sha256": "23e6d27ab410e97fe5e844d18db97c8e674d317abd8567f4c7726ee16f56da6e"
+      "bytes": 36854,
+      "sha256": "6b5c2256522fdba1e3313eafa3d743b960a7b13ec029d3e6586e04b23327c1f8"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/llms.txt",
-      "bytes": 1859,
-      "sha256": "3a92967f6c76a58f98a353dee430d15e53d2ce9f13f93ad35a9aedbb0e4e3ecd"
+      "bytes": 1846,
+      "sha256": "c34dc218fe2940a3944967add63e4220e43975f5b15b31b8a280e73055484301"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/minimalist-skill/SKILL.md",
-      "bytes": 8438,
-      "sha256": "e2fd202d3dac3a09491688a5c538e29bfc8159823af191edebdcff9472294b74"
+      "bytes": 8355,
+      "sha256": "37fcbfd5fca917ebc30ba3e0ca64eb773c34ba8bf03a34fa95b2a8d9be9bd8c1"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/output-skill/SKILL.md",
-      "bytes": 2641,
-      "sha256": "7b2275b591af7760b36a2dfb1dbcf3c99c5054c52298a1066c4979f39ed947d9"
+      "bytes": 2592,
+      "sha256": "e5bf48b1ae561511439cf71672209a10a88cee0968cc925909ff861dfa0a96a7"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/redesign-skill/SKILL.md",
-      "bytes": 15610,
-      "sha256": "fc7b1250232560aeb3e3d8da7f9f41041f3d525bd342b51765db0e1d1be96c96"
+      "bytes": 15435,
+      "sha256": "7482c5f4602677fa05151f0b06916dd6a020511781b28ba9b32224a2786e5e15"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/soft-skill/SKILL.md",
-      "bytes": 10604,
-      "sha256": "f6528674c9791156769414a1bcf8865941b4ba023c708c91a22c0231594d9069"
+      "bytes": 10507,
+      "sha256": "fb2a7860b1f56f08b2023178fbb6c324bfa3eb472d2c57df1847d79b07873cd5"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/stitch-skill/DESIGN.md",
-      "bytes": 12174,
-      "sha256": "4d13f63345ee4a0774fa910c6019d0579e05ff565699ff1a79e3f648f5db1d35"
+      "bytes": 12053,
+      "sha256": "0ab6740c4ebb1966dbceddb823a66d4bf027e960efbd73faca56cbf8370ae2ad"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/stitch-skill/SKILL.md",
-      "bytes": 12322,
-      "sha256": "61598a6c1d5722571989e9894f0a39fa08760f0360d79b3b4ffd4cbd119ab631"
+      "bytes": 12141,
+      "sha256": "fa1ebc545fde3047ea07d458b86551d48da3902ffd392bcebf67a96624aadfb0"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/taste-skill-v1/SKILL.md",
-      "bytes": 21344,
-      "sha256": "26f2d0d09ca8049b4efecb07f8b178628542aea8aa9af3d80421a2b218a5d839"
+      "bytes": 21119,
+      "sha256": "e66a175cf93c4ac241938706c4e4e0c179720489726a6cdce18d040ee133a5d6"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/skills/taste-skill/SKILL.md",
-      "bytes": 88459,
-      "sha256": "2e064e92aca020b2e0bad69326fe7ea55d59005ed53d1a8cbce1bd135d44b8b3"
+      "bytes": 87253,
+      "sha256": "aa194351b246b8b4799099d4ed7b033d29eab6e6e3d58d8d2172978be7b3ec89"
     },
     {
       "path": "03-skills-catalog/sources/design/taste-skill/upstream.json",
@@ -4316,224 +4346,784 @@
       "sha256": "c08a94779a42bdba5b88a369b00bf484ec36f2501b5d359cd73f50b8ceb9e897"
     },
     {
+      "path": "03-skills-catalog/sources/external/ecc/LICENSE",
+      "bytes": 1071,
+      "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/accessibility/SKILL.md",
+      "bytes": 6563,
+      "sha256": "d8578fe750e7321658450386e2112a46ea1aedca0235fbf97f3db2457e599b3a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/agent-eval/SKILL.md",
+      "bytes": 4696,
+      "sha256": "57fa683e356b6f5612bc6d7dc101ae39c126e6edf9a48f4ec53afea3e80d7e5d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/android-clean-architecture/SKILL.md",
+      "bytes": 8887,
+      "sha256": "20cbb9d7778462c549ccd32c830c0004fc7b92cfa009db99900d773373115f12"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/api-connector-builder/SKILL.md",
+      "bytes": 2664,
+      "sha256": "00a0d01e234f213d343f0040bbebd56e042978768ce5bb7117776a75bd9547e8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/api-design/SKILL.md",
+      "bytes": 13227,
+      "sha256": "bfae53167acc91caff0ff9ab73a80ee3fd92caccdfa445c88302c3bf95255156"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/architecture-decision-records/SKILL.md",
+      "bytes": 7131,
+      "sha256": "525e51b4ed98222cd49ea7d2e42b51a010ecab391b25022a86164258c14b8bb0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/backend-patterns/SKILL.md",
+      "bytes": 13349,
+      "sha256": "9b983d0297a983110fdfda8dce55d19b750ca3e53ef155d75a3eff740d3874b8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/benchmark/SKILL.md",
+      "bytes": 2356,
+      "sha256": "3b4d32317cb906904ab192b6e50389e34bad88887cb085c8ef1a345c382609dc"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/browser-qa/SKILL.md",
+      "bytes": 3727,
+      "sha256": "c501257d2c9ca711342b56d7adfb04897f17c6946dc6cdb88a5c75c87e4aa951"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/click-path-audit/SKILL.md",
+      "bytes": 7975,
+      "sha256": "662fc5d02483bcd8ff799d6d3109a38da673182341cfc14445e9076fcd920162"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/clickhouse-io/SKILL.md",
+      "bytes": 10731,
+      "sha256": "9f0f2b632f3feb1bd4ca7bae119fe05454668ab763b7d3c3d304f8740b8fd415"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/code-tour/SKILL.md",
+      "bytes": 8030,
+      "sha256": "416c7eb9229554a1ef113bbb873ff0b260a2ad9ae6e6075a75c375955d3fcf6f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/codebase-onboarding/SKILL.md",
+      "bytes": 8235,
+      "sha256": "ef88873a4b0d0fe155c0a196ffecd5c7b5e28edd00fbbdb5c1fd2ca8fd0eb6f0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/coding-standards/SKILL.md",
+      "bytes": 12866,
+      "sha256": "e80544c3d1eac5b14f22022146bd91a6b0ecc30e099cf5181894853aeb81dee1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/compose-multiplatform-patterns/SKILL.md",
+      "bytes": 8229,
+      "sha256": "37a50a5eb0a717eebac646360dbd8828f626236ec04d98d8c4a6b191a5efb0d0"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/config-gc/SKILL.md",
+      "bytes": 7942,
+      "sha256": "e8ade5c8d48728db6c1137e4392308b6d56290a19d4f78d365122d7ab05276a1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/context-budget/SKILL.md",
+      "bytes": 5840,
+      "sha256": "920c5edde48e495b267fb0d42d8411c8b75ce1d8ab76e793b2eb6d23da01b0f1"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/contract-first/SKILL.md",
+      "bytes": 9521,
+      "sha256": "dc23ee49437e4d914ea9a9e37eec0dfe59dc16b11fcbc3a6e5c72f25dbd3cc5c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/cost-aware-llm-pipeline/SKILL.md",
+      "bytes": 5992,
+      "sha256": "2d6c19c2d21a473db8720c4f723f17d265eeec48f84614f0169be2df2fbe28ff"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/cost-tracking/SKILL.md",
+      "bytes": 4465,
+      "sha256": "486b8289ec3f481e75c477f9e209ab4d008c9fe05dde7c1d0b7813010c3463ba"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/cpp-coding-standards/SKILL.md",
+      "bytes": 22291,
+      "sha256": "f870b47d3493b0ad0b6e3808a679ac3c429b60f03193af6c9dc0e0d9e6981436"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/cpp-testing/SKILL.md",
+      "bytes": 9175,
+      "sha256": "a92fb5da9b7e3cd1b4dee185b3eb9d0a55352af6396bf996d2eef72d683784df"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/dart-flutter-patterns/SKILL.md",
+      "bytes": 16033,
+      "sha256": "d0a5a1881005ae78f1bca3d73c194057302c653efedb24332a27d55f6c85112e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/data-throughput-accelerator/SKILL.md",
+      "bytes": 2612,
+      "sha256": "ed164d18536a456f71b876a84c54a94a5fc0a0f6aca25299c1c4a2b8f5476449"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/database-migrations/SKILL.md",
+      "bytes": 11957,
+      "sha256": "ad7f2f04ca03e592a16e2a539d8c6e90bf4e08892408820ce99a53e9d07775de"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/delivery-gate/hooks/quality-gate.py",
+      "bytes": 7826,
+      "sha256": "76aa0fe8c136be8a760ce74e614463ffb05fb16f1e165c5938daa86f516b87ef"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/delivery-gate/SKILL.md",
+      "bytes": 5140,
+      "sha256": "147a971c26b7bf4f9fbc3e1f624ec7c888eb8d74911d8ffbbe0418d9aaaa9767"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/deployment-patterns/SKILL.md",
+      "bytes": 11113,
+      "sha256": "b864abd1954570c4a469b7e1deb897e57858d25db2fd98d035ff7bca4a15b9b6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/django-celery/SKILL.md",
+      "bytes": 13134,
+      "sha256": "1f9189ece910eb90a5d2cd520a9a6238ccb89a3e48629ac1ad9b55ec3eb21f88"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/django-patterns/SKILL.md",
+      "bytes": 21116,
+      "sha256": "14abe2b635054dff872c07d4993057e614b48ac718c0431f1299931be7d69516"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/django-security/SKILL.md",
+      "bytes": 17269,
+      "sha256": "e043c9d300695aea5a9bb4c72a6f47e47ba1f2c7ddc1e82b8191acd0ad70c54a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/django-verification/SKILL.md",
+      "bytes": 11491,
+      "sha256": "cb1b6c5938c8c41dffb1f7bb752e307df6ced2577af2fc40786bde4c53799cea"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/docker-patterns/SKILL.md",
+      "bytes": 14937,
+      "sha256": "2a880cf2f6401874151daa9bcc0eacd10cf79f5f48b97f98e93a877a8f3fd12b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/error-handling/SKILL.md",
+      "bytes": 10984,
+      "sha256": "e8eec6756c950b570486493e64e3bf14c12baf6bf0858bf3928097fe2bfeaf79"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/fastapi-patterns/SKILL.md",
+      "bytes": 15637,
+      "sha256": "f54c2bf5a61eeda47c939da265b1431d609c231611e71b688b0b734a064b18f3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/flutter-dart-code-review/SKILL.md",
+      "bytes": 23194,
+      "sha256": "5ceac13c9b99c97340f9a47c081737aceee1f803ed9045b7fbc980243b01db03"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/foundation-models-on-device/SKILL.md",
+      "bytes": 8255,
+      "sha256": "4f239588e43f7ff0d6415cdcd2c85528a854cdd712986c00c690c6d3cb09491e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/frontend-design-direction/SKILL.md",
+      "bytes": 4360,
+      "sha256": "fa254de821f708e5791c4c80d30309ac7da89c2888301e967becb3b21ac73331"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/generating-python-installer/SKILL.md",
+      "bytes": 30327,
+      "sha256": "47e73ef601d900be3b5ccb5d1a1ba2371d3e46c67b5243c1810e51cd2d8f62f3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/git-workflow/SKILL.md",
+      "bytes": 15191,
+      "sha256": "d34cfc7114b4479cac2b802f2463c39312cbab4a509313128cb83ac12a1b1eb6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/golang-patterns/SKILL.md",
+      "bytes": 14136,
+      "sha256": "d643e354683167727cfeb76934855db988468cd15b3ca01db9a32db43902edf7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/golang-testing/SKILL.md",
+      "bytes": 16744,
+      "sha256": "e3399562c58590dfcbd09bfcbf8f401120a2ded0418eb33bbfca6c697ac485ad"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/growth-log/SKILL.md",
+      "bytes": 6766,
+      "sha256": "8f90db7c9e84a570f68480a32075026fd98dc4c0dbc7ead0af8357e756274cee"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/hexagonal-architecture/SKILL.md",
+      "bytes": 11520,
+      "sha256": "1579f70e4cd5a2dde39d29a2055d18b39f06b063a308d3b43a498900c99495b7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/inherit-legacy-style/SKILL.md",
+      "bytes": 8552,
+      "sha256": "14e7b20424f123b594d3ee3d6ac3e722b21e5a6816fe90bacf8a23e6c3af5b6d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/intent-driven-development/SKILL.md",
+      "bytes": 17199,
+      "sha256": "e34045f7b3bf6a6fbd364f85c7bc81d8208e18bb929ceff80bbc987f78aadea8"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/java-coding-standards/SKILL.md",
+      "bytes": 11550,
+      "sha256": "c7088a434cd7efb4f3bb449bed2178cf683c1d71bc50f8ae5234a8880d3633f4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/jpa-patterns/SKILL.md",
+      "bytes": 4679,
+      "sha256": "bcdd45c5e435df259856b20aae47182209b0467b542eacfc7e32bcf452326839"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/kotlin-coroutines-flows/SKILL.md",
+      "bytes": 7869,
+      "sha256": "ed7d895ecd6c717fbdbf7f1469110df74a6337792acd1232c4ad7286abee76e4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/kotlin-ktor-patterns/SKILL.md",
+      "bytes": 19536,
+      "sha256": "f2fa0b135ad0f37ee7a79dd346d236758f25c60c525de451bba28678659a5261"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/kotlin-patterns/SKILL.md",
+      "bytes": 18951,
+      "sha256": "e519234772a3697763ad484908d180c4c653439fea75a56c03440c272f9f0896"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/kotlin-testing/SKILL.md",
+      "bytes": 20800,
+      "sha256": "13e39ad65e86e86c22fbdb6273bdc8d17d3784c221a8f08207a1e9e2e9c29a0a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/laravel-patterns/SKILL.md",
+      "bytes": 10664,
+      "sha256": "6fa9d96a7b944ef9775e2ecb93a56bc29d6219e34eb5af491792638fc5cb46b4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/laravel-security/SKILL.md",
+      "bytes": 26556,
+      "sha256": "0440ddff450c63a9338f15b765ec35486f3f3266b321e0b27128faa3c29784fe"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/laravel-verification/SKILL.md",
+      "bytes": 4376,
+      "sha256": "577f592e4d570e8a6c4a0106acb8102063f67bea53c98eb6eae222191c038c35"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/latency-critical-systems/SKILL.md",
+      "bytes": 2495,
+      "sha256": "5df315a5b5dd306a569ba8b3220f4eab80302c3d7f90128c290398b64bb76275"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/liquid-glass-design/SKILL.md",
+      "bytes": 9119,
+      "sha256": "6e424b8daba26c92a8283cd3e5b35c7b2bc78a0a9fc07821a5939027090b8e43"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/living-docs-governance/SKILL.md",
+      "bytes": 8482,
+      "sha256": "e8c22a1f69743e256c6d6df138d99e49d22e29effbf008dfe2328b7fdc76247e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/mcp-server-patterns/SKILL.md",
+      "bytes": 4192,
+      "sha256": "eacb07c953e0440c758e3ee7d92984d2c9128e3444005ea7ad5da7bc0201d43d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/mle-workflow/SKILL.md",
+      "bytes": 22450,
+      "sha256": "2497888dd543ca7bdf5d0cb4d90fce023eb2c1c14f860f0af8e8be42423131b4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/motion-advanced/SKILL.md",
+      "bytes": 18800,
+      "sha256": "1ee09b942bf328ffa97148bed838ecc8789c1891ca441abccdca52b4c47a9742"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/motion-foundations/SKILL.md",
+      "bytes": 9797,
+      "sha256": "ac0dd6de088e8cf2bff57230b365469e893c5f3a9578815a7f113689d0401972"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/motion-patterns/SKILL.md",
+      "bytes": 13418,
+      "sha256": "9d78bcd2c3b52abdb6fb29162f289b9c709547de264ad064b12e00bedb031907"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/mysql-patterns/SKILL.md",
+      "bytes": 12169,
+      "sha256": "cab57c6a6d7e0bab99329945edda900811c40ec929b47aa95611f9df58f7391d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/nestjs-patterns/SKILL.md",
+      "bytes": 6533,
+      "sha256": "7f41406abaf10185d9a784e894108ded771a0177b1051e0b2c65d14f226bd581"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/nuxt4-patterns/SKILL.md",
+      "bytes": 4761,
+      "sha256": "8f99946d5aa8e11dae8ba1ade746a6a803efcba63ba8b618dbf7748331c14e47"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/perl-patterns/SKILL.md",
+      "bytes": 11591,
+      "sha256": "617ced86628e866a6242ef763ec736d5f7ee3fa0a5afc34236d808db6de9c4b3"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/perl-security/SKILL.md",
+      "bytes": 13856,
+      "sha256": "fd6dd778ed3b612dd8ee5f856d557b9328a1f92f87d5b69b91a53d58657531f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/postgres-patterns/SKILL.md",
+      "bytes": 3914,
+      "sha256": "9c8c391ae9e9aa87faa7ca091e1d395c97766df14080d0bfbea8a97721776163"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/prisma-patterns/SKILL.md",
+      "bytes": 15281,
+      "sha256": "fb0c7644f32b22ee030071c71fa00bda1825f955f7304a375ef299a7290227f2"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/product-capability/SKILL.md",
+      "bytes": 4436,
+      "sha256": "c26114356edb15f0340e5af66b6f4444892bdf376b053a7152312fd04d22aced"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/product-lens/SKILL.md",
+      "bytes": 3102,
+      "sha256": "d082be7c3dd9fed8523ce757a6e2b823a53003d57d2488ead5cec5d5e0a4270f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/production-audit/SKILL.md",
+      "bytes": 7727,
+      "sha256": "3ab3dd8a364ee17566e9361f0ebed2aec3b3146ede44e1db0a72c5ceae1ca0a4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/prompt-optimizer/SKILL.md",
+      "bytes": 16429,
+      "sha256": "0a86553a2860d263e3e5cbe5ab42e88971ead105e0bbdcd1613ba2f97d826ef9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/python-patterns/SKILL.md",
+      "bytes": 16914,
+      "sha256": "103e0130dac33a49d26705fc5a2df804980fcab6a0138d65bc7f370a987d49f6"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/python-testing/SKILL.md",
+      "bytes": 18955,
+      "sha256": "b9f7a158dae3b6c06c9c75ffe84e27a1edc86092d2afdcb39e96fc2569902eb7"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/pytorch-patterns/SKILL.md",
+      "bytes": 11797,
+      "sha256": "168c8740f548414a75f576265ddb03329be98ed57f06c5edaf79c7cd4b6a9cf4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/quarkus-patterns/SKILL.md",
+      "bytes": 21520,
+      "sha256": "5f91bed186170a23837452508fc731ec4cada0a337ae95b1327f80311fa6ab6b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/quarkus-security/SKILL.md",
+      "bytes": 12174,
+      "sha256": "61e25b00d47d64f0685219988c2605c95a87146bfe0bbb52f1a28d877456d07f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/quarkus-tdd/SKILL.md",
+      "bytes": 25526,
+      "sha256": "556d1c2d04e3e0ef10f474ed413013646088ff057f9be02d3a3c4f833ccc33c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/react-native-patterns/SKILL.md",
+      "bytes": 11752,
+      "sha256": "caf04da7ea1f20213b010f24dc19a8a20f1939c928156caa2f0482f26c31b12b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/react-patterns/SKILL.md",
+      "bytes": 11466,
+      "sha256": "f3208d44a5d553038c42e046cec4dc16e4a3d90a9dbf931f883a2e21919a64a9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/react-performance/SKILL.md",
+      "bytes": 18184,
+      "sha256": "ac76e8694d4f802a7bccc3c07a73ac68ace6d82a65ea10f10d8b7384dda61a8f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/react-testing/SKILL.md",
+      "bytes": 13168,
+      "sha256": "51c18b4e28285bb876ef469e47c6f53108b5a9f900950a60e897c3c24826a65e"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/redis-patterns/SKILL.md",
+      "bytes": 11977,
+      "sha256": "6cabb1cd03174a0584ff3538371c780aba90da156db15260691278ed3307d8fe"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/rules-distill/scripts/scan-rules.sh",
+      "bytes": 1604,
+      "sha256": "0cfac69aff6c6ea37eeb914639625b4f6d3d3dacbcaef99c6e0ab4a7d376ed9d"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/rules-distill/scripts/scan-skills.sh",
+      "bytes": 3893,
+      "sha256": "de6a938e14ce44d45e37fff24442ff3276b3cf1446cd2025e565426fb33d5cb5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/rules-distill/SKILL.md",
+      "bytes": 9586,
+      "sha256": "c451a63f96077f92ef6b40c4310f5a470a5d05103a181af518b115c4e828292c"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/rust-patterns/SKILL.md",
+      "bytes": 13500,
+      "sha256": "51379df2bd92a482309e109e5a210210842594f660cceeb2d68d18e995108edf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/rust-testing/SKILL.md",
+      "bytes": 11798,
+      "sha256": "02a9a40dcc42dd21d14730d29b13ee0a8b274694360585dc0fadb2602eb56ddf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/security-bounty-hunter/SKILL.md",
+      "bytes": 3628,
+      "sha256": "c94945165ca16ec06a04727dcbcf7a7593810d83fe168247c9c2d88c5a078611"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/security-scan/SKILL.md",
+      "bytes": 4592,
+      "sha256": "74bc3006fb15eef9cea6bf70a4e9cc45ec118ef00733d1c8226c9dc428f8d658"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/springboot-patterns/SKILL.md",
+      "bytes": 10047,
+      "sha256": "ff1884a8492d078d1bbb35f3ce0a8ae25f1ad95dab8596f4944a7c3110680946"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/springboot-security/SKILL.md",
+      "bytes": 8133,
+      "sha256": "566ecf928bf76812d15efd62e2f00841652e1618f0a97d8dda93e1c247a162c5"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/springboot-tdd/SKILL.md",
+      "bytes": 3786,
+      "sha256": "e4bd145484d93fb569eb0e1a09ffeb5cca68533d63c83805146b111c48bba172"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/strategic-compact/SKILL.md",
+      "bytes": 8608,
+      "sha256": "44a71c6dcc3fdde8061b8a78296c5d37233e4accc8cf3c794e29ac5b9f2eee28"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/swift-concurrency-6-2/SKILL.md",
+      "bytes": 8117,
+      "sha256": "00aed6a804ff7dc9b37d119cdb115d0869643dd84caf3c01d7f058398ab1955a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/swift-protocol-di-testing/SKILL.md",
+      "bytes": 6112,
+      "sha256": "1e0b9fddf0a731956cdc686fb55dfa1862a5f172a5140299f4ec9d95c7a5e6e9"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/swiftui-patterns/SKILL.md",
+      "bytes": 7039,
+      "sha256": "79e3c8b5b7c38fa04778b1084cddc2f8db5f671e682b0e9c1d5bd2f95800f690"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tdd-workflow/SKILL.md",
+      "bytes": 21473,
+      "sha256": "f5d8543733c557f0c53b688d40f14e9b870a6b2c7e405bab07433954e363828a"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tinystruct-patterns/references/architecture.md",
+      "bytes": 4057,
+      "sha256": "68b3e856ca7b4e1c7ea6ea49b90dbf9937ff304070f398eb33a67f7f4aeee87f"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tinystruct-patterns/references/data-handling.md",
+      "bytes": 1893,
+      "sha256": "4f14344808d3468228cb2f99215c6a340f25e3e34217147709c60f579742bdcf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tinystruct-patterns/references/database.md",
+      "bytes": 2648,
+      "sha256": "904b731361ad3cbdededc50c55ad782676441090a252e88a618e4e496c09df75"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tinystruct-patterns/references/routing.md",
+      "bytes": 2477,
+      "sha256": "5accd76c48394eeb0b8f97733c1e928a58c0ee28080951c66979b35b0029cd24"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tinystruct-patterns/references/system-usage.md",
+      "bytes": 2881,
+      "sha256": "6ff5f0ffab18340a298712e93170ff2e3207785c6ec3eb65b3e7f84cae2f06bf"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tinystruct-patterns/references/testing.md",
+      "bytes": 1988,
+      "sha256": "a4c82b7b9b9877049dcba49b8dbfd88e2713e32ad90ac37f598f9be6b2b864f4"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/tinystruct-patterns/SKILL.md",
+      "bytes": 11879,
+      "sha256": "6f5d16090aa5b1913002480ecfb00feb3ad894a05c9b84d8f3645e2297b6024b"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/ui-to-vue/SKILL.md",
+      "bytes": 4809,
+      "sha256": "cb6c17f7ae28a53b31fb2904180521ccdaa31ad0deafa96c6b4f5b2f4bfea480"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/vue-patterns/SKILL.md",
+      "bytes": 13182,
+      "sha256": "65e322383510de25bd5fc6fce4b0980d99d38b341f09bea662bd9a410e20c016"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/skills/windows-desktop-e2e/SKILL.md",
+      "bytes": 30577,
+      "sha256": "cbc93a1e2514ecdcee30da744aa13eb6c0ebe4948ca3dfff52b287df4f9f0814"
+    },
+    {
+      "path": "03-skills-catalog/sources/external/ecc/upstream.json",
+      "bytes": 3626,
+      "sha256": "70034d9ad0ce5c23d6dcb2a44e6580f20028a4ef20bedecd3de04810ee06f55f"
+    },
+    {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/.gitignore",
       "bytes": 38,
       "sha256": "599e8d09a18b6bac6f70ed12bf96f67e49c4d992ee2601bc173d92fbcb64b11d"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/app-interface.csv",
-      "bytes": 9773,
-      "sha256": "a276e55817958075a8dffeb5f5d7be16703b1611e9f0a3527525e1a44df25c46"
+      "bytes": 9743,
+      "sha256": "2a17ef810dab715ce1f339861817a8fbe3ccc38142b70517301e874803e838ac"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/charts.csv",
-      "bytes": 19391,
-      "sha256": "ebb565308115f955791b0431797a89d9b3587c25d5babb9428d10712c4924817"
+      "bytes": 19365,
+      "sha256": "a70ef7460b0eaaea8614f86a0d09a4bc38b467804179762464b5ca45b491baac"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/colors.csv",
-      "bytes": 38830,
-      "sha256": "d628b178803aee95c2bb8f3cf64d38ea5418948a072ef4feeedf4a69226912e8"
+      "bytes": 38668,
+      "sha256": "cb26759805217edaaa31b09836aec09eab0fe245c58f5884e9a16ef802c6e26a"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/google-fonts.csv",
-      "bytes": 745196,
-      "sha256": "2c03a3cd134d126bd9d6a7dc2a6360dc5272219ad6df3eb9315b031f806e1487"
+      "bytes": 743272,
+      "sha256": "3fd2898fb0fdd31ba758bf05cfcd2b58cd0f038a20cf08e417d09e5a8a4a509e"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/icons.csv",
-      "bytes": 20742,
-      "sha256": "9da693f818d43e2110e28d949905c85baad1650d383ae9e1568f58c766b0e016"
+      "bytes": 20637,
+      "sha256": "f376c29fb4df37b4bdb366a5aa70cb211ba3dd8b435390aaa03152a64b07d2e8"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/landing.csv",
-      "bytes": 16720,
-      "sha256": "080cedbcd61ff8ec9520f33929baa76bee9589e783f83b2f8d824a466b6a46d7"
+      "bytes": 16685,
+      "sha256": "121a2cac7cf21050234b5f80e7b4e182f10123536032e0f9ad862ad3aec9677d"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/motion.csv",
-      "bytes": 10517,
-      "sha256": "528be03324785eb568c9570f5d60fc1644d5bc7ce2cbdd21b648cb90ce74e76e"
+      "bytes": 10500,
+      "sha256": "6452fbd8028ab71d52993775340e1bc40a150d92be8d4b4cb8710620fd1a7512"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/products.csv",
-      "bytes": 73678,
-      "sha256": "83579b1fa5078e9607d6799195347506ffdd80ee0cb169693517b376459bc7f1"
+      "bytes": 73485,
+      "sha256": "e9749e4fd8f7d4c94919c25ebd347a4adaddb671e7b01d33fbc2c87d447e6667"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/react-performance.csv",
-      "bytes": 14867,
-      "sha256": "47c0a454cb73bf32378c55eb781dea4c44440ec6a1b52039119afc354315c17e"
+      "bytes": 14822,
+      "sha256": "904c8afcda229629545912dde0e8ac37503757131f0169f80b016f1f58c4fd3f"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/angular.csv",
-      "bytes": 18188,
-      "sha256": "550f571dbe15191de0f409accafbd9fd61938fb95e857d0a17f45554d5551514"
+      "bytes": 18137,
+      "sha256": "9de35bbda536ced9af7642d88b7675cefa3e18c370ab40c0875f75ab473f0fd6"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/astro.csv",
-      "bytes": 11924,
-      "sha256": "dfc5a1e32e85f07863b0f9dde8f299f826118a116d0e2c143e978594b1ae1d87"
+      "bytes": 11870,
+      "sha256": "6b587e32df201b6e5e7b2ed187b65eee8e6d55dcd6cc16bde29fc25e0f911dae"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/avalonia.csv",
-      "bytes": 25683,
-      "sha256": "4c44ad3db22da3f849b5ff6e65cd8c0cf4fd601506c0393dda63cdbbc05538bc"
+      "bytes": 25626,
+      "sha256": "6bfa40ec6609fcb59e52a38281edcc3a3e5b5e56341304fe5628b32cb9b1f875"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/flutter.csv",
-      "bytes": 10469,
-      "sha256": "e470e6bc2bcd8562667cc764d1e1afb0be0a30ca4dc9ec12fa18b19d46f156bd"
+      "bytes": 10416,
+      "sha256": "fe36d404c799781e8ba6e9a8179b45799ed5126a545528550cd2eb0f2346e8c5"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/html-tailwind.csv",
-      "bytes": 11361,
-      "sha256": "1f004891dd189f6bc2a7717401e3100244326e7e2f3963a79bf7b2349d85e091"
+      "bytes": 11305,
+      "sha256": "7aef38e75c53559470afcfa91580a9917ca8b7dbf8b92110389e23e93703ac52"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/javafx.csv",
-      "bytes": 30947,
-      "sha256": "95dff6d366687d07a9de006384e049bdaba867655b482f4eb7a4af704ba31229"
+      "bytes": 30871,
+      "sha256": "5545e331b2479eb431ca45203799ce1b0ab1e369045ab7735d5a9f85ec78f956"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/jetpack-compose.csv",
-      "bytes": 8248,
-      "sha256": "8e1995b93414e9d50f8d450bdd15853ff138ca3b8c9d6529cd3171729fa5fa7f"
+      "bytes": 8195,
+      "sha256": "6c8fd4b0391c342c12b0af15610cd5becbeccaef0bbe8dcfc01d928c3195d93e"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/laravel.csv",
-      "bytes": 18570,
-      "sha256": "0282fc3e09a30a6e1d825adbec9e3473dd3f7df43bc82d7812f40a97cf5890fc"
+      "bytes": 18519,
+      "sha256": "3e9f551b5232136f7b5ce1304c5e1bf5a83bd63c0dc02afb37502b238772d145"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/nextjs.csv",
-      "bytes": 12546,
-      "sha256": "06a8e8c13bd44696c6ebb4cb6c4d8dea440e3de8cce77616512529ed29258f0c"
+      "bytes": 12493,
+      "sha256": "e828ccc04843742f52f545a068e8a9ab0d2b97c0e771f7e93bf0cef74da05554"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/nuxt-ui.csv",
-      "bytes": 21301,
-      "sha256": "ceab72c6da970ebfac19154a00767bfaf1593bc9ec4c49841812ebe1e1ebbada"
+      "bytes": 21230,
+      "sha256": "b9972b31e721faabc667ee2b4e93ba2af29e1df86f186c2ff608b68370f0e3a5"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/nuxtjs.csv",
-      "bytes": 16598,
-      "sha256": "696ec6df0e5971cd8b69080ee6abea2e9748fb2de47acb2bcc748302684f2030"
+      "bytes": 16539,
+      "sha256": "f7a3f2d9542856d00199f85c6c023b7c284cc698e2e6e12d61afce2edacb24d6"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/react-native.csv",
-      "bytes": 10035,
-      "sha256": "a08ca77fcf6b6d9531982dce465366296013bfcf12d2938ac72ad57cf0c4f085"
+      "bytes": 9983,
+      "sha256": "077aefc81d194895ecf7936b3ed298b978e36961f183e3a275f8acda19b5f621"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/react.csv",
-      "bytes": 13016,
-      "sha256": "b6e3eb0e4c9c01bd00ffb951d5ca224a19d488b4544c75436f48cf92ff12bf45"
+      "bytes": 12962,
+      "sha256": "e5624ab41d33427d88e41d07581ce4eca59b37b36ab72a6ad43a9c8e2d0a1c72"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/shadcn.csv",
-      "bytes": 15982,
-      "sha256": "0f9cc6fbfebea8026950c422808bb3aae239185bad770726b331f827f8e1a6de"
+      "bytes": 15921,
+      "sha256": "395c2e415ef6f48a474acccdc8eb2c7258a6ed751a5037ba171a2d8823e02ded"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/svelte.csv",
-      "bytes": 11063,
-      "sha256": "bc8d158994a8bdf412830a9dd5e5a5534edd2f367a6e50e0ebd4d76f592dfa3f"
+      "bytes": 11009,
+      "sha256": "71af52d64f266c88070b91dbbaa900c2f8074b6baae9f35eaea6ba9cec6fd803"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/swiftui.csv",
-      "bytes": 10872,
-      "sha256": "e87cb9eee208bb753bdab96d4a261c7f830c4317ee90ec098316b248fc32be85"
+      "bytes": 10821,
+      "sha256": "c9c2d2510f8e66281a2514e8dd0125a6b653b9ef53a71281b5e7dfe003d5b569"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/threejs.csv",
-      "bytes": 44914,
-      "sha256": "ab3c9d1a690e7d2950719eba01ad6f6a5f4914886e7d9b05189a7b2d01d339d0"
+      "bytes": 44860,
+      "sha256": "c74d6ba76021f8d72c0ed12c559caecfeb6961829242acf6bcb9e99926b1a396"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/uno.csv",
-      "bytes": 27531,
-      "sha256": "bfb0904f96ef7d986369067525398e4864c51edf69e8156f94040cad4bc79a36"
+      "bytes": 27471,
+      "sha256": "5d2e0f396bb9dc5a2661204264cc0eda7cc4fa3d78152dec89d668704a41b8fc"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/uwp.csv",
-      "bytes": 22923,
-      "sha256": "bfe240f56dcd7d4ad97c851a66ef8ad9a3316d3d11932c751465ccce8a954e85"
+      "bytes": 22867,
+      "sha256": "debf669928871261ced9333788d5afd5784377ea1fa1b4f53993dd8f1574c0fc"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/vue.csv",
-      "bytes": 11056,
-      "sha256": "9b793c3f4eec85f77a758c09322f2b62f3b3ca549bb713ccf0849ef885934395"
+      "bytes": 11006,
+      "sha256": "c2724915d3c11cd67263f25896cff721f787a0fdd8326002d31e9f5806dfd8f8"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/winui.csv",
-      "bytes": 25212,
-      "sha256": "eaee213792a6d7c941114767370569407fad989f5b05e022a9d7ed9c2570a384"
+      "bytes": 25152,
+      "sha256": "2d970b08e44509d7afa53ce7feb446930b2d5e0667fa637df9aeeed65c42bbbe"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/stacks/wpf.csv",
-      "bytes": 22595,
-      "sha256": "49f41990069ef87dd4a40f5936649535253a097740788323d0b9fa76f41ea11e"
+      "bytes": 22538,
+      "sha256": "ca78b5f28dc50d66900548d602d74856400097284c73e076fcfbb5a38ae5083c"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/styles.csv",
-      "bytes": 142687,
-      "sha256": "baedf4b9681eb7b5a404179e3cd5eb1e8e40b3e2807db5154b72e1431c644b11"
+      "bytes": 142602,
+      "sha256": "1bf9c1d8484a0a7a54fb67555902380446865b604c8449e47a449cb3d9c1ef88"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/typography.csv",
-      "bytes": 49905,
-      "sha256": "9577e2243d032e226b36fe5037b33299872244f6905b296e16b597a3ed9853c8"
+      "bytes": 49830,
+      "sha256": "7abead73de0e43e09544f164cb60cd431674e411f1e063e555a8b44d51273328"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/ui-reasoning.csv",
-      "bytes": 53070,
-      "sha256": "41976082ecae1100da937c949215dc6694393e03f3c2a7444dd92a9edb43cb11"
+      "bytes": 52908,
+      "sha256": "06e4369445388ba9b7a57347510b125b7a2145bbf8546a327ba50292503b204a"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/data/ux-guidelines.csv",
-      "bytes": 18766,
-      "sha256": "1870ee048f2a2bdd60709f8f7adf7f3b6dcad560bc005c8b2915a8ac8639820d"
+      "bytes": 18667,
+      "sha256": "e01943c433b2cad3040f19389b3b0455673758a569b7a927b5bedf65c989cb96"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/LICENSE",
-      "bytes": 1096,
-      "sha256": "1b8bd455510cc1f6f9bd510ffe2ec372d1c51fe0e082ddfee8b41825fb7aa055"
+      "bytes": 1075,
+      "sha256": "738f69dfa83db5c347c678fb9d90e560877059f0de93a327c39001bff92dc014"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/references/pro-rules.md",
-      "bytes": 9694,
-      "sha256": "a67c8015e97c709d1dfd25706ed5ca9800c313e9e5e489d942460392909a77ad"
+      "bytes": 9585,
+      "sha256": "bc56db7cb40c5f4d8d4f6229f5c7072865278488fe5b97c76d3a38eb596da4fc"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/references/quick-reference.md",
-      "bytes": 21877,
-      "sha256": "f5647726263a26532778a980a2a2b86b84e1287f0a7d15a1468350340c8f1e5d"
+      "bytes": 21637,
+      "sha256": "b01ad594cc069d18786d5e8865356cc511226ba6f48d328fd975d31aae8e5781"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/scripts/core.py",
-      "bytes": 19265,
-      "sha256": "f2312caafcae700940644f8cf24439953bdec6a26fe7b9242613062759428b92"
+      "bytes": 18801,
+      "sha256": "64c149019196ee24647464a27278eb96d3b4638ded73ebfc35ccd2bc99c083a9"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/scripts/design_system.py",
-      "bytes": 60788,
-      "sha256": "ba22643868e715b34c8c2b967aeee194178ec9360897339e06ab57cfadcb91ba"
+      "bytes": 59417,
+      "sha256": "fcdb279eb9691dffd6c80c333d29a4e5567368e38d724520c60013c8b1aaf242"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/scripts/search.py",
-      "bytes": 8849,
-      "sha256": "3577f4e6b5f96ff2da83ad386c3c41c3d7a0948d7374e15344356990ed83fffb"
+      "bytes": 8687,
+      "sha256": "69a349d69543f35f45a12c0c82922c550d1b0a16a2b37f6b1406afb2ad2919c8"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/scripts/tests/test_core.py",
-      "bytes": 6035,
-      "sha256": "cdaed39ba0066bc1750977f3e2d50ed4f8bb177f43c66758d66f830dfe28f98f"
+      "bytes": 5901,
+      "sha256": "ce60ac571164cf35e8c866550ad989fa686706a56fa48df4fdf76444b94fdd8d"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/scripts/validate_data.py",
-      "bytes": 4299,
-      "sha256": "403bf38439b862313356dbf993632d5ad1a87e6d99fea94e467e17a375c43071"
+      "bytes": 4185,
+      "sha256": "f1b5e0916f3c2f8271416f93f6ff9ebf3311a68a943a19c1b83f16823cbb05a7"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/SKILL.md",
@@ -4542,8 +5132,8 @@
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/UPSTREAM-SKILL.md",
-      "bytes": 13773,
-      "sha256": "04e3332c3f82b3dfc60962477b834db1b0d1e2150cc4c96d7139150df612ad1f"
+      "bytes": 13577,
+      "sha256": "305a7527fcb2f5b6e4129ab22cd839b5172d26df7f14d3324bfdec8fc1763560"
     },
     {
       "path": "03-skills-catalog/sources/external/ui-ux-pro-max/upstream.json",

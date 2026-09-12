@@ -75,6 +75,7 @@ Run the same gate locally before opening a PR:
 cd ai-dev-mcp-server
 npm run check          # static-quality + seed index + coverage + security + protocol/lifecycle smokes
 npm run docker:prepare && npm run docker:audit   # if you touched the Docker context or seed
+npm run docker:seed:verify                       # if you touched the seed
 ```
 
 ## Coding standards
@@ -100,6 +101,20 @@ node scripts/ensure-skill-index.mjs   # or: npm run docker:seed  (rebuilds the w
 
 The generated `registries/`, `cards/`, and `groups/` folders under the seed are
 git-ignored; only the `sources/` and hand-written seed docs are committed.
+
+`public-seed.manifest.json` records the size and SHA-256 of every committed seed
+file, and the image audit trusts it — so a manifest that has drifted from the
+files makes "what was built is what was audited" a formality. CI runs
+`npm run docker:seed:verify` to catch that. When it fails, rebuild the seed from
+the full vault with `npm run docker:seed`; in a checkout without the vault,
+recompute the manifest from the committed tree:
+
+```bash
+node scripts/verify-public-seed.mjs --write
+```
+
+The generated folders are excluded on both sides, so the fingerprint depends only
+on committed content.
 
 ## Commits and pull requests
 
