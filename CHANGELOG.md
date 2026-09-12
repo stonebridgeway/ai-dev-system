@@ -424,6 +424,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`npm run setup` called stale artefacts "already built".** The plan asked
+  whether a file existed, never whether it was current, so one run printed
+  `· Search index: already built` and, four lines later from the diagnostic in
+  the same run, `fail: skill_routing_benchmark — … is stale; rerun
+  run_skill_routing_eval`. Setup now reads the freshness signals the health
+  check grades — `search_index_status.stale`, and the benchmark report's mtime
+  against its golden cases and `skill-router.mjs` — and rebuilds what is out of
+  date, saying so. An optional step that is installed but stale says
+  `out of date; --dense rebuilds it` instead of reporting itself installed.
+
+- **`--dense` downloaded 2.3 GB and left search nearly blind.** Documents are
+  embedded during a rebuild, and the model download was the last thing the flag
+  did, so an install with the weights in place, a live worker and `dense_score`
+  in its answers had vectors for 300 documents and 382 waiting — none of which
+  the dense half of a hybrid query could see. `--dense` now embeds the index
+  after fetching the weights, re-embeds when documents have been added since,
+  and the setup header prints the coverage: an index built without the model
+  reads `none embedded yet`, not `0 with a vector, 0 without`.
+
+- **The setup header printed an interpreter Windows never creates.**
+  `.venv/bin/python` was hard-coded while the step that builds the environment
+  looked in both places and worked, so the only thing that was wrong was the
+  line a person reads. It is resolved per platform now, from what is on disk
+  when something is on disk.
+
+- **A checkout could edit its golden cases and never be told to rerun the
+  benchmark.** The freshness check compared the report against
+  `09-mcp/search-eval/skill_routing_eval_cases.json`, a path that does not exist
+  outside an Obsidian vault, so the missing file's mtime read as zero and the
+  report was always "fresh". Measured on this repository: touching the cases
+  left `fresh: true` before, and gives `fail … is stale` now. The benchmark and
+  the health check read one resolved path.
+
+- **A Python helper's failure was reported as `Traceback (most recent call
+  last):`.** The helper explains itself in the last line of the traceback and
+  every caller that prints one line prints the first, so `npm run setup --
+  --dense` without the embeddings environment reported the word "Traceback" and
+  nothing else. The final exception now leads, with the traceback kept behind it
+  (`src/core/python-failure.mjs`).
+
+- **`change-hygiene.mjs` was invisible to code search.** Its binary-file check
+  was written as a raw NUL byte in the source rather than an escape, so `grep`
+  and `rg` answered `Binary file … matches` and 537 lines of the module never
+  appeared in a repository-wide search — which is how the byte was found, by a
+  search that skipped it. Git was unaffected: its heuristic reads the first 8000
+  bytes and the byte sat at 15851.
+
 - **Hybrid search died without the optional model.** The README says it plainly
   — "Hybrid search works without a model: SQLite FTS, sparse aliases, and
   deterministic intent routing are always on" — and the dense embedding call was

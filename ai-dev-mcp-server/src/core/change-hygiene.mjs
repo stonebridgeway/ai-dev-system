@@ -277,7 +277,7 @@ async function readAddedLinesFromFile(projectRoot, relativePath) {
   const stats = await fs.stat(target).catch(() => null);
   if (!stats?.isFile() || stats.size > MAX_FILE_BYTES) return { lines: [], skipped: stats ? "too large" : "missing" };
   const content = await fs.readFile(target, "utf8").catch(() => "");
-  if (content.includes(" ")) return { lines: [], skipped: "binary" };
+  if (content.includes("\u0000")) return { lines: [], skipped: "binary" };
   return {
     lines: content.split(/\r?\n/).map((text, index) => ({ line: index + 1, text })),
     skipped: ""

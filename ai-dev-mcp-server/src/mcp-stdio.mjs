@@ -257,6 +257,12 @@ const searchIndexDir = path.resolve(
 const searchIndexPath = path.join(searchIndexDir, "ai-dev-search.sqlite");
 const searchCliPath = path.join(searchSourceDir, "search_cli.py");
 const searchEvalCasesPath = path.join(runtimeAssets.searchEvalDir, "search_eval_cases.json");
+// The routing benchmark's golden cases. `skillRoutingEvalRelativePath` above is
+// what a report prints; this is where the file actually is, which in a plain
+// checkout is outside the seed that stands in for a vault. The health check
+// compares the report against this, so editing the cases asks for a rerun
+// instead of being invisible.
+const skillRoutingEvalCasesPath = path.join(runtimeAssets.searchEvalDir, "skill_routing_eval_cases.json");
 const embeddingsDir = runtimeAssets.embeddingsDir;
 const frontendQaRunnerPath = path.join(runtimeAssets.frontendQaDir, "frontend_qa_runner.mjs");
 const frontendQaPackagePath = path.join(runtimeAssets.frontendQaDir, "package.json");
@@ -1623,9 +1629,7 @@ async function runSkillRoutingEval({
   // A caller's path is checked against the vault; ours is the resolved helper
   // tree, which in a plain checkout sits outside the seed that stands in for a
   // vault (`src/core/runtime-assets.mjs`).
-  const target = cases_path
-    ? safePath(cases_path)
-    : path.join(runtimeAssets.searchEvalDir, "skill_routing_eval_cases.json");
+  const target = cases_path ? safePath(cases_path) : skillRoutingEvalCasesPath;
   const source = await readSkillRoutingCases(target);
   const selectedIds = new Set(searchEvalList(case_ids));
   const cases = selectedIds.size
@@ -4380,7 +4384,8 @@ const extensions = createExtensionTools({
     systemDashboard: systemDashboardRelativePath,
     systemDashboardState: systemDashboardStateRelativePath
   },
-  searchIndexPath, frontendQaRunnerPath, frontendQaPackagePath, frontendQaArtifactsRoot,
+  searchIndexPath, skillRoutingEvalCasesPath,
+  frontendQaRunnerPath, frontendQaPackagePath, frontendQaArtifactsRoot,
   // `tools` is assembled from the extension definitions below, so it is read lazily.
   toolCount: () => tools.length,
   safePath, fileStatus, pathExists, readJsonIfExists, writeJson, writeText, listMarkdownFiles,
@@ -4804,6 +4809,7 @@ export {
   safeProjectRoot,
   searchIndexPath,
   shutdownBgeWorkers,
+  skillRoutingEvalCasesPath,
   tools,
   usageLedger,
   vaultRoot

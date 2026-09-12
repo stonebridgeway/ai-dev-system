@@ -1,105 +1,114 @@
-# ECC upgrades: stages 0–3, the debt pass, and a source install that works
+# Six defects the first run of the merged tree found, fixed with their measurements
 
 ## What and why
 
-This is the work from the `BreezeAreaSay` fork: the ideas worth taking from
-[ECC](https://github.com/affaan-m/ECC), the server split into modules that can be
-tested, and a first run that does not require an Obsidian vault to be useful.
-103 commits, 364 files, 924 tests (917 pass, 7 skipped), 133 tools, and the main
-module down from 10,452 lines to 4,813 under a ceiling that ratchets.
+#37 shipped `npm run setup`. The first run of it on a real install — Windows, a
+real Obsidian vault — found three things wrong with it, and fixing those turned
+up three more. All six are here, each with the measurement that produced it:
+15 files, +717/−55, two commits on top of `2a1b215`.
 
-Every claim below is a measurement, not a report: each change was checked with an
-adversarial probe against the running server before it was merged, and what the
-probes found is written down in `docs/ecc-upgrades/DEBTS.md` — 29 entries with the
-measurement that produced them, 23 closed, 2 closed in part, 4 open and named.
+### The setup command contradicted itself
 
-### Stage 1 — the server became testable
+It asked only whether a file existed, never whether it was current, so one run
+printed
 
-`src/mcp-stdio.mjs` was 10,452 lines. It is 4,813 now, with the rest in
-`src/core/*` (pure logic, each with its own test) and `src/extensions/*` (MCP
-tools behind a `createXxxTools(host)` factory and a registry). A static gate
-holds the ceiling at 5,076 lines and caps any module at 800, so the file cannot
-grow back.
+```
+· Search index: already built; --force rebuilds it
+· Skill-routing benchmark: already built; --force rebuilds it
+...
+fail: skill_routing_benchmark — Skill routing benchmark is stale; rerun run_skill_routing_eval
+```
 
-### Stages 2–3 — what came from ECC
+— the diagnostic calling stale what the step four lines earlier had skipped as
+done. `planFirstRun` now takes a `stale` map beside `present` and reads the same
+signals the health check grades: `search_index_status.stale`, and the benchmark
+report's mtime against its golden cases and `skill-router.mjs`. Reproduced here
+by touching the cases file: the step went from `· already built` to
+`✓ 37/37 cases pass`, and the health check's failure disappeared with it.
 
-Decision ledger, usage ledger with a rate table, change hygiene, per-task
-worktrees, a rules library with fourteen packs, a planning gate, session memory,
-instincts and their proposals, agent hooks with a policy file, fact forcing, git
-hooks through `core.hooksPath`, pull-request preparation from task evidence, a
-completion-statement linter, task snapshots and rollback, security scanners,
-policy rules with an MCP inventory, coverage gaps, epics, an import graph in the
-project map, and a distillation of a repository's own conventions into a draft
-rules file. 101 skills imported from ECC's catalogue reach routing through a
-reserved slot and a bilingual concept table.
+### `--dense` downloaded 2.3 GB and left search nearly blind
 
-### The debt pass
+Documents are embedded during a rebuild, and the weights were the last thing the
+flag fetched. So an install with the model in place, a live worker and
+`dense_score` in its answers had vectors for 300 documents and 382 waiting —
+none of which the dense half of a hybrid query could see. A `dense_index` step
+behind the same flag embeds the index once the weights land and re-embeds what
+has been added since. The header prints the coverage, and an index built without
+the model now reads `none embedded yet (--dense embeds them)` rather than
+`0 with a vector, 0 without`.
 
-Nine defects the probes found, fixed in one pass with before/after measurements.
-The one that changed a verdict: the security scanner matched the bare word
-`proxy` against a scanner's whole output, so an npm advisory titled "…cache-key
-and proxy interpretation differentials" turned a finished audit into "could not
-reach the network" — this repository's fourteen findings, five of them high, came
-back as `skipped`, and `verify_task` passed its security check because a skipped
-scanner cannot block. Offline is decided by the failure channel now. The rest are
-in the changelog, each with its measurement.
+### The header printed an interpreter Windows never creates
 
-### A source install that works
+`.venv/bin/python` was hard-coded while the step that builds the environment
+looked in both places and worked, so the only thing that was wrong was the line
+a person reads. `venvPythonPath` resolves it per platform, from disk when
+something is on disk.
 
-A clone with no vault could not find its own helper trees (`search-index/`,
-`embeddings/`, `frontend-qa/`, `search-eval/` live in the repository root; the
-runtime only ever looked for them under a vault's `09-mcp/`). `clients:install`
-— the one command a new user is told to run — computed the server's path the
-same way and refused to install anything. Hybrid search died without the
-BGE-M3 model it documents as optional. `prepare_project` wrote project names and
-absolute paths into the repository's own seed. Three tools crashed instead of
-stating their contract, nine refused calls that filled every required field, and
-the health check demanded notes a checkout cannot have.
+### A checkout could edit its golden cases and never be told to rerun
 
-All of that is fixed, and `npm run setup` builds what a clone does not ship —
-skill registry, search index, routing benchmark — with `--frontend-qa` and
-`--dense` for the two steps that reach the network. Measured on a bare clone:
-133 tools, none broken; 93 answer with plausible arguments; the health check's
-failures go from six to one, and the one that remains is the 2.3 GB model
-download, which is a decision a person makes.
+The freshness check compared the report against
+`09-mcp/search-eval/skill_routing_eval_cases.json` — a path that cannot exist
+outside a vault, so the missing file's mtime read as zero and the report was
+always fresh. Measured on this repository: touching the cases left `fresh: true`
+before, and gives `fail … is stale` now. One resolved path is shared by the
+benchmark and the health check; the report still prints the vault-relative name.
+
+### A Python failure was reported as the word "Traceback"
+
+The helper explains itself in the last line of its traceback and every caller
+that prints one line prints the first, so `npm run setup -- --dense` without the
+embeddings environment reported `Traceback (most recent call last):` and nothing
+else. It now leads with
+`RuntimeError: sentence-transformers is required for dense BGE-M3 embeddings…`
+and keeps the traceback behind it (`src/core/python-failure.mjs`).
+
+### `change-hygiene.mjs` was invisible to code search
+
+Its binary-file check was a raw NUL byte in the source rather than an escape, so
+`grep` answered `Binary file … matches` and 537 lines never appeared in a
+repository-wide search — which is how it was found, by a search that skipped it.
+Git was unaffected: its heuristic reads the first 8000 bytes and the byte sat at
+15851.
+
+### Docs
+
+Both READMEs now tell a source install to run `npm run setup`, and the BGE-M3
+instructions no longer point at `09-mcp/embeddings/`, a path a clone does not
+have.
 
 ## Type
 
 - [x] Bug fix
 - [x] Feature
-- [x] Refactor / internal
+- [ ] Refactor / internal
 - [x] Docs
-- [x] Build / CI / packaging
+- [ ] Build / CI / packaging
 
 ## Checklist
 
-- [x] `npm run check` passes from `ai-dev-mcp-server/` — with one caveat, measured
-      and recorded as Д-11: roughly two runs in ten exit non-zero with
-      `Warning: Could not report code coverage. SyntaxError: Unexpected end of
-      JSON input` and `# fail 0`. No test fails in those runs. The same rate was
-      measured on the base commit in its own worktree, so it is the suite's
-      behaviour under load rather than anything in this diff.
+- [x] `npm run check` passes from `ai-dev-mcp-server/` — ten consecutive runs on
+      this tree: 0 failures out of 10. Twenty minutes earlier, on the same tree
+      bar two comments, 3 of 10 exited non-zero with `# fail 0` and
+      `Warning: Could not report code coverage`. That is Д-11, measured on the
+      base commit too and still open; a green ten does not close it.
 - [x] New behaviour has tests; `src/core/` additions have JSDoc types
 - [x] `CHANGELOG.md` updated under `[Unreleased]`
-- [ ] Conventional commit messages (`type(scope): subject`) — the earlier commits
-      follow it; the later ones use a plain sentence subject with the reasoning
-      in the body. Say the word and they can be rewritten before merge.
+- [ ] Conventional commit messages (`type(scope): subject`) — two plain-sentence
+      subjects with the reasoning in the body, as in #37. Say the word and they
+      can be rewritten before merge.
 - [x] No secrets, tokens, personal paths, or a personal vault in the diff
 - [x] Docs updated if behaviour, flags, or setup changed
 
 ## What is not verified
 
-The local BGE-M3 model was never run end to end: the sandbox this was built in
-denies `huggingface.co` and `download.pytorch.org`, so the weights could not be
-downloaded. Everything up to that point is verified — the interpreter is found,
-the worker starts, and the failure now names the missing model directory instead
-of an exit code. `npm run setup -- --dense` on a machine with network access is
-the remaining check.
+The dense path end to end. The sandbox this was built in denies
+`huggingface.co`, so the weights were never downloaded here and `dense_index`
+was exercised only as far as the missing Python package — which is exactly the
+failure that now reports itself properly. `npm run setup -- --dense` on a
+machine with network access is the remaining check.
 
-Two things need an account-level fix rather than a code one: GitHub Actions has
-never run in the fork (19 runs, every job fails in two seconds with no runner and
-logs that 404 — recorded as Д-5), and `bootstrap.sh` installs the published image
-from GHCR, which is only rebuilt when that workflow runs.
-
----
-_Generated by [Claude Code](https://claude.ai/code)_
+Windows. 23 to 41 tests fail there in every one of ten runs, on a suite that has
+never run on Windows because the fork's Actions have never had a runner (Д-5).
+This diff does not touch that; it is recorded as Д-35 with what is known —
+path separators, CRLF, and state shared between test files through the real
+`HOME` — and needs the actual assertion output before it is worth guessing at.

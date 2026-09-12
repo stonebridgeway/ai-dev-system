@@ -16,10 +16,19 @@
  * behind their back. So the model step exists here too, and it only ever runs
  * when it is asked for by name.
  *
+ * The weights on their own change nothing: documents are embedded during a
+ * rebuild, not on the way past a query, so an install that downloaded the model
+ * and stopped there had a working embedding backend and an index almost none of
+ * whose documents had a vector — dense search answered from whatever had been
+ * embedded before. Downloading the model and embedding with it are therefore
+ * two steps behind the same flag.
+ *
  * This module decides *what* to do from what is already on disk. Doing it —
  * calling the tools, spawning pip — is `scripts/first-run.mjs`, so the plan can
  * be read and tested without building anything.
  */
+
+import path from "node:path";
 
 /** The steps, in the order a first run does them. */
 export const FIRST_RUN_STEPS = Object.freeze([
@@ -54,43 +63,106 @@ export const FIRST_RUN_STEPS = Object.freeze([
     detail: "A Python environment plus 2.3 GB of weights, for dense search and reranking.",
     optional: true,
     flag: "--dense"
+  }),
+  Object.freeze({
+    id: "dense_index",
+    title: "Dense vectors",
+    detail: "Embeddings for the documents already indexed; the dense half of hybrid search reads them.",
+    optional: true,
+    flag: "--dense"
   })
 ]);
 
 /**
  * Which steps this machine needs, and why each one is or is not run.
  *
- * `present` is what already exists, keyed by step id. `want` is what the caller
- * asked for by flag; an optional step is never run unasked, because both of
- * them reach the network and one of them downloads gigabytes.
+ * `present` is what already exists, keyed by step id; `stale` is what exists and
+ * no longer matches what it was built from. A file being there is not the same
+ * as it being current: on a real vault the search index and the routing
+ * benchmark were skipped as "already built" and the diagnostic two lines later
+ * called them stale, which is a setup command contradicting itself.
+ *
+ * `want` is what the caller asked for by flag; an optional step is never run
+ * unasked, because none of them is cheap: two reach the network, one of those
+ * downloads gigabytes, and the third embeds the whole index.
  *
  * @param {object} input
  * @param {Record<string, boolean>} input.present - Artefacts already on disk.
+ * @param {Record<string, boolean>} [input.stale] - Of those, the ones out of date.
  * @param {Record<string, boolean>} [input.want] - Optional steps asked for.
  * @param {boolean} [input.force] - Rebuild what is already there.
  * @returns {Array<{ id: string, title: string, detail: string, run: boolean, reason: string }>}
  */
-export function planFirstRun({ present = {}, want = {}, force = false } = {}) {
+export function planFirstRun({ present = {}, stale = {}, want = {}, force = false } = {}) {
   return FIRST_RUN_STEPS.map((step) => {
     const here = Boolean(present[step.id]);
+    const outOfDate = here && Boolean(stale[step.id]);
     if (step.optional && !want[step.id]) {
       return {
         ...pick(step),
         run: false,
-        reason: here
-          ? `already installed; ${step.flag} rebuilds it`
-          : `not installed — pass ${step.flag} to install it`
+        reason: outOfDate
+          ? `out of date; ${step.flag} rebuilds it`
+          : here
+            ? `already installed; ${step.flag} rebuilds it`
+            : `not installed — pass ${step.flag} to install it`
       };
     }
-    if (here && !force) {
+    if (here && !outOfDate && !force) {
       return { ...pick(step), run: false, reason: "already built; --force rebuilds it" };
     }
     return {
       ...pick(step),
       run: true,
-      reason: here ? "rebuilding on request" : "missing"
+      reason: outOfDate ? "out of date" : here ? "rebuilding on request" : "missing"
     };
   });
+}
+
+/**
+ * The interpreter a virtual environment keeps, on whichever platform this is.
+ *
+ * Windows puts it in `Scripts\python.exe`, everything else in `bin/python`.
+ * The setup header hard-coded the POSIX one, so a Windows run printed an
+ * interpreter path that could never exist and told the reader their model was
+ * broken when it was not — the step itself already looked in both places.
+ *
+ * An environment that is not built yet has neither, so the answer is the one
+ * this platform would create.
+ *
+ * @param {object} input
+ * @param {string} input.venvDir
+ * @param {string} [input.platform] - As `process.platform`.
+ * @param {(target: string) => boolean} input.exists
+ * @returns {string}
+ */
+export function venvPythonPath({ venvDir, platform = process.platform, exists }) {
+  const candidates = [
+    path.join(venvDir, "bin", "python"),
+    path.join(venvDir, "Scripts", "python.exe")
+  ];
+  return candidates.find((candidate) => exists(candidate))
+    || (platform === "win32" ? candidates[1] : candidates[0]);
+}
+
+/**
+ * How much of the index the dense half of hybrid search can actually see.
+ *
+ * Zero and zero is not half-built, it is never built: an index rebuilt without
+ * the model reports no vectors and nothing pending, and a line reading "0 with
+ * a vector, 0 without" tells a reader their documents are covered when none of
+ * them is.
+ *
+ * @param {{ current_document_count?: number, dense_documents?: number, dense_pending_documents?: number }|null} status
+ * @returns {string}
+ */
+export function describeDenseCoverage(status) {
+  if (!status) return "No search index yet.";
+  const documents = Number(status.current_document_count || 0);
+  const dense = Number(status.dense_documents || 0);
+  const pending = Number(status.dense_pending_documents || 0);
+  if (!dense && !pending) return `Indexed: ${documents} document(s), none embedded yet (--dense embeds them).`;
+  return `Indexed: ${documents} document(s), ${dense} with a dense vector, ${pending} waiting for one.`;
 }
 
 function pick(step) {

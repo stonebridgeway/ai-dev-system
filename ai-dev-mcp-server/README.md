@@ -220,18 +220,35 @@ concept and document retrieval. The Docker image never bundles the weights
 
 ### From a source checkout
 
+```bash
+npm run setup -- --dense
+```
+
+That builds the Python environment, downloads the weights (~2.3 GB) into the
+directory the loader expects (`$BGE_M3_MODEL_DIR`, else
+`~/.ai-dev/models/bge-m3`), and then embeds the documents already in the search
+index — the last part is what makes a query semantic, and the weights on their
+own do not do it. Adding notes later leaves them without a vector until the next
+`npm run setup -- --dense`, which re-embeds only what changed and reports the
+coverage it ended with.
+
+Set `BGE_M3_DEVICE=cuda` to use a GPU. The loader checks for `pytorch_model.bin`
+in the model directory and says so plainly when it is missing.
+
+By hand, if you would rather do each step yourself (paths are for a plain
+checkout; in an Obsidian vault the helper trees live under `09-mcp/`):
+
 1. Install the Python helper dependencies:
 
    ```bash
-   python3 -m venv 09-mcp/embeddings/.venv
-   09-mcp/embeddings/.venv/bin/pip install -r 09-mcp/embeddings/requirements-bge-m3.txt
+   python3 -m venv embeddings/.venv
+   embeddings/.venv/bin/pip install -r embeddings/requirements-bge-m3.txt
    ```
 
-2. Download the weights into the model directory the loader expects
-   (`$BGE_M3_MODEL_DIR`, else `~/.ai-dev/models/bge-m3`):
+2. Download the weights:
 
    ```bash
-   09-mcp/embeddings/.venv/bin/python - <<'PY'
+   embeddings/.venv/bin/python - <<'PY'
    from pathlib import Path
    from huggingface_hub import snapshot_download
    target = Path.home() / ".ai-dev" / "models" / "bge-m3"
@@ -244,12 +261,10 @@ concept and document retrieval. The Docker image never bundles the weights
    PY
    ```
 
-   The loader checks for `pytorch_model.bin` in that folder and fails clearly if
-   it is missing. Set `BGE_M3_DEVICE=cuda` to use a GPU.
-
 3. Point `AI_DEV_PYTHON` at that venv's interpreter (or keep `python3` on `PATH`
-   with the packages installed) and run `run_search_eval` / `system_health_check`
-   to confirm the dense backend is picked up.
+   with the packages installed), then call `rebuild_search_index` with
+   `dense_embeddings: true` to embed the index, and `run_search_eval` /
+   `system_health_check` to confirm the dense backend is picked up.
 
 ### With the Docker image
 
@@ -309,11 +324,20 @@ See `docs/SECURITY.md`.
 
 ## Installation
 
-Pinned dependencies:
+Pinned dependencies, then the first run:
 
 ```bash
 npm ci --ignore-scripts --no-audit --no-fund
+npm run setup
 ```
+
+`npm run setup` builds what a clone does not ship — the skill registry, the
+SQLite search index and the skill-routing benchmark — and ends with the health
+check, so what is still missing is on the screen. It reaches the network only
+when asked: `--frontend-qa` installs the Frontend QA runner's dependencies,
+`--dense` builds the Python environment, downloads the BGE-M3 weights and embeds
+the index with them. Everything it builds is idempotent, and anything that has
+gone out of date since is rebuilt rather than skipped.
 
 Or restore both MCP and Frontend QA runtimes (`../scripts/restore-runtime.ps1`) — it prefers
 `node` / `npm` / `pnpm` on `PATH` and falls back to a bundled Codex runtime only if one is present.

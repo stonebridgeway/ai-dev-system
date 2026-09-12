@@ -173,6 +173,22 @@ test("every finding uses the documented { rule, severity, file, line, message, e
   assert.deepEqual(changeSetWide.files, ["src/service.ts"]);
 });
 
+test("a file with a NUL byte is skipped as binary rather than scanned line by line", async (t) => {
+  // The check for it was a raw NUL in this repository's own source, which made
+  // git and grep read `change-hygiene.mjs` itself as binary — diffs on it came
+  // out as "Binary files differ". The escape that replaced it has to detect the
+  // same thing.
+  const root = await gitFixture(t);
+  await fs.writeFile(
+    path.join(root, "src", "blob.bin"),
+    Buffer.concat([Buffer.from("header"), Buffer.from([0]), Buffer.from("payload\n")])
+  );
+  const changeSet = await collectChangeSet(root);
+  const blob = changeSet.files.find((file) => file.path === "src/blob.bin");
+  assert.equal(blob.skipped, "binary");
+  assert.deepEqual(blob.added, []);
+});
+
 test("collectChangeSet and verifyChangeHygiene use git added lines and untracked files", async (t) => {
   const root = await gitFixture(t);
   await fs.writeFile(path.join(root, "src", "app.js"), "export const app = 1;\nconsole.log(\"x\");\nexport const two = 2;\n");

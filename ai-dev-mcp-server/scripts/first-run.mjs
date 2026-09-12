@@ -18,9 +18,11 @@ import process from "node:process";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
+  describeDenseCoverage,
   firstRunSucceeded,
   planFirstRun,
-  renderFirstRunReport
+  renderFirstRunReport,
+  venvPythonPath
 } from "../src/core/first-run.mjs";
 
 const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -29,9 +31,9 @@ const repositoryRoot = path.resolve(serverRoot, "..");
 function parseArgs(argv) {
   const options = { want: {}, force: false, health: true };
   for (const argument of argv) {
-    if (argument === "--dense") options.want.dense_model = true;
+    if (argument === "--dense") Object.assign(options.want, { dense_model: true, dense_index: true });
     else if (argument === "--frontend-qa") options.want.frontend_qa = true;
-    else if (argument === "--all") Object.assign(options.want, { dense_model: true, frontend_qa: true });
+    else if (argument === "--all") Object.assign(options.want, { dense_model: true, dense_index: true, frontend_qa: true });
     else if (argument === "--force") options.force = true;
     else if (argument === "--no-health") options.health = false;
     else if (argument === "--help" || argument === "-h") options.help = true;
@@ -48,8 +50,9 @@ function usage() {
     "",
     "  (no flags)      skill registry, search index, routing benchmark",
     "  --frontend-qa   also install the Frontend QA runner's dependencies",
-    "  --dense         also build the Python environment and download BGE-M3 (2.3 GB)",
-    "  --all           both optional steps",
+    "  --dense         also build the Python environment, download BGE-M3 (2.3 GB),",
+    "                  and embed the indexed documents with it",
+    "  --all           everything above",
     "  --force         rebuild what is already there",
     "  --no-health     skip the closing diagnostic"
   ].join("\n");
@@ -69,9 +72,18 @@ async function runOrThrow(label, command, args, options) {
   if (code !== 0) throw new Error(`${label} exited with code ${code}.`);
 }
 
-const { callTool, shutdownBgeWorkers, vaultRoot, searchIndexPath, embeddingsDir } = await import("../src/mcp-stdio.mjs");
+const {
+  callTool, shutdownBgeWorkers, vaultRoot, searchIndexPath, embeddingsDir, skillRoutingEvalCasesPath
+} = await import("../src/mcp-stdio.mjs");
 
-const options = parseArgs(process.argv.slice(2));
+let options;
+try {
+  options = parseArgs(process.argv.slice(2));
+} catch (error) {
+  // A mistyped flag is a typo, not a crash: say which one and what to try.
+  console.error(String(error?.message ?? error));
+  process.exit(2);
+}
 if (options.help) {
   console.log(usage());
   process.exit(0);
@@ -79,14 +91,28 @@ if (options.help) {
 
 const modelDir = process.env.BGE_M3_MODEL_DIR
   || path.join(process.env.AI_DEV_HOME || process.env.HOME || process.env.USERPROFILE || "", ".ai-dev", "models", "bge-m3");
-const densePython = process.env.AI_DEV_PYTHON || path.join(embeddingsDir, ".venv", "bin", "python");
+const venvDir = path.join(embeddingsDir, ".venv");
+const densePython = process.env.AI_DEV_PYTHON || venvPythonPath({ venvDir, exists: existsSync });
+
+const registriesDir = path.join(vaultRoot, "03-skills-catalog", "registries");
+const routingReportPath = path.join(registriesDir, "skill-routing-eval.json");
+
+// Asked once and read by both the plan and the report below: a status call
+// walks the vault. A machine without a working Python helper cannot answer it,
+// and that is a reason to rebuild rather than to stop before the first step.
+const indexStatus = existsSync(searchIndexPath)
+  ? await callTool("search_index_status", { include_external_project_files: true })
+    .then(parseResult)
+    .catch(() => null)
+  : null;
 
 const present = {
-  skill_registry: existsSync(path.join(vaultRoot, "03-skills-catalog", "registries", "skills.index.json")),
+  skill_registry: existsSync(path.join(registriesDir, "skills.index.json")),
   search_index: existsSync(searchIndexPath),
-  routing_benchmark: existsSync(path.join(vaultRoot, "03-skills-catalog", "registries", "skill-routing-eval.json")),
+  routing_benchmark: existsSync(routingReportPath),
   frontend_qa: existsSync(path.join(repositoryRoot, "frontend-qa", "node_modules")),
-  dense_model: existsSync(path.join(modelDir, "pytorch_model.bin"))
+  dense_model: existsSync(path.join(modelDir, "pytorch_model.bin")),
+  dense_index: Number(indexStatus?.dense_documents || 0) > 0
 };
 
 /** What each step actually does. Every one of them is idempotent. */
@@ -121,13 +147,10 @@ const ACTIONS = {
     return `${manager} install in frontend-qa/`;
   },
   async dense_model() {
-    const venvDir = path.join(embeddingsDir, ".venv");
-    if (!existsSync(path.join(venvDir, "bin", "python")) && !existsSync(path.join(venvDir, "Scripts", "python.exe"))) {
+    if (!existsSync(venvPythonPath({ venvDir, exists: existsSync }))) {
       await runOrThrow("python -m venv", process.env.AI_DEV_PYTHON_BASE || "python3", ["-m", "venv", venvDir]);
     }
-    const python = existsSync(path.join(venvDir, "bin", "python"))
-      ? path.join(venvDir, "bin", "python")
-      : path.join(venvDir, "Scripts", "python.exe");
+    const python = venvPythonPath({ venvDir, exists: existsSync });
     await runOrThrow("pip install", python, [
       "-m", "pip", "install", "--disable-pip-version-check",
       "-r", path.join(embeddingsDir, "requirements-bge-m3.txt")
@@ -139,6 +162,16 @@ const ACTIONS = {
       ' allow_patterns=["*.json", "*.model", "sentencepiece.bpe.model", "pytorch_model.bin"])'
     ].join("\n")]);
     return `model in ${modelDir}, interpreter ${python}`;
+  },
+  async dense_index() {
+    const result = await callTool("rebuild_search_index", {
+      include_external_project_files: true,
+      dense_embeddings: true,
+      dense_incremental: true
+    });
+    return summarize(result, (doc) => (
+      `${doc.dense_documents ?? "?"} document(s) embedded, ${doc.dense_pending_documents ?? 0} still pending`
+    ));
   }
 };
 
@@ -147,19 +180,58 @@ async function hasCommand(command) {
   return code === 0;
 }
 
-function summarize(result, describe) {
-  const text = result?.content?.find((item) => item.type === "text")?.text ?? "{}";
+function parseResult(result) {
+  const text = result?.content?.find((item) => item.type === "text")?.text ?? "";
   try {
-    return describe(JSON.parse(text));
+    return JSON.parse(text);
   } catch {
-    return "done";
+    return null;
   }
 }
 
-const plan = planFirstRun({ present, want: options.want, force: options.force });
+function summarize(result, describe) {
+  const doc = parseResult(result);
+  return doc ? describe(doc) : "done";
+}
+
+async function modifiedAt(target) {
+  const stat = await fs.stat(target).catch(() => null);
+  return stat?.mtimeMs ?? 0;
+}
+
+/**
+ * What exists but no longer matches what it was built from.
+ *
+ * Existence was the only question this asked, so a vault whose notes had moved
+ * on since the last build was told "already built" and then, two lines later by
+ * the diagnostic in the same run, that its index and its benchmark were stale.
+ * Both answers came from the same command. These are the signals the health
+ * check itself grades, asked before rather than after.
+ */
+async function findStale(present) {
+  const stale = {
+    search_index: Boolean(indexStatus?.stale),
+    // Documents indexed since the last embedding run have no vector, so the
+    // dense half of a hybrid query cannot see them.
+    dense_index: Number(indexStatus?.dense_pending_documents || 0) > 0
+  };
+  if (present.routing_benchmark) {
+    const report = await modifiedAt(routingReportPath);
+    const inputs = await Promise.all([
+      modifiedAt(skillRoutingEvalCasesPath),
+      modifiedAt(path.join(serverRoot, "src", "core", "skill-router.mjs"))
+    ]);
+    stale.routing_benchmark = report < Math.max(...inputs);
+  }
+  return stale;
+}
+
+const stale = await findStale(present);
+const plan = planFirstRun({ present, stale, want: options.want, force: options.force });
 console.log(`Vault: ${vaultRoot}`);
 console.log(`Search index: ${searchIndexPath}`);
 console.log(`Dense model: ${modelDir} (interpreter ${densePython})`);
+if (indexStatus) console.log(describeDenseCoverage(indexStatus));
 console.log("");
 
 const results = [];
@@ -193,7 +265,7 @@ if (options.health) {
     include_dense_smoke: false,
     include_search_eval: false
   });
-  const doc = JSON.parse(health.content?.find((item) => item.type === "text")?.text ?? "{}");
+  const doc = parseResult(health) ?? {};
   const checks = doc.checks ?? [];
   const unhappy = checks.filter((check) => check.status !== "passed" && check.status !== "ok" && check.status !== "skipped");
   console.log(`Health: ${doc.status} — ${checks.length} check(s), ${unhappy.length} not passing.`);

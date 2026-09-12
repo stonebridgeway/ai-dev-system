@@ -41,6 +41,20 @@ For the Docker path:
 
 To run from source you additionally need Node.js 22.12+ and npm. On Windows you can
 use the bundled runtime described in the [server README](ai-dev-mcp-server/README.md).
+From the clone root:
+
+```bash
+cd ai-dev-mcp-server
+npm ci --ignore-scripts --no-audit --no-fund
+npm run setup
+```
+
+`npm run setup` builds the three things a clone does not ship — the skill
+registry, the search index and the routing benchmark — and prints the health
+check. Add `--frontend-qa` for the QA runner's dependencies, `--dense` for the
+local BGE-M3 model and the embeddings built with it (~2.3 GB); neither runs
+unless asked. No Obsidian vault is needed: without one the server reads the
+bundled seed and its helper trees from the repository itself.
 
 ## One command on Windows
 

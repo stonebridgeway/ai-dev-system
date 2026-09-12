@@ -246,6 +246,30 @@ test("missing generated registries fail their checks with the vault path", async
   assert.equal(result.status, "fail");
 });
 
+test("the benchmark ages against the cases file the runtime actually reads", async (t) => {
+  // In a checkout the golden cases are outside the seed that stands in for a
+  // vault, so the vault-relative path in the report points at nothing: editing
+  // the cases left the health check saying "fresh" and nobody was ever told to
+  // rerun the benchmark. Measured on this repository before the fix.
+  const { vaultRoot, host, registry } = await createFixture(t);
+  const elsewhere = path.join(vaultRoot, "..", "outside", "skill_routing_eval_cases.json");
+  await fs.mkdir(path.dirname(elsewhere), { recursive: true });
+  await writeJsonFile(elsewhere, { cases: [] });
+  host.skillRoutingEvalCasesPath = elsewhere;
+  // Newer than the report the fixture wrote, which is what a person editing
+  // their golden cases produces.
+  const later = new Date(Date.now() + 60_000);
+  await fs.utimes(elsewhere, later, later);
+
+  const result = await registry.handlers.get("system_health_check")({ include_search_smoke: false });
+  const benchmark = result.checks.find((check) => check.name === "skill_routing_benchmark");
+  assert.equal(benchmark.status, "fail");
+  assert.equal(benchmark.details.fresh, false);
+  assert.match(benchmark.summary, /stale/);
+  // The report still names the layout rather than someone's absolute path.
+  assert.equal(benchmark.details.cases_path, VAULT_PATHS.skillRoutingEvalCases);
+});
+
 test("dashboard rebuild writes the note and snapshot, and status compares fingerprints", async (t) => {
   const { vaultRoot, host, calls, registry } = await createFixture(t);
 

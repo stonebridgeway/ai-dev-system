@@ -234,7 +234,10 @@ async function systemHealthCheck(host, {
     }));
     await report.runCheck("skill_routing_benchmark", true, async () => {
       const reportPath = host.safePath(paths.skillRoutingReport);
-      const casesPath = host.safePath(paths.skillRoutingEvalCases);
+      // Where the cases actually are, not where a report says they are: in a
+      // checkout the vault-relative path points into a seed that has no
+      // `09-mcp/`, so the file the benchmark reads never aged the report.
+      const casesPath = host.skillRoutingEvalCasesPath || host.safePath(paths.skillRoutingEvalCases);
       const routerPath = path.join(serverSourceDir(host), "core", "skill-router.mjs");
       const reportStatus = await host.fileStatus(reportPath);
       if (!reportStatus.exists) {

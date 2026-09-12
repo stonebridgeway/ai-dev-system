@@ -20,6 +20,7 @@ import path from "node:path";
 import process from "node:process";
 import { atomicWriteJson } from "./atomic-files.mjs";
 import { csvValue, stripBom } from "./text-format.mjs";
+import { pythonFailureMessage } from "./python-failure.mjs";
 
 /** How long a fresh-index verdict is trusted before it is checked again. */
 const FRESHNESS_CACHE_MS = 1000;
@@ -108,7 +109,12 @@ export function createSearchIndexRuntime({
       throw new Error(`Search helper not found: ${searchCliPath}`);
     }
 
-    const output = await execFile(command, [searchCliPath, ...args], { timeoutMs });
+    // The helper explains itself in the last line of its traceback, and callers
+    // report the first line of what they are handed.
+    const output = await execFile(command, [searchCliPath, ...args], { timeoutMs })
+      .catch((error) => {
+        throw new Error(pythonFailureMessage(error?.message, `Search helper failed: ${args[0]}`), { cause: error });
+      });
     try {
       return JSON.parse(stripBom(output.stdout));
     } catch (err) {
