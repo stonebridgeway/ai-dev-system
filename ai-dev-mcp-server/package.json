@@ -50,6 +50,6 @@
     "@huggingface/transformers": "3.7.5",
     "@modelcontextprotocol/sdk": "1.30.0",
     "onnxruntime-node": "1.21.0",
-    "zod": "4.5.4"
+    "zod": "4.6.2"
   }
 }
