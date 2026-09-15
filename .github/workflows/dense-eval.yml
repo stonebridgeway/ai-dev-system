@@ -53,7 +53,7 @@ jobs:
       # Keyed on the revision, so a manifest that moves to a new export or a new
       # dtype downloads afresh rather than scoring yesterday's weights.
       - name: Restore the model
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.ai-dev/models/bge-m3-onnx
           key: bge-m3-onnx-${{ steps.manifest.outputs.revision }}
@@ -97,7 +97,7 @@ jobs:
         run: node scripts/dense-benchmark.mjs --label onnx --out "${{ runner.temp }}/dense-onnx.json"
 
       - name: Upload the report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dense-eval-onnx
           path: ${{ runner.temp }}/dense-onnx.json
@@ -118,12 +118,12 @@ jobs:
           cache-dependency-path: ai-dev-mcp-server/package-lock.json
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Restore the model
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.ai-dev/models/bge-m3
           key: bge-m3-torch-${{ env.BGE_M3_PYTHON_REVISION || 'unpinned' }}-v1
@@ -159,7 +159,7 @@ jobs:
         run: node scripts/dense-benchmark.mjs --label python --out "${{ runner.temp }}/dense-python.json"
 
       - name: Upload the report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dense-eval-python
           path: ${{ runner.temp }}/dense-python.json
@@ -174,7 +174,7 @@ jobs:
     if: always()
     steps:
       - name: Download the reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: reports
         continue-on-error: true
