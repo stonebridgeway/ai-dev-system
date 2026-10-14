@@ -12,8 +12,8 @@ importers:
         specifier: 4.13.0
         version: 4.13.0(playwright-core@1.63.0)
       pixelmatch:
-        specifier: 7.2.0
-        version: 7.2.0
+        specifier: 8.0.0
+        version: 8.0.0
       playwright:
         specifier: 1.63.0
         version: 1.63.0
@@ -32,8 +32,8 @@ packages:
     resolution: {integrity: sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==}
     engines: {node: '>=4'}
 
-  pixelmatch@7.2.0:
-    resolution: {integrity: sha512-xhcb4yHu9sM/G7foGzoLtXYcC0zHEaOXXjRKhGup0fw78Nf2Tkiapv4EQyMzrbcmQPsllAI7DbFY2UT7PlI9Pg==}
+  pixelmatch@8.0.0:
+    resolution: {integrity: sha512-cIqOLfh5k52us715qf3B3+kTOxZv+WDv77HN7xokLScYQGYQHi4m/ynoDIPpvF2LvCyUJGyvzY64i0QCXtzu1g==}
     hasBin: true
 
   playwright-core@1.63.0:
@@ -59,7 +59,7 @@ snapshots:
 
   axe-core@4.13.0: {}
 
-  pixelmatch@7.2.0:
+  pixelmatch@8.0.0:
     dependencies:
       pngjs: 7.0.0
 
