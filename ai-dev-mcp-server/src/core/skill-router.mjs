@@ -88,6 +88,17 @@ const RULES = [
     domain: "database-migration-guardian"
   },
   {
+    // Scanning a project and patching what the scan finds — a workflow of its
+    // own (ar-security-review: scan, plan, confirm, verify). A security review
+    // of code without a scan ("review the authorization") stays with the
+    // review workflow below, so bare "vulnerability" does not trigger this.
+    id: "security-remediation",
+    pattern: /(ar-security-review|security scan|vulnerability scan|scan[a-z]*\s+(?:the\s+|this\s+|our\s+)?(?:project|repo|repository|dependencies)|(?:fix|patch|remediate)\s+(?:the\s+|all\s+)?vulnerab|malware|malicious (?:package|version|dependency)|compromised (?:package|dependency)|supply[- ]chain attack|\bcve-\d|\bghsa-|\bosv\b|(?:npm|pnpm|yarn|bun) audit|просканир|залат|латат|закр[а-я]*\s+уязвим|малвар|вредонос|скомпрометир[а-я]*\s+пакет|проверк[а-я]*\s+безопасност[а-я]*\s+(?:проект|зависимост|бэк|фронт)|на\s+уязвимост)/i,
+    workflow: "ar-security-review",
+    domain: "application-security-reviewer",
+    verification: "secrets-dependencies-auditor"
+  },
+  {
     id: "secrets-dependencies",
     pattern: /(secret|credential|token|api key|dependency|dependencies|supply chain|npm audit|pip audit|snyk|секрет|учетн[а-я]*\s+данн|токен|ключ[а-я]*\s+api|зависимост)/i,
     domain: "secrets-dependencies-auditor"
@@ -155,6 +166,7 @@ const RULE_PRIORITY = Object.freeze({
   "task-lifecycle": 100,
   repository: 90,
   "frontend-product": 85,
+  "security-remediation": 80,
   knowledge: 10
 });
 
@@ -288,7 +300,7 @@ export function routeSkills({ task, projectTypes = [], stack = [], maxSkills = 3
  * *beside* the routed core, never instead of it, because the routed core is the
  * part with our verification contract on it. Without a reserved slot an
  * imported skill can only appear by pushing one of ours out, which is why all
- * 101 of them were invisible (docs/DEFECTS.md, Д-1).
+ * 101 of them were invisible.
  */
 export const RESERVED_ROUTING_ROLES = Object.freeze(["capability", "specialist"]);
 

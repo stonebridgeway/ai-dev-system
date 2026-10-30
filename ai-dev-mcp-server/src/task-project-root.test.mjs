@@ -5,8 +5,16 @@ import path from "node:path";
 import test from "node:test";
 import { assertNotProtectedProjectRoot, resolveTaskProjectRoot, safeProjectRoot, vaultRoot } from "./mcp-stdio.mjs";
 
+/**
+ * A new folder under the temp folder, by its real path: the lifecycle answers with resolved paths, and the temp
+ * folder can be a link — `/var` → `/private/var` on macOS, any TMPDIR a user points elsewhere.
+ */
+async function realTemporaryFolder(prefix) {
+  return fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), prefix)));
+}
+
 test("task lifecycle resolves a nested package to the nearest project quality gate", async (t) => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-task-root-"));
+  const root = await realTemporaryFolder("ai-dev-task-root-");
   t.after(() => fs.rm(root, { recursive: true, force: true }));
 
   const nested = path.join(root, "packages", "web");
@@ -22,7 +30,7 @@ test("task lifecycle resolves a nested package to the nearest project quality ga
 });
 
 test("task lifecycle preserves a standalone project directory", async (t) => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-task-standalone-"));
+  const root = await realTemporaryFolder("ai-dev-task-standalone-");
   t.after(() => fs.rm(root, { recursive: true, force: true }));
 
   assert.equal(await resolveTaskProjectRoot(root), root);

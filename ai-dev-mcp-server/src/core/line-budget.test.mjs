@@ -10,7 +10,7 @@ import {
 } from "./line-budget.mjs";
 import { SYSTEM_LINE_CEILING } from "./system-health.mjs";
 
-// Д-12. The gate is the only thing holding the ratchet, and its five branches
+// The gate is the only thing holding the ratchet, and its five branches
 // were checked once, by hand, by breaking real files and putting them back.
 // Each branch gets an input here that must produce exactly one finding, and the
 // healthy tree must produce none — so a rewrite of the gate that silently drops

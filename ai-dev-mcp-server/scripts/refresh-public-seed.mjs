@@ -14,6 +14,7 @@ import {
   ownerUsername,
   VENDORED_SEED_CATALOGUES
 } from "../src/core/public-distribution.mjs";
+import { npmLeavesOut } from "../src/core/distribution-build.mjs";
 import { isDirectExecution } from "../src/core/direct-execution.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -53,7 +54,10 @@ function excludedSource(relative, entry) {
     "node_modules"
   ].includes(segment))
     || entry.name === ".DS_Store"
-    || /\.pyc$/i.test(entry.name);
+    || /\.pyc$/i.test(entry.name)
+    // A name `npm pack` drops would be missing from every installed package,
+    // and the vault sync would wait for it forever.
+    || npmLeavesOut(relative.replaceAll("\\", "/"));
 }
 
 function assertGeneratedTarget(target) {
@@ -161,7 +165,7 @@ async function copySkillSources(vaultRoot, stage) {
         exclude: directory === "node_modules"
           // `simple-icons` (~23 MB) is only used by the brand-mark generator,
           // never at runtime, so the clean seed omits it.
-          ? (relative, entry) => entry.name === ".DS_Store" || entry.name === "simple-icons"
+          ? (relative, entry) => entry.name === "simple-icons" || npmLeavesOut(relative.replaceAll("\\", "/"))
           : excludedSource,
         // Nested dependencies (`ajv/node_modules/fast-uri`) are part of the same
         // approved vendored tree; without this the copy drops them and archify
@@ -199,7 +203,7 @@ async function countSkillFiles(root) {
  *
  * `copySkillSources` reads the owner's vault, which has never held these — they
  * came from imports recorded in `THIRD_PARTY_NOTICES.md`. Without this step the
- * refresh replaces the seed with a tree missing 3,084 skills, and the manifest
+ * refresh replaces the seed with a tree missing every vendored skill (471 today), and the manifest
  * it writes makes the loss look intentional.
  *
  * The source is the repository's own `docker/public-seed`, read before the

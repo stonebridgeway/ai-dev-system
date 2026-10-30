@@ -1,184 +1,69 @@
 /**
- * What the dense search backend needs, and what its absence actually means.
+ * The health check's verdict on dense search, from the `embedding_status`
+ * payload.
  *
- * Extracted from `system-health.mjs`, which is at its line ceiling, and grown
- * there rather than here because the question it answers turned out to be about
- * the *environment* rather than about files: the same missing weights mean
- * "download them" in a clone, "mount them" in a container built without the
- * Python stack, and "your install is half-built" in a clone whose download was
- * interrupted. One sentence covered all three, and two of them it sent the
- * reader to a command that cannot work where they are (docs/DEFECTS.md, Д-59).
+ * Four answers, because they send a person to four different places. Ready is
+ * `ok`. Not installed is `skipped` — nobody has to have the model, and a
+ * correct install without it is not unhealthy. Files
+ * that are there and wrong are a `warn`, and so is anything left of the
+ * removed Python backend: a 2.x setting that nothing reads any more is worth
+ * a sentence and the command that replaces it, every time someone looks.
+ * A machine the runtime has no build for is `skipped`
+ * with that said plainly.
  */
+import { containerModelAdvice } from "./dense-backend.mjs";
+import { formatBytes } from "./disk-space.mjs";
+import { hint } from "./install-layout.mjs";
 
 /**
- * Availability keys the BGE-M3 backend needs before dense search can run.
+ * Grade the dense backend from an `embedding_status` payload.
  *
- * The search index is deliberately not one of them. It used to be, and because
- * a missing index is not a model file, its absence tipped the whole check from
- * the soft "dense is not set up" into a critical failure naming five missing
- * files — so a fresh container, which has no index until its first start builds
- * one, reported one missing artefact as two critical failures. The index has
- * its own critical check, `search_index_file`, which says so once.
- */
-export const EMBEDDING_BACKEND_REQUIREMENTS = Object.freeze([
-  "embeddings_python",
-  "embed_helper",
-  "worker_helper",
-  "model_dir",
-  "model_file",
-  "modules_file"
-]);
-
-/**
- * The requirements that arrive only with the optional dense step.
- *
- * The helpers ship with the repository; the Python environment and the weights
- * are built by `npm run setup -- --dense` — the step's own description calls it
- * "a Python environment plus 2.3 GB of weights" — so a clone that never asked
- * for them is not broken. Reporting their absence as a failure met every new
- * user with "Health: fail" on a correct install, measured on a clean clone on
- * both Linux and Windows.
- */
-export const EMBEDDING_MODEL_REQUIREMENTS = Object.freeze([
-  "embeddings_python",
-  "model_dir",
-  "model_file",
-  "modules_file"
-]);
-
-/**
- * What to do about missing weights, in the environment the reader is in.
- *
- * The published image is built with `INSTALL_BGE_M3=0` and says so through
- * `AI_DEV_DENSE_INSTALLED`; inside it `npm run setup -- --dense` is not a thing
- * a user can run, and the weights arrive by mount instead.
- *
- * @param {{ installed?: boolean|null, reason?: string }} [dense] - From `embedding_status`.
- * @returns {string}
- */
-export function denseSetupAdvice(dense = {}) {
-  if (dense.reason === "image-opt-out") {
-    return "This image was built without the BGE-M3 Python stack (INSTALL_BGE_M3=0). "
-      + "Mount the weights — point AI_DEV_MODEL_PATH at the folder holding them before `docker/run-mcp.sh` — "
-      + "or build an image variant with `--build-arg INSTALL_BGE_M3=1`.";
-  }
-  if (dense.reason === "image-opt-in") {
-    return "This image carries the BGE-M3 Python stack, but weights are never in an image: "
-      + "point AI_DEV_MODEL_PATH at the folder holding them before `docker/run-mcp.sh`.";
-  }
-  return "Run `npm run setup -- --dense` to enable it.";
-}
-
-/**
- * What the ONNX backend needs, said where the reader is.
- *
- * Its requirements are not the legacy ones: no interpreter, no virtualenv, no
- * 2.3 GB of torch weights — five files that match a manifest. So when that
- * backend is the one selected, the advice is a download rather than a build,
- * and inside an image it is a mount (docs/DEFECTS.md, Д-62).
- *
- * @param {{ onnx?: object, python?: object }} selected - From the dense runtime.
- * @param {{ installed?: boolean|null, reason?: string }} [dense]
- * @returns {string}
- */
-export function onnxSetupAdvice(selected = {}, dense = {}) {
-  const onnx = selected.onnx || {};
-  if (onnx.mismatched?.length) {
-    return `The files in ${onnx.dir} are not the pinned export (${onnx.mismatched.join(", ")}). `
-      + "Delete that directory and run `npm run setup -- --dense` again.";
-  }
-  if (dense.reason === "image-opt-out" || dense.reason === "image-opt-in") {
-    return "Weights are never baked into an image: point AI_DEV_MODEL_PATH at a folder holding "
-      + "`bge-m3-onnx/` before `docker/run-mcp.sh`.";
-  }
-  return `Run \`npm run setup -- --dense\` to download the pinned ONNX export into ${onnx.dir || "the model directory"} `
-    + "(no Python involved).";
-}
-
-/**
- * Grade the embedding backend from an `embedding_status` payload.
- *
- * Three outcomes rather than two. A shipped helper missing is a real failure.
- * Weights missing where nothing dense was ever installed is `skipped` — nobody
- * has to have the model. Weights missing where the Python stack *is* installed
- * is a `warn`: something was set up and did not finish, which is worth saying
- * out loud without failing a correct install.
- *
- * @param {{ availability?: object, workers?: object, dense?: object }} status
+ * @param {{ dense_backend?: object, model_dir?: string, partial?: object[], worker?: object }} status
  * @returns {{ status: string, summary: string, details: object }}
  */
-export function evaluateEmbeddingBackend(status) {
-  const missing = EMBEDDING_BACKEND_REQUIREMENTS.filter((key) => !status.availability?.[key]?.exists);
-  const dense = status.dense || {};
-  const selected = status.dense_backend || null;
-  const shared = { missing, dense, selected_backend: selected, availability: status.availability, workers: status.workers };
-
-  // With the ONNX backend selected, the legacy stack's absence says nothing
-  // about whether dense search works — that is the whole point of Д-62 — so it
-  // is graded on its own files. The shipped helpers are still checked below,
-  // because a checkout missing them is broken either way.
-  if (selected?.backend === "onnx") {
-    const shippedMissing = missing.filter((key) => !EMBEDDING_MODEL_REQUIREMENTS.includes(key));
-    if (selected.available) {
-      return {
-        status: "ok",
-        summary: `Dense search is ready through the ONNX backend (${selected.onnx?.export} @ ${String(selected.onnx?.revision).slice(0, 12)}, `
-          + `${selected.onnx?.dtype}); no Python is involved.`,
-        details: { ...shared, backend: "onnx", onnx: selected.onnx, legacy_python_missing: shippedMissing }
-      };
-    }
-    const advice = onnxSetupAdvice(selected, dense);
-    if (selected.onnx?.mismatched?.length) {
-      return {
-        status: "warn",
-        summary: `The ONNX model directory does not match the manifest. ${advice}`,
-        details: { ...shared, backend: "onnx", onnx: selected.onnx }
-      };
-    }
+export function evaluateEmbeddingBackend(status = {}) {
+  const selected = status.dense_backend ?? {};
+  const onnx = selected.onnx ?? {};
+  const legacy = selected.legacy?.notes ?? [];
+  const partial = status.partial ?? [];
+  const details = { backend: selected.backend ?? "onnx", onnx, model_dir: status.model_dir ?? onnx.dir, partial, worker: status.worker, legacy };
+  if (legacy.length) {
+    return {
+      status: "warn",
+      summary: [...legacy, selected.available ? "" : selected.reason].filter(Boolean).join(" "),
+      details
+    };
+  }
+  if (selected.available) {
+    return {
+      status: "ok",
+      summary: `Dense search is ready through the ONNX backend (${onnx.export} @ ${String(onnx.revision).slice(0, 12)}, ${onnx.dtype}); no Python is involved.`,
+      details
+    };
+  }
+  // Inside a container the fix depends on the folder: a read-only mount from
+  // the host is fixed there, the volume's by
+  // installing into it with the network that one run needs.
+  const inContainer = Boolean(status.in_container);
+  if (onnx.mismatched?.length) {
+    return {
+      status: "warn",
+      summary: `The model files in ${onnx.dir} do not match the manifest (${onnx.mismatched.join(", ")}). `
+        + (inContainer ? `In this container, ${containerModelAdvice(onnx.dir)}` : `Run \`${hint("npm run setup -- --model")}\`: it fetches those files again.`),
+      details
+    };
+  }
+  // A check that could not be made is a fault to look at, not a model to install.
+  if (onnx.unchecked) return { status: "warn", summary: selected.reason || `The model could not be checked: ${onnx.unchecked}`, details };
+  // A model this user cannot read is said as that first: no download continues it.
+  if (partial.length && !onnx.unreadable) {
+    const started = partial.map((entry) => `${formatBytes(entry.bytes)} of ${entry.file}`).join(", ");
     return {
       status: "skipped",
-      summary: `Dense search is not set up: the ONNX export is not here. ${advice}`,
-      details: { ...shared, backend: "onnx", onnx: selected.onnx, optional: true }
+      summary: `Dense search is not installed: a model download stopped partway (${started}). `
+        + (inContainer ? `In this container, ${containerModelAdvice(onnx.dir)}` : `\`${hint("npm run setup -- --model")}\` continues it from there.`),
+      details: { ...details, optional: true }
     };
   }
-  // Everything missing is model weights, and those are an opt-in download.
-  // Anything else missing is a shipped file that should be there.
-  const onlyModel = missing.length > 0 && missing.every((key) => EMBEDDING_MODEL_REQUIREMENTS.includes(key));
-  if (onlyModel) {
-    const advice = denseSetupAdvice(dense);
-    if (dense.installed) {
-      return {
-        status: "warn",
-        summary: `Dense search is installed but cannot run: ${missing.join(", ")} missing. ${advice}`,
-        details: shared
-      };
-    }
-    return {
-      status: "skipped",
-      summary: `Dense search is not set up: the model weights are not here. ${advice}`,
-      details: { ...shared, optional: true }
-    };
-  }
-  if (missing.length) {
-    return {
-      status: "fail",
-      summary: `Embedding backend is missing required files: ${missing.join(", ")}.`,
-      details: shared
-    };
-  }
-  return {
-    status: "ok",
-    summary: status.workers.count > 0
-      ? `Embedding backend files exist; ${status.workers.count} worker(s) currently tracked.`
-      : "Embedding backend files exist; worker is not started yet.",
-    details: {
-      backend: status.backend,
-      dense_model: status.dense_model,
-      dense_dimensions: status.dense_dimensions,
-      configured_device: status.configured_device,
-      dense,
-      workers: status.workers,
-      paths: status.paths
-    }
-  };
+  return { status: "skipped", summary: selected.reason || "Dense search is not installed.", details: { ...details, optional: true } };
 }

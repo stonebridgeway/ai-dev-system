@@ -1,4 +1,18 @@
-import { ReadBuffer, serializeMessage } from "@modelcontextprotocol/sdk/shared/stdio.js";
+import { ReadBuffer, STDIO_DEFAULT_MAX_BUFFER_SIZE, serializeMessage } from "@modelcontextprotocol/sdk/shared/stdio.js";
+
+/**
+ * The largest message a session takes: the SDK's own limit for stdio, so a
+ * client meets the same bound whether it is served by the daemon or in its own
+ * process. The bridge refuses a longer one itself (`daemon-bridge.mjs`).
+ */
+export const MAX_MESSAGE_BYTES = STDIO_DEFAULT_MAX_BUFFER_SIZE;
+
+/**
+ * Room above one message in the read buffer: the rest of the socket read that
+ * ends it, so a message of the largest size is never refused for the bytes
+ * that came with it.
+ */
+const READ_SLACK_BYTES = 1024 * 1024;
 
 /**
  * MCP's line-delimited JSON transport, carried over a local socket.
@@ -10,7 +24,9 @@ import { ReadBuffer, serializeMessage } from "@modelcontextprotocol/sdk/shared/s
  */
 export class SocketServerTransport {
   #socket;
-  #buffer = new ReadBuffer();
+  #buffer = new ReadBuffer({ maxBufferSize: MAX_MESSAGE_BYTES + READ_SLACK_BYTES });
+  #buffered;
+  #scope;
   #started = false;
   #closed = false;
 
@@ -18,9 +34,18 @@ export class SocketServerTransport {
   onerror;
   onmessage;
 
-  /** @param {import("node:net").Socket} socket - An already-connected socket. */
-  constructor(socket) {
+  /**
+   * @param {import("node:net").Socket} socket - An already-connected socket.
+   * @param {{ buffered?: Buffer, scope?: (deliver: () => void) => void }} [options] -
+   *   `buffered`: bytes read past the daemon's handshake, the start of the MCP
+   *   stream, which must not be lost. `scope`: runs the delivery of each message,
+   *   so that everything it sets off runs in the session's environment
+   *   (`src/core/session-env.mjs`).
+   */
+  constructor(socket, { buffered, scope = (deliver) => deliver() } = {}) {
     this.#socket = socket;
+    this.#buffered = buffered;
+    this.#scope = scope;
   }
 
   /**
@@ -34,23 +59,43 @@ export class SocketServerTransport {
     }
     this.#started = true;
     this.#socket.on("data", (chunk) => {
-      this.#buffer.append(chunk);
-      for (;;) {
-        let message;
-        try {
-          message = this.#buffer.readMessage();
-        } catch (error) {
-          // A malformed frame poisons the buffer: stop draining and report it
-          // rather than spinning on the same bytes.
-          this.onerror?.(error);
-          return;
-        }
-        if (message === null) return;
-        this.onmessage?.(message);
+      try {
+        this.#buffer.append(chunk);
+      } catch (error) {
+        // Ten megabytes without a line break is not a client to keep reading.
+        this.onerror?.(error);
+        this.#socket.destroy();
+        return;
       }
+      this.#drain();
     });
     this.#socket.on("error", (error) => this.onerror?.(error));
     this.#socket.on("close", () => this.#notifyClosed());
+    if (this.#buffered?.length) {
+      this.#buffer.append(this.#buffered);
+      this.#buffered = null;
+      this.#drain();
+    }
+    // The handshake leaves the socket paused, so nothing arrives before the
+    // listeners above are there to take it.
+    this.#socket.resume();
+  }
+
+  /** Hand every complete message in the buffer to the server. */
+  #drain() {
+    for (;;) {
+      let message;
+      try {
+        message = this.#buffer.readMessage();
+      } catch (error) {
+        // The bad line is already out of the buffer: report it and go on with
+        // the next one, as the SDK's stdio transport does.
+        this.onerror?.(error);
+        continue;
+      }
+      if (message === null) return;
+      this.#scope(() => this.onmessage?.(message));
+    }
   }
 
   /**
@@ -58,6 +103,7 @@ export class SocketServerTransport {
    * @returns {Promise<void>}
    */
   async send(message) {
+    if (this.#closed) return;
     await new Promise((resolve, reject) => {
       this.#socket.write(serializeMessage(message), (error) => (error ? reject(error) : resolve()));
     });

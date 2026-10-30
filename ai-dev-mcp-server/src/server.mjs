@@ -26,6 +26,10 @@ import {
   visibleTools
 } from "./mcp-stdio.mjs";
 import { isDirectExecution } from "./core/direct-execution.mjs";
+import { describeProgress } from "./core/progress-line.mjs";
+import { prepareRuntimeHome } from "./core/runtime-home-migration.mjs";
+import { createSessionEnd } from "./core/session-end.mjs";
+import { DEFAULT_PROFILE_IDS, filterToolsByProfiles, findProfile, profileNotes, profileOfTool, profilesFromEnvironment } from "./core/tool-profiles.mjs";
 
 const serverFile = fileURLToPath(import.meta.url);
 const serverRoot = path.resolve(path.dirname(serverFile), "..");
@@ -273,7 +277,9 @@ function toolDefinition(tool) {
   return {
     ...tool,
     title: tool.title || toolTitle(tool.name),
-    outputSchema: {
+    // A tool with a contract (the control tools) advertises it, so an SDK
+    // client checks every answer against it; the rest answer anything under `result`.
+    outputSchema: tool.outputSchema ?? {
       type: "object",
       properties: { result: {} },
       required: ["result"],
@@ -282,7 +288,7 @@ function toolDefinition(tool) {
     annotations: {
       title: tool.title || toolTitle(tool.name),
       readOnlyHint: readOnly,
-      destructiveHint: false,
+      destructiveHint: !readOnly && tool.annotations?.destructiveHint === true,
       idempotentHint: readOnly || /^(rebuild|sync|refresh|prepare|bootstrap|validate)/.test(tool.name),
       openWorldHint: OPEN_WORLD_TOOLS.has(tool.name)
     }
@@ -304,13 +310,61 @@ function structuredResult(result) {
   };
 }
 
-async function reportProgress(extra, progress, total, message) {
+/**
+ * The request's progress, as MCP `notifications/progress`.
+ *
+ * A tool reports `{ phase, done, total }` (or `bytes` for a download) in units
+ * of its own; this turns them into one count that only rises — MCP requires
+ * each notification to be larger than the last — by stacking the phases: the
+ * text index written, then the documents embedded, then the closing write.
+ * Before 3.0 a call said 0 of 1 when it began and 1 of 1 when it ended, and
+ * nothing between. Notifications go out at most every
+ * 100 ms, and not at all when the client sent no progress token.
+ *
+ * @param {object} extra - The SDK's request context.
+ * @returns {{ begin: (message: string) => Promise<void>, onProgress: ((event: object) => void) | undefined, end: (message: string) => void }}
+ */
+export function progressReporter(extra, { now = Date.now } = {}) {
   const progressToken = extra?._meta?.progressToken;
-  if (progressToken === undefined) return;
-  await extra.sendNotification({
-    method: "notifications/progress",
-    params: { progressToken, progress, total, message }
-  });
+  if (progressToken === undefined) return { begin: async () => undefined, onProgress: undefined, end: () => undefined };
+  let sent = -1;
+  let base = 0;
+  let phase;
+  let phaseTotal = 0;
+  let lastAt = -Infinity;
+  const send = (progress, total, message) => {
+    if (!(progress > sent)) return Promise.resolve();
+    sent = progress;
+    return extra.sendNotification({
+      method: "notifications/progress",
+      params: { progressToken, progress, ...(total > 0 ? { total: Math.max(total, progress) } : {}), message }
+    }).catch(() => undefined);
+  };
+  return {
+    begin: (message) => send(0, 1, message),
+    onProgress(event = {}) {
+      const total = Math.max(0, Number(event.total) || 0);
+      const done = Math.max(0, Number(event.done ?? event.bytes) || 0);
+      // A step of a longer run (`setup_run`) has phases of its own: one bar for all.
+      const key = `${event.step ?? ""}/${event.phase ?? ""}`;
+      if (key !== phase) {
+        base += phaseTotal;
+        phase = key;
+        phaseTotal = total;
+      } else {
+        phaseTotal = Math.max(phaseTotal, total);
+      }
+      const finished = total > 0 && done >= total;
+      if (!finished && now() - lastAt < 100) return;
+      lastAt = now();
+      // One unit is kept for the end, so 100% means the call has answered.
+      send(base + Math.min(done, phaseTotal || done), base + phaseTotal + 1, describeProgress(event));
+    },
+    end(message) {
+      const whole = Math.max(sent + 1, base + phaseTotal + 1, 1);
+      send(whole, whole, message);
+    }
+  };
 }
 
 async function readFixedResource(resource) {
@@ -366,7 +420,50 @@ function validatePromptArguments(prompt, args) {
   }
 }
 
-export function createAiDevServer() {
+/**
+ * The capability profiles of one session. A daemon serves clients whose
+ * `AI_DEV_PROFILES` differ, so each bridge sends its own: a string, empty for
+ * every profile. `null` means this process's own setting — the stdio server's.
+ *
+ * @param {string | null | undefined} profiles
+ */
+function sessionProfiles(profiles) {
+  return typeof profiles === "string" ? profilesFromEnvironment({ AI_DEV_PROFILES: profiles }) : activeProfiles;
+}
+
+/** The tools one session lists. */
+function sessionTools(profiles) {
+  if (typeof profiles !== "string") return visibleTools();
+  const active = sessionProfiles(profiles);
+  return filterToolsByProfiles(legacyTools, active.ids);
+}
+
+/**
+ * What the daemon tells a bridge about its session's tool list, so the bridge
+ * can say on stderr what the stdio server says when profiles narrow it.
+ *
+ * @param {string | null} profiles
+ * @returns {{ tools_listed: number, tools_total: number, tools_opt_in: number, profiles: string[], unknown_profiles: string[] }}
+ *   `tools_total`: what an unset `AI_DEV_PROFILES` lists; `tools_opt_in`: the listed tools of opt-in profiles.
+ */
+export function sessionToolCounts(profiles) {
+  const active = sessionProfiles(profiles);
+  const listed = sessionTools(profiles);
+  return {
+    tools_listed: listed.length,
+    // What an unset AI_DEV_PROFILES lists: every profile but the opt-in ones.
+    tools_total: filterToolsByProfiles(legacyTools, DEFAULT_PROFILE_IDS).length,
+    tools_opt_in: listed.filter((tool) => findProfile(profileOfTool(tool.name))?.optIn).length,
+    profiles: active.all ? [] : active.ids,
+    unknown_profiles: active.unknown
+  };
+}
+
+/**
+ * @param {{ profiles?: string | null }} [options] - The session's
+ *   `AI_DEV_PROFILES`, when a daemon serves it; omitted, this process's own.
+ */
+export function createAiDevServer({ profiles = null, track = (work) => work() } = {}) {
   const server = new Server(
     { name: "ai-dev-system", version: VERSION },
     {
@@ -392,36 +489,41 @@ export function createAiDevServer() {
   // still validates against the full list, so a client that knows a tool's name
   // can call it whether or not this listing advertised it.
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: visibleTools().map(toolDefinition)
+    tools: sessionTools(profiles).map(toolDefinition)
   }));
 
-  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+  // `track` sees each call run: a stdio session ends between calls.
+  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => track(async () => {
     const { name, arguments: args = {} } = request.params;
     if (!legacyTools.some((tool) => tool.name === name)) {
       throw new McpError(ErrorCode.InvalidParams, `Unknown tool: ${name}`);
     }
     // `callTool` records the call itself, so every caller — this transport, the
     // CLI, the smoke scripts — lands in the usage ledger exactly once. All this
-    // handler contributes is the transport overhead it just spent.
+    // handler contributes is the transport overhead it just spent, and the
+    // request's progress token and cancellation for the tools that use them.
+    const progress = progressReporter(extra);
     const startedAt = Date.now();
-    await reportProgress(extra, 0, 1, `Starting ${name}`);
+    await progress.begin(`Starting ${name}`);
     const transportMs = Date.now() - startedAt;
     try {
-      const result = structuredResult(await callTool(name, args, { transportMs }));
-      await reportProgress(extra, 1, 1, `Completed ${name}`);
+      const result = structuredResult(await callTool(name, args, { transportMs, signal: extra?.signal, onProgress: progress.onProgress }));
+      progress.end(`Completed ${name}`);
       return result;
     } catch (error) {
-      await reportProgress(extra, 1, 1, `Failed ${name}`).catch(() => undefined);
+      progress.end(`Failed ${name}`);
       const message = error instanceof Error ? error.message : String(error);
+      // An error that knows the next step carries it as `hint`.
+      const hint = typeof error?.hint === "string" ? error.hint.trim() : "";
       return {
         content: [{
           type: "text",
-          text: message
+          text: hint ? `${message}\n${hint}` : message
         }],
         isError: true
       };
     }
-  });
+  }));
 
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: FIXED_RESOURCES.map(({ source, priority, ...resource }) => resource)
@@ -509,25 +611,28 @@ export function createAiDevServer() {
   return server;
 }
 
-export async function startServer() {
-  if (!activeProfiles.all) {
-    const kept = visibleTools().length;
-    process.stderr.write(
-      `ai-dev: capability profiles ${activeProfiles.ids.join(", ")} — ` +
-      `${kept} of ${legacyTools.length} tools listed. Unset AI_DEV_PROFILES for all of them.\n`
-    );
-  }
-  for (const name of activeProfiles.unknown) {
-    process.stderr.write(`ai-dev: AI_DEV_PROFILES names "${name}", which is not a capability profile; ignoring it.\n`);
-  }
-  const server = createAiDevServer();
+export async function startServer({ track } = {}) {
+  await prepareRuntimeHome();
+  for (const line of profileNotes(sessionToolCounts(null))) process.stderr.write(`${line}\n`);
+  const server = createAiDevServer({ track });
   const transport = new StdioServerTransport();
   await server.connect(transport);
   return server;
 }
 
-if (await isDirectExecution(import.meta.url)) {
-  const server = await startServer();
+/**
+ * Serve MCP on stdin/stdout until a signal ends the process: what
+ * `node src/server.mjs` (every 2.x client config) and `ai-dev mcp` run.
+ *
+ * @returns {Promise<ReturnType<typeof createAiDevServer>>}
+ */
+export async function runStdioServer() {
+  // The client closing stdin ends the session once what it asked for is
+  // answered; the model's worker would keep the process — in Docker, the
+  // container — running for good.
+  const ending = createSessionEnd(() => shutdownBgeWorkers());
+  const server = await startServer({ track: ending.track });
+  process.stdin.once("end", ending.inputEnded);
   const shutdown = async (code) => {
     shutdownBgeWorkers();
     await server.close().catch(() => undefined);
@@ -535,4 +640,9 @@ if (await isDirectExecution(import.meta.url)) {
   };
   process.once("SIGINT", () => shutdown(130));
   process.once("SIGTERM", () => shutdown(143));
+  return server;
+}
+
+if (await isDirectExecution(import.meta.url)) {
+  await runStdioServer();
 }

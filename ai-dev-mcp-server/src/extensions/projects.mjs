@@ -30,6 +30,12 @@ import {
 /** The gate file, relative to the project root. */
 const QUALITY_GATE_RELATIVE_PATH = ".ai-dev/quality-gate.md";
 
+/**
+ * What to do about a project with no gate: a repository AI Dev has not seen
+ * yet has none, and nothing else says where one comes from.
+ */
+export const QUALITY_GATE_MISSING_HINT = "prepare_project writes .ai-dev/quality-gate.md from the project's own scripts (overwrite=false keeps every file already there); then run the gate again.";
+
 /** The `engines.node` a project declares, or "" when it declares none. */
 async function declaredNodeEngine(host, projectRoot) {
   const manifest = await host.readProjectTextIfExists(projectRoot, "package.json").catch(() => "");
@@ -96,7 +102,10 @@ async function runQualityGate(host, {
     // The path that was probed, not one rebuilt from its parts: `path.join`
     // spells separators the host may not have used, so on Windows the message
     // named a file the code never looked at.
-    throw new Error(`Quality gate file not found: ${gatePath}`);
+    throw Object.assign(new Error(`Quality gate file not found: ${gatePath}`), {
+      code: "QUALITY_GATE_MISSING",
+      hint: QUALITY_GATE_MISSING_HINT
+    });
   }
 
   const startedAt = new Date().toISOString();
@@ -137,7 +146,7 @@ async function runQualityGate(host, {
     });
     const status = output.timedOut ? "timed_out" : output.exitCode === 0 ? "passed" : "failed";
     // Read before truncation: the hint is decided by what the command actually
-    // said, not by the prefix that survived the cut (docs/DEFECTS.md, Д-54).
+    // said, not by the prefix that survived the cut.
     const hint = status === "passed" ? "" : diagnoseQualityCommandFailure({
       command: item.command,
       stdout: output.stdout,
@@ -181,10 +190,9 @@ async function runQualityGate(host, {
     // Which Node ran the project's commands. On the Docker path that is the
     // image's Node, not the user's, and a script that behaves differently
     // across majors otherwise disagrees with the user's own terminal with
-    // nothing on the record to explain it (docs/DEFECTS.md, Д-54). Naming it
+    // nothing on the record to explain it. Naming it
     // was not enough on its own: nothing compared it to the Node the project
-    // asks for, so the report held both halves and drew no conclusion
-    // (docs/DEFECTS.md, Д-67).
+    // asks for, so the report held both halves and drew no conclusion.
     runtime: buildRuntimeReport(await declaredNodeEngine(host, projectRoot)),
     status: qualityGateStatus({ dryRun: dry_run, parsed, results, blocked, diagramSpecs }),
     parsed_commands: parsed,

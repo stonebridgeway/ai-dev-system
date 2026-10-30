@@ -369,7 +369,7 @@ export async function cleanupTaskWorktrees({
         // What it was, then what happened to it. The outcome alone carries no
         // `name` and no `state`, so a report of the cleanup could only list
         // paths — `removed.map((item) => item.name)` answered with undefined
-        // for every entry (docs/DEFECTS.md, Д-27).
+        // for every entry.
         removed.push({ ...entry, ...outcome });
       } catch (error) {
         problems.push(`${entry.path}: ${error instanceof Error ? error.message : String(error)}`);

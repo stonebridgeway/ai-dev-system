@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { dashboardSourceFingerprint, renderSystemDashboard } from "./system-dashboard.mjs";
 import {
-  COVERAGE_THRESHOLDS,
   REQUIRED_SEARCH_PRESETS,
   REQUIRED_SYSTEM_NOTES,
   SYSTEM_LINE_CEILING,
@@ -13,6 +12,7 @@ import {
   evaluateAutoCommands,
   evaluateDenseSmoke,
   evaluateFrontendQaEnvironment,
+  evaluateUiUxKnowledge,
   evaluateFrontendQaRunner,
   evaluateHybridSmoke,
   evaluateProjectRegistry,
@@ -50,11 +50,11 @@ test("a Frontend QA environment that is not ready says which piece is missing", 
     playwright_available: true,
     chromium_available: false,
     browser_launch_ok: false,
-    launch_error: "Chromium is not at /opt/pw-browsers/chromium-1243/chrome-linux64/chrome. Install it with `npx playwright install chromium`."
+    launch_error: "Chromium is not at /opt/pw-browsers/chromium-1243/chrome-linux64/chrome. Install it with `npm run setup -- --frontend-qa`."
   });
   assert.equal(noBrowser.status, "warn");
   assert.match(noBrowser.summary, /the Chromium binary is missing/);
-  assert.match(noBrowser.summary, /npx playwright install chromium/);
+  assert.match(noBrowser.summary, /npm run setup -- --frontend-qa/);
 
   const noPlaywright = evaluateFrontendQaEnvironment({ playwright_available: false });
   assert.match(noPlaywright.summary, /Playwright itself/);
@@ -106,8 +106,9 @@ test("error details survive non-Error throws", () => {
   assert.deepEqual(healthErrorDetails("plain"), { message: "plain", name: "Error" });
 });
 
-test("recommendations name every failure and warning, plus the dense smoke hint", () => {
+test("recommendations name every failure and warning, plus the dense smoke hint where the model runs", () => {
   const recommendations = healthRecommendations([
+    { name: "embedding_backend", status: "ok", summary: "ready" },
     { name: "dense_smoke", status: "skipped", summary: "skipped" },
     { name: "search_smoke", status: "fail", summary: "no results" },
     { name: "required_notes", status: "warn", summary: "1 missing" },
@@ -118,6 +119,10 @@ test("recommendations name every failure and warning, plus the dense smoke hint"
   assert.equal(recommendations[1], "Fix failed check: search_smoke - no results");
   assert.equal(recommendations[2], "Review warning: required_notes - 1 missing");
   assert.deepEqual(healthRecommendations([{ name: "dense_smoke", status: "ok", summary: "ran" }]), []);
+  // Without the model the advice only turned a healthy install into a failure.
+  for (const backend of [[], [{ name: "embedding_backend", status: "skipped", summary: "not installed" }]]) {
+    assert.deepEqual(healthRecommendations([...backend, { name: "dense_smoke", status: "skipped", summary: "skipped" }]), []);
+  }
 });
 
 test("health report records checks in order, turns throws into failures, and finishes", async () => {
@@ -177,6 +182,11 @@ test("search index freshness reports drift counts", () => {
   const fresh = evaluateSearchIndexFreshness({ stale: false, current_document_count: 900 });
   assert.equal(fresh.status, "ok");
   assert.match(fresh.summary, /900 document\(s\)/);
+  // Current documents, but their vectors are another model's: a warning with the command.
+  const otherModel = evaluateSearchIndexFreshness({ stale: false, current_document_count: 825, dense_other_model_documents: 365 });
+  assert.equal(otherModel.status, "warn");
+  assert.equal(otherModel.summary, "Search index is current with 825 document(s). 365 document(s) have dense vectors of another model, "
+    + "which hybrid search does not compare; run `npm run setup -- --model` to embed them with the installed one.");
 });
 
 test("frontend QA runner check needs both the runner and its manifest", () => {
@@ -213,6 +223,11 @@ test("frontend QA environment is ready only when Playwright can launch Chromium"
   assert.equal(notInstalled.status, "skipped");
   assert.equal(notInstalled.details.optional, true);
   assert.match(notInstalled.summary, /--frontend-qa/);
+  // The image's default variant ships no browser, and a client's container installs nothing.
+  const inImage = evaluateFrontendQaEnvironment({ playwright_available: false }, { kind: "docker", ephemeral: false, appHome: false });
+  assert.equal(inImage.status, "skipped");
+  assert.match(inImage.summary, /is missing; the image's `-browser` variant carries it/);
+  assert.doesNotMatch(inImage.summary, /--frontend-qa/);
 
   // Playwright there and its browser not is a half-configured install, and
   // stays a warning: something is wrong that the person can fix.
@@ -352,8 +367,7 @@ test("project registry check previews at most ten projects", () => {
 
 test("an empty project registry is a fresh install, not a warning", () => {
   // A correct install has no projects until somebody registers one, and warning
-  // about that put every new user at `degraded` on their first health check
-  // (docs/DEFECTS.md, Д-63).
+  // about that put every new user at `degraded` on their first health check.
   const empty = evaluateProjectRegistry([]);
   assert.equal(empty.status, "ok");
   assert.equal(empty.details.count, 0);
@@ -384,6 +398,9 @@ test("smoke checks require results, and the dense smoke requires dense scores", 
   assert.deepEqual(Object.keys(evaluateDenseSmoke(results).details.results[0]), ["title", "path", "score", "dense_score"]);
   assert.equal(evaluateDenseSmoke([{ ...results[0], dense_score: 0 }]).status, "fail");
   assert.equal(evaluateDenseSmoke([]).status, "fail");
+  const unavailable = evaluateDenseSmoke([], { unavailable: "Dense search is not installed: the model is not on this machine. Run `npm run setup -- --model` …" });
+  assert.equal(unavailable.status, "fail", "asked for, and it cannot run");
+  assert.match(unavailable.summary, /^Dense search cannot run here, so the smoke test had nothing to test\. Dense search is not installed: .*npm run setup -- --model/);
 });
 
 test("search eval check maps eval status and lists failed cases", () => {
@@ -447,7 +464,7 @@ function snapshotInput(overrides = {}) {
 
 test("system snapshot summarizes live state and renders through the dashboard", () => {
   const snapshot = buildSystemSnapshot(snapshotInput());
-  assert.equal(snapshot.schema_version, 1);
+  assert.equal(snapshot.schema_version, 2);
   assert.equal(snapshot.generated_at, "2026-02-03T00:00:00.000Z");
   assert.deepEqual(snapshot.tools, { total: 115 });
   assert.deepEqual(snapshot.skills, {
@@ -471,9 +488,11 @@ test("system snapshot summarizes live state and renders through the dashboard", 
     server_ready: true,
     modular: true,
     main_lines: SYSTEM_LINE_CEILING - 350,
-    line_ceiling: SYSTEM_LINE_CEILING,
-    coverage_thresholds: COVERAGE_THRESHOLDS
+    line_ceiling: SYSTEM_LINE_CEILING
   });
+  assert.deepEqual(snapshot.checks, []);
+  const checked = buildSystemSnapshot(snapshotInput({ checks: [{ name: "vault_root", status: "ok", summary: "Vault root\n  exists.", details: { big: true } }] }));
+  assert.deepEqual(checked.checks, [{ name: "vault_root", status: "ok", summary: "Vault root exists." }]);
   assert.equal(snapshot.source_fingerprint, dashboardSourceFingerprint(snapshot));
   assert.match(renderSystemDashboard(snapshot), /115 tools/);
 });
@@ -502,7 +521,7 @@ test("system snapshot falls back when quality, projects, and card shapes are spa
 });
 
 test("a Frontend QA runner that never started is not reported as Playwright missing", () => {
-  // Д-56: in the image Playwright and Chromium are installed and the runner
+  // In the image Playwright and Chromium are installed and the runner
   // dies importing the server, so all three flags are false for a reason that
   // has nothing to do with the optional install. Saying "run `npm run setup --
   // --frontend-qa`" sent the reader after software that was already there, and
@@ -539,4 +558,21 @@ test("a Frontend QA runner that never started is not reported as Playwright miss
   assert.equal(other.status, "warn");
   assert.match(other.summary, /did not start\. Command timed out/);
   assert.doesNotMatch(other.summary, /--frontend-qa/);
+});
+
+test("no Python only skips the UI UX check: it is optional, and says how to get it", () => {
+  const found = evaluateUiUxKnowledge({ command: "python3", version: "3.13.1" });
+  assert.deepEqual([found.status, found.details.version], ["ok", "3.13.1"]);
+  assert.match(found.summary, /run their helper with python3 \(Python 3\.13\.1\)\.$/);
+  const missing = evaluateUiUxKnowledge({ command: "python", missing: true });
+  assert.equal(missing.status, "skipped");
+  assert.equal(missing.details.optional, true);
+  assert.match(missing.summary, /^query_ui_ux_knowledge and generate_ui_ux_design_system need Python 3, and "python" is not on PATH\. They are optional.*AI_DEV_PYTHON/);
+  const moved = evaluateUiUxKnowledge({ command: "C:\\Tools\\Python312\\python.exe", missing: true });
+  assert.ok(moved.summary.includes('"C:\\Tools\\Python312\\python.exe" is not there.'), moved.summary);
+  // A file that is there but is not a Python 3 — the Store's alias, a Python 2 — is no better.
+  const stub = evaluateUiUxKnowledge({ command: "python", failure: "Python was not found; run without arguments to install from the Microsoft Store" });
+  assert.equal(stub.status, "skipped");
+  assert.match(stub.summary, /"python" did not run as Python 3 \(Python was not found; run without arguments/);
+  assert.equal(stub.details.failure, "Python was not found; run without arguments to install from the Microsoft Store");
 });

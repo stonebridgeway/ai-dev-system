@@ -1,8 +1,8 @@
 /**
  * The one line worth reading out of a Python traceback.
  *
- * The search helper and the embedding workers are Python, and when one of them
- * refuses it refuses with an explanation: "sentence-transformers is required
+ * The legacy embedding workers and the UI UX Pro Max script are Python, and
+ * when one of them refuses it refuses with an explanation: "sentence-transformers is required
  * for dense BGE-M3 embeddings. Run this command with the embeddings virtualenv
  * Python." That sentence is the last line of a forty-line traceback, and every
  * caller that reports a failure takes the first line — so a person running
@@ -51,4 +51,33 @@ export function pythonFailureMessage(output, fallback = "The Python helper faile
   // One line for whoever prints the first line, the traceback for whoever reads
   // the whole thing.
   return text.startsWith(verdict) ? text : `${verdict}\n\n${text}`;
+}
+
+/**
+ * The tools that run the UI UX Pro Max dataset's own Python script — with the
+ * legacy dense backend, all that still needs an interpreter.
+ */
+export const UI_UX_PYTHON_TOOLS = "query_ui_ux_knowledge and generate_ui_ux_design_system";
+
+/**
+ * What a caller is told when an optional Python helper could not run: that no
+ * interpreter was found and how to provide one, or else what the helper said.
+ * Nothing in the server needs Python but the tools that run such a helper —
+ * {@link UI_UX_PYTHON_TOOLS} and the legacy dense backend.
+ *
+ * @param {unknown} error - From running the helper.
+ * @param {{ tool: string, interpreter: string }} context - `tool` names the tool, or tools joined by " and ".
+ * @returns {Error}
+ */
+export function optionalPythonFailure(error, { tool, interpreter }) {
+  const message = String(error?.message ?? error ?? "");
+  if (error?.code === "ENOENT" || /\bENOENT\b/.test(message)) {
+    return new Error(
+      `${tool} run${/ and /.test(tool) ? "" : "s"} a Python helper, and no Python was found here (tried "${interpreter}"). `
+      + "Install Python 3 and put it on PATH, or set AI_DEV_PYTHON to the interpreter. "
+      + "Nothing else needs Python: search, skills and the rest of the server run without it.",
+      { cause: error }
+    );
+  }
+  return new Error(pythonFailureMessage(message, `${tool} failed.`), { cause: error });
 }

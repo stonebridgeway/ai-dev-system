@@ -1,3 +1,8 @@
+# The 2.x launcher, kept so that the client configs naming it — and its copy in
+# C:\ProgramData\AI-Dev-System that bootstrap.ps1 made — work until 4.0. 3.0
+# writes `docker run -i --rm ...` into a client's config itself
+# (bootstrap.ps1, or `ai-dev clients install --docker`); this runs the same image
+# the way it always did.
 $ErrorActionPreference = "Stop"
 
 function Write-AiDevDiagnostic([string]$Message) {
@@ -10,6 +15,8 @@ function Write-AiDevDiagnostic([string]$Message) {
         # Diagnostics must never interfere with MCP stdio.
     }
 }
+
+[Console]::Error.WriteLine("ai-dev: this client config runs run-mcp.ps1, the 2.x launcher, which works until 4.0. Run bootstrap.ps1 (or ``ai-dev clients install --docker``) to write the 3.0 entry: docker run, with the state your agent hooks share.")
 
 $image = if ($env:AI_DEV_IMAGE) { $env:AI_DEV_IMAGE } else { "ai-dev-system:local" }
 $dataVolume = if ($env:AI_DEV_DATA_VOLUME) { $env:AI_DEV_DATA_VOLUME } else { "ai-dev-system-data" }
@@ -41,21 +48,24 @@ if ($env:AI_DEV_MODEL_PATH) {
     if ($modelPath.Contains(",")) {
         throw "AI_DEV_MODEL_PATH cannot contain a comma when Docker --mount syntax is used."
     }
-    # One mount point for both backends: the folder is expected to hold
-    # bge-m3-onnx/ (the default) and/or bge-m3/ (the legacy Python weights).
-    # docs/DEFECTS.md, Д-62.
+    # The folder above the model: it holds bge-m3-onnx/.
+    # A bge-m3/ beside it is the Python backend's weights, which 3.0 removed:
+    # said, not taken for a model.
     #
-    # Before Д-62 the variable named the model directory itself. A folder that
+    # In 2.0.0 the variable named the model directory itself. A folder that
     # holds model files is that old value; mounted at /models it would leave both
-    # backends looking one level too deep and reporting "not set up"
-    # (docs/DEFECTS.md Д-68).
+    # backends looking one level too deep and reporting "not set up".
     foreach ($marker in @("pytorch_model.bin", "modules.json", "config.json", "onnx")) {
         if (Test-Path -LiteralPath (Join-Path $modelPath $marker)) {
-            throw "AI_DEV_MODEL_PATH now names the folder above the models, and $modelPath holds model files itself ($marker). Point it at the parent folder that contains bge-m3-onnx\ and/or bge-m3\ - for a default install that is $HOME\.ai-dev\models (docs/INSTALL.md)."
+            throw "AI_DEV_MODEL_PATH now names the folder above the models, and $modelPath holds model files itself ($marker). Point it at the parent folder that contains bge-m3-onnx\ - for a default install that is $HOME\.ai-dev\models (docs/INSTALL.md)."
         }
     }
-    if (-not (Test-Path -LiteralPath (Join-Path $modelPath "bge-m3-onnx")) -and -not (Test-Path -LiteralPath (Join-Path $modelPath "bge-m3"))) {
-        [Console]::Error.WriteLine("AI_DEV_MODEL_PATH=$modelPath holds neither bge-m3-onnx\ nor bge-m3; dense search will report that it is not set up until a model is put there.")
+    if (-not (Test-Path -LiteralPath (Join-Path $modelPath "bge-m3-onnx"))) {
+        if (Test-Path -LiteralPath (Join-Path $modelPath "bge-m3")) {
+            [Console]::Error.WriteLine("AI_DEV_MODEL_PATH=$modelPath holds bge-m3\, the weights of the Python backend 3.0 removed, and no bge-m3-onnx\; dense search will report that it is not set up. Put the ONNX model there: npm run model -- install --dir $modelPath\bge-m3-onnx (docs/INSTALL.md).")
+        } else {
+            [Console]::Error.WriteLine("AI_DEV_MODEL_PATH=$modelPath holds no bge-m3-onnx\; dense search will report that it is not set up until a model is put there.")
+        }
     }
     $dockerArgs += @("--mount", "type=bind,source=$modelPath,target=/models,readonly")
 }

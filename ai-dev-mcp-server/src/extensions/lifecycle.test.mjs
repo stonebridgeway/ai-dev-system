@@ -67,7 +67,7 @@ function createFixture(overrides = {}) {
     recommendSkills: async (args) => { calls.push(["recommendSkills", args]); return [{ name: "feature-builder", routing_role: "primary" }]; },
     runQualityGate: async (args) => {
       calls.push(["runQualityGate", args]);
-      if (overrides.qualityGateThrows) throw new Error("Quality gate file not found.");
+      if (overrides.qualityGateThrows) throw Object.assign(new Error("Quality gate file not found."), overrides.qualityGateError ?? {});
       return { status: overrides.qualityStatus ?? "passed" };
     },
     runSecurityScan: async (args) => {
@@ -128,6 +128,18 @@ test("begin_task routes at most three skills and compiles a bounded context pack
   assert.match(begun.next_actions[0], /Confirm or refine acceptance criteria/);
 });
 
+test("a lifecycle answer is the summary; include_details returns the whole record", async () => {
+  const { registry } = createFixture({ record: { context: { compiled_context: "- Stack: Node.js", project_identity: { id: "x" } }, verifications: [{ id: "verification-0", passed: true }] } });
+  const summary = await call(registry, "verify_task", { task_id: "task-1", run_hygiene: false, run_security_scan: false });
+  assert.equal(summary.task.id, "task-1");
+  assert.match(summary.task.details, /get_task returns the whole record/);
+  for (const key of ["context", "verifications", "skills"]) assert.equal(key in summary.task, false, key);
+
+  const whole = await call(registry, "verify_task", { task_id: "task-1", run_hygiene: false, run_security_scan: false, include_details: true });
+  assert.ok(Array.isArray(whole.task.verifications));
+  assert.equal(whole.task.context.compiled_context, "- Stack: Node.js");
+});
+
 test("checkpoint_task lints the report before it writes anything", async () => {
   const { registry, calls } = createFixture();
   const checkpointed = await call(registry, "checkpoint_task", {
@@ -171,7 +183,7 @@ test("verify_task runs the gate and hygiene, and a passing run meets its criteri
   assert.equal(verified.verification.passed, true);
   // The scanners run next to hygiene, and a run where none of them could run is
   // `unchecked` rather than a failure nobody can act on — it still does not
-  // block, but it no longer reads as "checked and clean" (Д-55).
+  // block, but it no longer reads as "checked and clean".
   assert.deepEqual(calls.find(([name]) => name === "runSecurityScan")[1], { project_path: "/repo/atlas", scanners: undefined });
   const securityCheck = verified.verification.checks.at(-1).result;
   assert.equal(securityCheck.status, "unchecked");
@@ -239,6 +251,17 @@ test("an unavailable runner becomes a failing check rather than an exception", a
   assert.deepEqual(verified.verification.checks[0].result, {
     status: "unavailable", error: "Quality gate file not found."
   });
+  assert.equal(verified.verification.passed, false);
+});
+
+test("a project with no gate yet is told what writes one", async () => {
+  const hint = "prepare_project writes .ai-dev/quality-gate.md from the project's own scripts.";
+  const { registry } = createFixture({ qualityGateThrows: true, qualityGateError: { code: "QUALITY_GATE_MISSING", hint } });
+  const verified = await call(registry, "verify_task", { task_id: "task-1", run_hygiene: false });
+  assert.deepEqual(verified.verification.checks[0].result, { status: "unavailable", error: "Quality gate file not found.", hint });
+  // The record keeps it too: the detail of a check that did not pass is what a later reader sees.
+  const [summary] = verified.verification.evidence.details.checks;
+  assert.equal(summary.detail.hint, hint);
   assert.equal(verified.verification.passed, false);
 });
 

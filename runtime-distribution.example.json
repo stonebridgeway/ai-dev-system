@@ -1,5 +1,5 @@
 {
-  "_comment": "Example of the file written by `node ai-dev-mcp-server/scripts/ai-dev.mjs distribution` (MCP tool: prepare_runtime_distribution). The real runtime-distribution.json is git-ignored because it embeds machine-specific absolute paths. Placeholders below use ${VAR} expansion, and the `files` and `fingerprint` keys the real file carries are left out for the same reason. This example shows the `posix` flavor; `runtime_flavor` is `windows` on Windows and `docker` inside the published image, and `commands` and `recovery` follow it.",
+  "_comment": "Example of the file written by `node ai-dev-mcp-server/bin/ai-dev.mjs distribution` (MCP tool: prepare_runtime_distribution). The real runtime-distribution.json is git-ignored because it embeds machine-specific absolute paths. Placeholders below use ${VAR} expansion, and the `files` and `fingerprint` keys the real file carries are left out for the same reason. This example shows the `posix` flavor; `runtime_flavor` is `windows` on Windows and `docker` inside the published image, and `commands` and `recovery` follow it.",
   "schema_version": 1,
   "generated_at": "1970-01-01T00:00:00.000Z",
   "runtime_flavor": "posix",
@@ -39,10 +39,10 @@
     "warnings": []
   },
   "entrypoint": "src/server.mjs",
-  "tools": 133,
+  "tools": 148,
   "commands": {
-    "start": "npm start",
-    "doctor": "node scripts/ai-dev.mjs doctor",
+    "start": "node bin/ai-dev.mjs mcp",
+    "doctor": "node bin/ai-dev.mjs doctor",
     "acceptance": "node scripts/acceptance.mjs"
   },
   "command_context": "",

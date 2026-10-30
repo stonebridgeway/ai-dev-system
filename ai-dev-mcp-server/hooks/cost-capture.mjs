@@ -13,7 +13,7 @@
 // is never billed twice however often Stop fires.
 import fs from "node:fs";
 import path from "node:path";
-import { activeTaskFor, appendUsageEvents, hooksDisabled, normalizeInput, projectRootOf, readJson, readStdin, stateRoot, sumAssistantUsage } from "./lib.mjs";
+import { activeTaskFor, appendUsageEvents, hooksDisabled, identityRootOf, normalizeInput, projectRootOf, readJson, readStdin, stateRoot, sumAssistantUsage } from "./lib.mjs";
 
 function cursorFile(sessionId) {
   return path.join(stateRoot(), "usage", "sessions", `${sessionId}.json`);
@@ -56,7 +56,7 @@ async function main() {
   if (summary.offset !== offset) writeCursor(input.sessionId, input.transcriptPath, summary.offset);
   if (!summary.models.length) process.exit(0);
   const projectRoot = projectRootOf(input.cwd);
-  const task = activeTaskFor(projectRoot);
+  const task = activeTaskFor(identityRootOf(input.cwd));
   const at = new Date().toISOString();
   appendUsageEvents(summary.models.map((row) => ({
     at,

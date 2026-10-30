@@ -1,5 +1,5 @@
 /**
- * Reading the six security scanners' output.
+ * Reading the security scanners' output.
  *
  * Every parser is pure: raw stdout (or the JSON report a scanner writes to a
  * file) in, a list of findings out, in one shape:
@@ -9,10 +9,16 @@
  * ```
  *
  * `kind` is what the finding is about, not which tool said it: `dependency`,
- * `secret`, `sast`, `misconfig`. The gate blocks on critical and high
- * `dependency` and `secret` findings and warns about the rest, so a tool that
- * reports several kinds — `trivy fs` reports all four — is graded per finding
- * rather than as a whole.
+ * `malware`, `secret`, `sast`, `misconfig`. The gate blocks on critical and
+ * high `dependency`, `malware` and `secret` findings and warns about the rest,
+ * so a tool that reports several kinds — `trivy fs` reports four — is graded
+ * per finding rather than as a whole.
+ *
+ * A finding about a package the scanner could name also carries `package`,
+ * `version`, `vulnerable`, `fixed_in` and `aliases` — what a fix plan needs,
+ * and what lets two scanners' reports of one advisory be told apart from two
+ * advisories (`security-scan.mjs`, `mergeDuplicateFindings`). The npm-family
+ * and OSV parsers live in `security-scan-js-parsers.mjs`.
  *
  * Parsers never throw. A scanner that printed something unexpected yields no
  * findings and the caller reports the run as an error with the raw tail, which
@@ -22,8 +28,32 @@
 /** Severities a finding can carry, worst first. */
 export const SECURITY_SEVERITIES = Object.freeze(["critical", "high", "medium", "low", "info", "unknown"]);
 
-/** What a finding is about. */
-export const SECURITY_FINDING_KINDS = Object.freeze(["dependency", "secret", "sast", "misconfig"]);
+/**
+ * What a finding is about. `malware` is a published package version that is
+ * malicious rather than flawed: it is removed and every credential it could
+ * read is rotated, which no version bump does.
+ */
+export const SECURITY_FINDING_KINDS = Object.freeze(["dependency", "malware", "secret", "sast", "misconfig"]);
+
+/**
+ * What to do about a malicious package, in one sentence the report and the
+ * next step both carry. Upgrading past it is not the fix: its install script
+ * has already run wherever it was installed.
+ */
+export const MALWARE_REMEDIATION = "Malicious code ran wherever this version was installed: remove it, reinstall from a lockfile without it, and rotate every credential those machines and CI runners could read.";
+
+/**
+ * Whether an advisory describes malware rather than a vulnerability. GitHub
+ * titles its malware advisories "Malware in <package>" and the npm registry
+ * serves them through the same audit endpoint as every other advisory; OSV
+ * gives them `MAL-` identifiers.
+ *
+ * @param {{ title?: string, ids?: string[] }} advisory
+ * @returns {boolean}
+ */
+export function isMalwareAdvisory({ title = "", ids = [] } = {}) {
+  return /^\s*malware in\b/i.test(String(title ?? "")) || ids.some((id) => /^MAL-/i.test(String(id ?? "")));
+}
 
 /**
  * Normalize a scanner's severity word.
@@ -54,7 +84,7 @@ export function severityFromCvssScore(score) {
   return "low";
 }
 
-function parseJson(text) {
+export function parseJsonDocument(text) {
   const source = String(text ?? "").trim();
   if (!source) return null;
   try {
@@ -72,8 +102,15 @@ function parseJson(text) {
   }
 }
 
-function finding({ tool, kind, severity, file = "", line = 0, message, rule = "" }) {
-  return {
+/**
+ * One finding in the shape the gate reads. `details` is for a finding about a
+ * named package; without it the finding has the seven fields and no more.
+ *
+ * @param {object} input
+ * @returns {object}
+ */
+export function makeFinding({ tool, kind, severity, file = "", line = 0, message, rule = "", details = null }) {
+  const base = {
     tool,
     kind,
     severity: normalizeSeverity(severity),
@@ -82,9 +119,20 @@ function finding({ tool, kind, severity, file = "", line = 0, message, rule = ""
     message: String(message ?? "").replace(/\s+/g, " ").trim().slice(0, 500),
     rule: String(rule ?? "")
   };
+  if (!details) return base;
+  return {
+    ...base,
+    package: String(details.package ?? ""),
+    version: String(details.version ?? ""),
+    vulnerable: String(details.vulnerable ?? ""),
+    fixed_in: String(details.fixed_in ?? ""),
+    aliases: [...new Set((details.aliases ?? []).map((item) => String(item ?? "").trim()).filter((item) => item && item !== base.rule))]
+  };
 }
 
-function advisoryId(url, fallback) {
+const finding = makeFinding;
+
+export function advisoryId(url, fallback) {
   const match = /\/(GHSA-[0-9a-z-]+|CVE-\d{4}-\d+)/i.exec(String(url ?? ""));
   return match ? match[1] : String(fallback ?? "");
 }
@@ -102,7 +150,7 @@ function advisoryId(url, fallback) {
  * @returns {object[]}
  */
 export function parseNpmAudit(stdout) {
-  const report = parseJson(stdout);
+  const report = parseJsonDocument(stdout);
   const vulnerabilities = report?.vulnerabilities;
   if (!vulnerabilities || typeof vulnerabilities !== "object") return [];
   const findings = [];
@@ -111,16 +159,23 @@ export function parseNpmAudit(stdout) {
     for (const via of Array.isArray(entry?.via) ? entry.via : []) {
       if (!via || typeof via !== "object") continue;
       const rule = advisoryId(via.url, via.source);
-      const key = `${rule}:${via.name ?? entry?.name ?? ""}`;
+      const name = via.name ?? entry?.name ?? "";
+      const key = `${rule}:${name}`;
       if (seen.has(key)) continue;
       seen.add(key);
+      const malware = isMalwareAdvisory({ title: via.title, ids: [rule] });
       findings.push(finding({
         tool: "npm audit",
-        kind: "dependency",
-        severity: via.severity ?? entry?.severity,
+        kind: malware ? "malware" : "dependency",
+        severity: malware ? "critical" : via.severity ?? entry?.severity,
         file: "package-lock.json",
-        message: `${via.name ?? entry?.name ?? "dependency"}${via.range ? ` ${via.range}` : ""}: ${via.title ?? "known vulnerability"}${entry?.fixAvailable ? " (a fix is available)" : ""}`,
-        rule
+        message: malware
+          ? `${name || "dependency"}${via.range ? ` ${via.range}` : ""}: ${via.title ?? "malware"}. ${MALWARE_REMEDIATION}`
+          : `${name || "dependency"}${via.range ? ` ${via.range}` : ""}: ${via.title ?? "known vulnerability"}${entry?.fixAvailable ? " (a fix is available)" : ""}`,
+        rule,
+        // npm's v2 report names the vulnerable range but not the installed
+        // version; the fix plan reads that from the lockfile.
+        details: { package: name, vulnerable: via.range ?? "", aliases: [] }
       }));
     }
   }
@@ -139,7 +194,7 @@ export function parseNpmAudit(stdout) {
  * @returns {object[]}
  */
 export function parsePipAudit(stdout) {
-  const report = parseJson(stdout);
+  const report = parseJsonDocument(stdout);
   const dependencies = Array.isArray(report) ? report : report?.dependencies;
   if (!Array.isArray(dependencies)) return [];
   const findings = [];
@@ -170,7 +225,7 @@ export function parsePipAudit(stdout) {
  * @returns {object[]}
  */
 export function parseCargoAudit(stdout) {
-  const report = parseJson(stdout);
+  const report = parseJsonDocument(stdout);
   const list = report?.vulnerabilities?.list;
   if (!Array.isArray(list)) return [];
   return list.map((entry) => {
@@ -201,7 +256,7 @@ export function parseCargoAudit(stdout) {
  * @returns {object[]}
  */
 export function parseGitleaks(report) {
-  const leaks = parseJson(report);
+  const leaks = parseJsonDocument(report);
   if (!Array.isArray(leaks)) return [];
   return leaks.map((leak) => finding({
     tool: "gitleaks",
@@ -227,7 +282,7 @@ export function parseGitleaks(report) {
  * @returns {object[]}
  */
 export function parseSemgrep(stdout) {
-  const report = parseJson(stdout);
+  const report = parseJsonDocument(stdout);
   const results = report?.results;
   if (!Array.isArray(results)) return [];
   return results.map((result) => finding({
@@ -252,7 +307,7 @@ export function parseSemgrep(stdout) {
  * @returns {object[]}
  */
 export function parseTrivy(stdout) {
-  const report = parseJson(stdout);
+  const report = parseJsonDocument(stdout);
   const results = report?.Results ?? report?.results;
   if (!Array.isArray(results)) return [];
   const findings = [];

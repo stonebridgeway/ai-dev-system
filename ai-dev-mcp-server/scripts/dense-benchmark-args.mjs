@@ -6,7 +6,7 @@
  * worth separating: `.github/workflows/dense-eval.yml` offers a `max_cases`
  * input, and until this module existed nothing read it. Dispatching the
  * workflow with 20 scored 50, quietly. A knob that does nothing is the kind of
- * claim this project keeps removing (docs/DEFECTS.md, Д-62).
+ * claim this project keeps removing.
  */
 
 /** Golden cases per backend when the caller names no number. */

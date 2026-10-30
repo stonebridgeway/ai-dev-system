@@ -810,7 +810,11 @@ async function frontendQaEnvironmentStatus(options) {
   let browserLaunchOk = false;
   let launchError = "";
   let browser = null;
-  if (executable?.isFile()) {
+  // `launch: false` asks only whether the browser is on disk: setup reads that
+  // to decide whether the install step is still needed, and starting Chromium
+  // for it would cost a second for nothing.
+  const launch = options.launch !== false;
+  if (executable?.isFile() && launch) {
     try {
       browser = await playwright.module.chromium.launch({ headless: true });
       browserLaunchOk = true;
@@ -819,7 +823,7 @@ async function frontendQaEnvironmentStatus(options) {
     } finally {
       await browser?.close().catch(() => {});
     }
-  } else {
+  } else if (!executable?.isFile()) {
     // The commonest reason Frontend QA does nothing, and the one the status
     // used to report as an empty string: Playwright resolved a browser path and
     // there is no browser at it — a fresh install, or a shared browser
@@ -828,7 +832,9 @@ async function frontendQaEnvironmentStatus(options) {
     launchError = [
       `Chromium is not at ${executablePath}.`,
       shared ? `PLAYWRIGHT_BROWSERS_PATH is ${shared}, and this Playwright wants the build above.` : "",
-      "Install it with `npx playwright install chromium`, or point PLAYWRIGHT_BROWSERS_PATH at a directory that has this build."
+      // `npx playwright install chromium` run anywhere but here fetches the
+      // newest Playwright and the build *it* wants, not this one.
+      "Install it with `npm run setup -- --frontend-qa`, or point PLAYWRIGHT_BROWSERS_PATH at a directory that has this build."
     ].filter(Boolean).join(" ");
   }
 
@@ -841,6 +847,7 @@ async function frontendQaEnvironmentStatus(options) {
     chromium_available: Boolean(executable?.isFile()),
     chromium_executable: executablePath,
     browser_launch_ok: browserLaunchOk,
+    launch_checked: launch && Boolean(executable?.isFile()),
     launch_error: launchError,
     errors: playwright.errors || []
   };

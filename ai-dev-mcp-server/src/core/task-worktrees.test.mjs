@@ -214,7 +214,7 @@ test("states and cleanup over a real repository, and nothing goes without being 
   assert.equal(applied.removed[0].branch_deleted, true);
   assert.deepEqual(applied.problems, []);
   // Each record says what was removed, not only that something was: the plan
-  // entry's name, state and reason, plus the outcome (Д-27).
+  // entry's name, state and reason, plus the outcome.
   assert.equal(applied.removed[0].name, "merged");
   assert.equal(applied.removed[0].state, "orphan");
   assert.match(applied.removed[0].branch, /merged$/);

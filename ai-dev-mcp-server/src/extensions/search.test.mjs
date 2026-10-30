@@ -48,15 +48,15 @@ function createFixture({ results = [hit()], cases = [], searchResults = null } =
         return typeof results === "function" ? results(args) : results;
       }
     },
-    embeddings: {
-      embedTexts: async (args) => {
-        calls.push(["embedTexts", args]);
-        return { embeddings: [[0.1]] };
-      },
-      status: async (args) => {
-        calls.push(["embeddingStatus", args]);
-        return { backend: "bge-m3-local" };
+    dense: {
+      embed: async (args) => {
+        calls.push(["denseEmbed", args]);
+        return { backend: "onnx", embeddings: [[0.1]] };
       }
+    },
+    embeddingStatus: async (args) => {
+      calls.push(["embeddingStatus", args]);
+      return { backend: "onnx" };
     },
     readSearchEvalCases: async (casesPath) => {
       calls.push(["readSearchEvalCases", casesPath]);
@@ -86,6 +86,16 @@ test("index status and rebuild pass their arguments straight to the runtime", as
   await call(registry, "rebuild_search_index", { dense_embeddings: true });
   assert.deepEqual(calls[0], ["status", { include_external_project_files: false }]);
   assert.deepEqual(calls[1], ["rebuild", { dense_embeddings: true }]);
+});
+
+test("a rebuild's progress listener and cancellation come with the call, never from its JSON arguments", async () => {
+  const { registry, calls } = createFixture();
+  const onProgress = () => undefined;
+  const { signal } = new AbortController();
+  await registry.handlers.get("rebuild_search_index")({ in_place: true, onProgress: "x", signal: { aborted: false } }, { onProgress, signal });
+  assert.deepEqual(calls[0], ["rebuild", { in_place: true, onProgress, signal }]);
+  await registry.handlers.get("rebuild_search_index")({ onProgress: "x", signal: { aborted: false } });
+  assert.deepEqual(calls[1], ["rebuild", {}]);
 });
 
 test("search_all forwards every filter and defaults the rest", async () => {
@@ -251,12 +261,23 @@ test("include_dense=false zeroes the dense weight unless the case set one", asyn
   assert.equal(searches[1][1].dense_weight, 0.9);
 });
 
-test("embedding tools hand their arguments to the backend untouched", async () => {
+test("embedding tools hand their arguments to the dense runtime, the texts cleaned", async () => {
   const { registry, calls } = createFixture();
-  await call(registry, "embed_texts", { text: "hello", use_worker: false });
-  await call(registry, "embedding_status", { device: "cuda" });
-  assert.deepEqual(calls[0], ["embedTexts", { text: "hello", use_worker: false }]);
-  assert.deepEqual(calls[1], ["embeddingStatus", { device: "cuda" }]);
+  await call(registry, "embed_texts", { text: "  hello  ", use_worker: false });
+  await call(registry, "embedding_status", { device: "cuda", refresh: true });
+  assert.deepEqual(calls[0], ["denseEmbed", { text: "  hello  ", use_worker: false, texts: ["hello"] }]);
+  assert.deepEqual(calls[1], ["embeddingStatus", { device: "cuda", refresh: true }]);
+});
+
+test("embed_texts refuses what no model should be sent, and without one says what to install", async () => {
+  const { host, registry, calls } = createFixture();
+  await assert.rejects(call(registry, "embed_texts", { texts: Array.from({ length: 33 }, (_, index) => `t${index}`) }), /at most 32 texts per call/);
+  await assert.rejects(call(registry, "embed_texts", {}), /texts or text is required/);
+  assert.deepEqual(calls, [], "refused before the model is asked");
+  host.dense.embed = async () => {
+    throw new Error("Dense search is not installed: the model is not on this machine. Run `npm run setup -- --model` to download it.");
+  };
+  await assert.rejects(call(registry, "embed_texts", { text: "hello" }), /^Error: Dense search is not installed: the model is not on this machine\. Run `npm run setup -- --model`/);
 });
 
 test("the narrow wrappers pin their own scope", async () => {

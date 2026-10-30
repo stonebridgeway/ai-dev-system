@@ -2,14 +2,14 @@
  * The MCP surface over search.
  *
  * Thirteen tools, three layers under them. The sqlite index and its freshness
- * live in `src/core/search-index.mjs`; the BGE-M3 worker pool lives in
- * `src/core/embedding-workers.mjs`; the presets, the score explanations and the
+ * live in `src/core/search-index.mjs`; the local model, through
+ * `src/core/dense-runtime.mjs`; the presets, the score explanations and the
  * golden-case verdicts are pure functions in `src/core/search-runtime.mjs` and
  * `src/core/search-eval.mjs`. What is here is argument handling and the shape of
  * each answer.
  *
  * Both runtimes are built once by `mcp-stdio.mjs` and arrive as `host.search`
- * and `host.embeddings`, because they are services rather than tools: the system
+ * and `host.dense`, because they are services rather than tools: the system
  * extension's health checks and the runtime's own writers use them too.
  */
 import {
@@ -28,6 +28,7 @@ import {
   searchEvalStatus
 } from "../core/search-eval.mjs";
 import { csvValue, toStringList } from "../core/text-format.mjs";
+import { cleanEmbedTexts } from "../core/dense-onnx.mjs";
 
 /** `explain_search` returns fewer, richer rows than a plain search. */
 const EXPLAIN_DEFAULT_LIMIT = 5;
@@ -82,7 +83,7 @@ async function explainSearch(host, options = {}) {
     ...denseNote(results),
     notes: [
       "weighted_score_before_adjustments is computed from returned component scores and normalized weights.",
-      "score_adjustment captures lexical boosts, vault-note preference, and source penalties applied inside the search helper."
+      "score_adjustment captures lexical boosts, vault-note preference, and source penalties applied inside hybrid search."
     ],
     tuning_notes: explainSearchTuningNotes(results, weights),
     results: results.map((item, index) => explainSearchResult(item, index, weights))
@@ -428,7 +429,7 @@ export function createSearchTools(host) {
   },
   {
     name: "embedding_status",
-    description: "Inspect the local BGE-M3 embedding backends (ONNX and legacy Python), which one is selected and why, model files, search index, and warm worker state without loading the model.",
+    description: "Inspect the local BGE-M3 model: whether dense search can run and why, its files, downloads that stopped partway, the worker, and settings left from 2.x, without loading the model.",
     inputSchema: {
       type: "object",
       properties: {
@@ -490,7 +491,11 @@ export function createSearchTools(host) {
     ],
     handlers: {
       search_index_status: (args) => host.search.status(args),
-      rebuild_search_index: (args) => host.search.rebuild(args),
+      // Progress and cancellation come with the request, never in the
+      // arguments: those are JSON from the client.
+      rebuild_search_index: ({ onProgress, signal, ...args } = {}, { onProgress: progress, signal: cancel } = {}) => (
+        host.search.rebuild({ ...args, ...(progress ? { onProgress: progress } : {}), ...(cancel ? { signal: cancel } : {}) })
+      ),
       search_all: ({ query, scope = "all", limit = 10, project = "", source = "", categories = "", folders = "" } = {}) => (
         host.search.search({ query, scope, limit, project, source, categories, folders })
       ),
@@ -501,15 +506,12 @@ export function createSearchTools(host) {
       preset_search: (args) => presetSearch(host, args),
       explain_search: (args) => explainSearch(host, args),
       run_search_eval: (args) => runSearchEval(host, args),
-      embed_texts: (args) => host.embeddings.embedTexts(args),
-      // One payload, both backends: the legacy files and worker state as before,
-      // plus which backend is actually selected and why (docs/DEFECTS.md, Д-62).
-      embedding_status: async (args) => {
-        const status = await host.embeddings.status(args);
-        if (!host.dense) return status;
-        const selected = await host.dense.describe(args?.refresh ? { refresh: true } : {});
-        return { ...status, dense_backend: selected, backend: selected.backend, dense_revision: selected.provenance.revision };
-      },
+      // Through the same model hybrid search and the rebuild use, and with
+      // none installed, the reason and the command that installs it.
+      // The texts are checked here, where a client
+      // decides how many it sends.
+      embed_texts: async (args = {}) => host.dense.embed({ ...args, texts: cleanEmbedTexts(args) }),
+      embedding_status: (args = {}) => host.embeddingStatus(args),
       search_projects: ({ query, project = "", limit = 10 } = {}) => (
         host.search.search({ query, scope: "projects", project, limit })
       ),

@@ -6,7 +6,7 @@
  * one into concrete weights and filters, normalizing those weights, and
  * explaining afterwards which signal produced each result are all plain
  * functions over data — the sqlite index and the embedding backend live in
- * `src/core/search-index.mjs` and `src/core/embedding-workers.mjs`, and the MCP
+ * `src/core/search-index.mjs` and `src/core/dense-runtime.mjs`, and the MCP
  * surface in `src/extensions/search.mjs`.
  */
 import { csvValue } from "./text-format.mjs";

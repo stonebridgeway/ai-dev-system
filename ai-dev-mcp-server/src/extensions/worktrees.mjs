@@ -11,6 +11,7 @@ import {
   removeTaskWorktree,
   worktreeName
 } from "../core/task-worktrees.mjs";
+import { beginTaskView, wantsDetails } from "../core/response-budget.mjs";
 
 function parseToolText(result) {
   const text = result?.content?.find((item) => item.type === "text")?.text ?? "";
@@ -41,7 +42,8 @@ export function createWorktreeTools(host) {
             project_name: { type: "string" },
             acceptance_criteria: { type: "array", items: { type: "string" }, default: [] },
             base_ref: { type: "string", default: "HEAD", description: "Commit, branch, or tag the task branch starts from." },
-            name: { type: "string", description: "Optional worktree/branch slug; derived from the task text when omitted." }
+            name: { type: "string", description: "Optional worktree/branch slug; derived from the task text when omitted." },
+            include_details: { type: "boolean", default: false, description: "Return the whole task record instead of the summary. get_task returns it too." }
           },
           required: ["project_path", "task"]
         }
@@ -102,7 +104,9 @@ export function createWorktreeTools(host) {
           project_path: worktree.path,
           task: args.task,
           project_name: args.project_name || "",
-          acceptance_criteria: args.acceptance_criteria || []
+          acceptance_criteria: args.acceptance_criteria || [],
+          // The whole record: its context gains the worktree below, and the answer is shaped once, at the end.
+          include_details: true
         }));
         const record = await host.taskStore.update(begun.id, (current) => {
           current.context = {
@@ -117,7 +121,7 @@ export function createWorktreeTools(host) {
           };
           return current;
         });
-        return {
+        const answer = {
           ...begun,
           context: record.context,
           worktree,
@@ -127,6 +131,7 @@ export function createWorktreeTools(host) {
             "After complete_task, merge or open a PR from the task branch, then call remove_task_worktree."
           ]
         };
+        return wantsDetails(args) ? answer : beginTaskView(answer);
       },
       async list_task_worktrees(args) {
         const identity = await host.resolveProjectIdentity(args.project_path);

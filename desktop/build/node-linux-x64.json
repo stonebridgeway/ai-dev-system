@@ -1,0 +1,9 @@
+{
+  "$comment": "The Node the Linux (x64) app ships: the same LTS release as the Windows installer's, pinned by version and sha256 and checked when the app is built. The archive's sum is nodejs.org's own (SHASUMS256.txt of the release); bin/node's, of the file in it.",
+  "version": "24.22.0",
+  "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-linux-x64.tar.gz",
+  "sha256": "28ea0a438de9a13bd7891fd758eee6c7819ee8af5442dfd8d45bd65e56d4228c",
+  "entry": "node-v24.22.0-linux-x64/bin/node",
+  "binary_sha256": "67ca5783febb8bf85736c79fcdd92c8d6d465a0eb2a082672bcdfa76a506751c",
+  "license": "node-v24.22.0-linux-x64/LICENSE"
+}

@@ -18,6 +18,8 @@ frontend-qa/fixtures/**/.ai-dev/frontend-qa-baselines/
 frontend-qa/artifacts/
 embeddings/models/
 .docker/
+# `npm run dist`: the package folder and its tarball, rebuilt from the allowlist.
+/dist/
 docker/.env
 docker/compose.local.yaml
 *.log
@@ -32,6 +34,7 @@ docker/public-seed/03-skills-catalog/Skill Quality Dashboard.md
 docker/public-seed/02-knowledge/Projects/
 docker/public-seed/01-system/System Dashboard.md
 docker/public-seed/01-system/system-dashboard.json
+docker/public-seed/01-system/Knowledge Galaxy.html
 
 # Generated live-state (machine-specific absolute paths); regenerated locally by
 # `node scripts/ai-dev.mjs distribution` and the project-prep MCP tools.

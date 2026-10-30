@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pythonExceptionLine, pythonFailureMessage } from "./python-failure.mjs";
+import { optionalPythonFailure, pythonExceptionLine, pythonFailureMessage, UI_UX_PYTHON_TOOLS } from "./python-failure.mjs";
 
 // What the search helper printed when `npm run setup -- --dense` ran without
 // the embeddings virtualenv. The useful sentence is the last line; the setup
@@ -62,4 +62,16 @@ test("an exception message that runs over several lines keeps all of them", () =
   ].join("\n");
   assert.match(pythonExceptionLine(multiline), /^ValueError: the index is at schema 4/);
   assert.match(pythonFailureMessage(multiline).split("\n")[0], /^ValueError:/);
+});
+
+test("an optional helper without Python says how to get one; otherwise it says what the helper said", () => {
+  const context = { tool: UI_UX_PYTHON_TOOLS, interpreter: "python3" };
+  const missing = optionalPythonFailure(Object.assign(new Error("spawn python3 ENOENT"), { code: "ENOENT" }), context);
+  assert.match(missing.message, /^query_ui_ux_knowledge and generate_ui_ux_design_system run a Python helper, and no Python was found here \(tried "python3"\)\..*AI_DEV_PYTHON.*Nothing else needs Python/);
+  assert.equal(missing.cause.code, "ENOENT");
+  const one = optionalPythonFailure(new Error("spawn python ENOENT"), { tool: "embed_texts", interpreter: "python" });
+  assert.match(one.message, /^embed_texts runs a Python helper, and no Python was found here \(tried "python"\)/);
+  const failed = optionalPythonFailure(new Error("Traceback (most recent call last):\n  File \"search.py\", line 3\nValueError: unknown domain"), context);
+  assert.match(failed.message, /^ValueError: unknown domain/);
+  assert.equal(optionalPythonFailure(new Error(""), context).message, "query_ui_ux_knowledge and generate_ui_ux_design_system failed.");
 });

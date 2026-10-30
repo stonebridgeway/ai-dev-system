@@ -22,7 +22,7 @@ test("a run is read by what failed, not by whether something did", () => {
   assert.deepEqual(summarizeAcceptanceRun({ exitCode: 0, output: CLEAN }), {
     ok: true, test_failures: 0, coverage_reporter_failed: false, kind: "passed"
   });
-  // Д-11: exit 1 with no failing test is the reporter, and saying "1 падение"
+  // Exit 1 with no failing test is the reporter, and saying "1 failure"
   // without saying which kind is what made the number meaningless.
   assert.equal(summarizeAcceptanceRun({ exitCode: 1, output: REPORTER }).kind, "coverage reporter");
   assert.equal(summarizeAcceptanceRun({ exitCode: 1, output: BROKEN }).kind, "tests failed");
@@ -42,15 +42,15 @@ test("the report ends in the line the project's rule asks for", () => {
   const text = renderAcceptanceReport(runs);
   assert.match(text, /^✓ run  1 \(31s\): passed$/m);
   assert.match(text, /^✗ run  2 \(30s\): coverage reporter$/m);
-  assert.match(text, /^1 падений из 3$/m);
-  assert.match(text, /Ни одно падение не про тесты: coverage reporter\./);
+  assert.match(text, /^1 failure out of 3$/m);
+  assert.match(text, /None of the failures is a failing test: coverage reporter\./);
 
   const withRealFailures = renderAcceptanceReport([
     { ok: false, kind: "tests failed", test_failures: 2 },
     { ok: true, kind: "passed", test_failures: 0 }
   ]);
-  assert.match(withRealFailures, /^1 падений из 2$/m);
-  assert.match(withRealFailures, /Из них с упавшими тестами: 1\./);
+  assert.match(withRealFailures, /^1 failure out of 2$/m);
+  assert.match(withRealFailures, /With failing tests: 1\./);
 });
 
 test("the verdict separates a failure of the code from a failure of the run", () => {

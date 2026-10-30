@@ -1,15 +1,19 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 import test from "node:test";
 import { SKILL_GROUPS } from "../skill-taxonomy.mjs";
 import {
   SKILL_CARDS_DIR,
   SKILL_CATALOG_DIR,
   SKILL_GROUPS_DIR,
+  MEMBRANE_SOURCE_IDS,
+  catalogSourceOfPath,
   findSkillItem,
   groupWikiLink,
   isDesignSkill,
   isMembraneSkill,
   isVisualHeavySkill,
+  membraneSourceLayout,
   skillCardPath,
   skillGroupNotePath,
   skillKey
@@ -56,6 +60,29 @@ test("membrane skills are recognised by source", () => {
   assert.ok(isMembraneSkill({ source: "membrane/app-skills" }));
   assert.ok(!isMembraneSkill({ source: "custom" }));
   assert.ok(!isMembraneSkill({}));
+});
+
+test("both places the Membrane catalogue can sit are Membrane by source", () => {
+  for (const source of MEMBRANE_SOURCE_IDS) assert.ok(isMembraneSkill({ source }), source);
+  assert.equal(catalogSourceOfPath("03-skills-catalog/sources/external/membrane/skills/slack/SKILL.md"), "external/membrane");
+  assert.equal(
+    catalogSourceOfPath("C:\\vault\\03-skills-catalog\\sources\\membrane\\application-skills\\skills\\x\\SKILL.md"),
+    "membrane/application-skills"
+  );
+  assert.equal(catalogSourceOfPath("03-skills-catalog/sources/external/membrane/README.md"), "external/membrane");
+  assert.equal(catalogSourceOfPath("03-skills-catalog/sources/external/archify/SKILL.md"), "external/archify");
+  assert.ok(!isMembraneSkill({ source: catalogSourceOfPath("03-skills-catalog/sources/external/archify/SKILL.md") }));
+  assert.equal(catalogSourceOfPath("02-knowledge/membrane notes.md"), "", "outside the catalogue a path names no source");
+  assert.equal(catalogSourceOfPath("03-skills-catalog/sources/external"), "");
+});
+
+test("the Membrane collector reads whichever layout the vault has", () => {
+  const sources = path.join("vault", "03-skills-catalog", "sources");
+  const seed = path.join(sources, "external", "membrane");
+  const vault = path.join(sources, "membrane", "application-skills");
+  assert.deepEqual(membraneSourceLayout(sources, (candidate) => candidate === seed), { id: "external/membrane", root: seed });
+  assert.deepEqual(membraneSourceLayout(sources, (candidate) => candidate === vault), { id: "membrane/application-skills", root: vault });
+  assert.deepEqual(membraneSourceLayout(sources, () => false), { id: "membrane/application-skills", root: vault }, "neither: the vault layout, which reads as empty");
 });
 
 test("design skills are recognised by source folder or category", () => {

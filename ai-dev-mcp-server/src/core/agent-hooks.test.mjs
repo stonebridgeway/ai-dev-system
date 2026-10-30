@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   CURSOR_HOOKS_CONTRACT,
   CURSOR_HOOKS_FORMATS,
@@ -15,6 +15,8 @@ import {
   cursorHooksDocument,
   cursorVerificationPlan,
   defaultPolicy,
+  gitHookStub,
+  hookCommandLine,
   installAgentHooks,
   mergeClaudeSettings,
   mergeCursorHooks,
@@ -83,11 +85,11 @@ test("installer writes hooks, patterns, policy, and merges harness registrations
   const settings = JSON.parse(await fs.readFile(path.join(projectRoot, ".claude", "settings.json"), "utf8"));
   assert.deepEqual(settings.permissions, { allow: ["Bash(npm test)"] });
   assert.equal(settings.hooks.PreToolUse[0].hooks[0].command, "node my-own-hook.js", "foreign entries are preserved");
-  assert.ok(settings.hooks.PreToolUse.some((entry) => entry.hooks[0].command === "node .ai-dev/hooks/guard.mjs bash"));
+  assert.ok(settings.hooks.PreToolUse.some((entry) => entry.hooks[0].command === hookCommandLine("guard.mjs", ["bash"])));
   assert.ok(settings.hooks.SessionStart);
-  assert.deepEqual(settings.hooks.Stop[0].hooks.map((hook) => hook.command), [".ai-dev/hooks/session-end.mjs", ".ai-dev/hooks/cost-capture.mjs", ".ai-dev/hooks/stop-check.mjs"].map((script) => `node ${script}`));
+  assert.deepEqual(settings.hooks.Stop[0].hooks.map((hook) => hook.command), ["session-end.mjs", "cost-capture.mjs", "stop-check.mjs"].map((script) => hookCommandLine(script)));
   const cursor = JSON.parse(await fs.readFile(path.join(projectRoot, ".cursor", "hooks.json"), "utf8"));
-  assert.equal(cursor.hooks.beforeShellExecution[0].command, "node .ai-dev/hooks/guard.mjs bash --cursor");
+  assert.equal(cursor.hooks.beforeShellExecution[0].command, hookCommandLine("guard.mjs", ["bash", "--cursor"]));
 
   const second = await installAgentHooks({ projectRoot, hooksSourceDir, targets: ["claude", "cursor"], profile: "standard" });
   assert.equal(second.written.length + second.updated.length, 0, "second install is a no-op");
@@ -130,10 +132,10 @@ test("hook path helpers are platform-agnostic", async (t) => {
 });
 
 test("the hook decides the project boundary without climbing into the home directory", async (t) => {
-  // Д-48, the hook's copy of the rule. It is spelled out here as well as in
+  // The hook's copy of the rule. It is spelled out here as well as in
   // project-identity.test.mjs because this file is the one that travels with
-  // the hooks, and the two copies have already drifted three times (Д-45,
-  // Д-51, Д-52). Platform and home are parameters: os.tmpdir() sits inside the
+  // the hooks, and the two copies have already drifted apart three times.
+  // Platform and home are parameters: os.tmpdir() sits inside the
   // user profile on Windows, so an environment-driven test would be deciding a
   // different layout there than here.
   const { isProjectBoundaryCandidate, projectIdOf, projectRootOf, userHomeDirectory } =
@@ -236,8 +238,8 @@ test("the Cursor adapter is pinned to a checked hooks.json format version", () =
 });
 
 test("what the Cursor adapter could not verify is said at install time, and has a check", () => {
-  // Д-2: three statements in the contract stand on secondary sources, because
-  // cursor.com is unreachable from where this was built. They were recorded in
+  // Three statements in the contract stand on secondary sources, because
+  // they could not be checked against a running Cursor. They were recorded in
   // a source comment, which is the one place the person installing never looks.
   const plan = cursorVerificationPlan();
   assert.deepEqual(plan.unverified, ["events", "limits"]);
@@ -273,7 +275,7 @@ test("installing for Cursor records the format version and reports what it could
   const document = JSON.parse(await fs.readFile(path.join(projectRoot, ".cursor", "hooks.json"), "utf8"));
   assert.equal(document.version, 1);
   assert.equal(document.hooks.beforeShellExecution[0].command, "node audit.js");
-  assert.equal(document.hooks.beforeShellExecution[1].command, "node .ai-dev/hooks/guard.mjs bash --cursor");
+  assert.equal(document.hooks.beforeShellExecution[1].command, hookCommandLine("guard.mjs", ["bash", "--cursor"]));
 
   const status = await agentHooksStatus(projectRoot);
   assert.equal(status.cursor_format_version, 1);
@@ -589,4 +591,146 @@ test("cost capture reads a real transcript in whole lines, chunk by chunk", asyn
 
   assert.deepEqual(sumAssistantUsage(""), { offset: 0, messages: 0, models: [] });
   assert.deepEqual(sumAssistantUsage(path.join(fixturesDir, "does-not-exist.jsonl"), { fromOffset: 12 }), { offset: 12, messages: 0, models: [] });
+});
+
+test("hook commands find Node through the launcher on macOS and Linux, and stay `node` on Windows", () => {
+  assert.equal(hookCommandLine("guard.mjs", ["bash"], "darwin"), "/bin/sh .ai-dev/hooks/with-node.sh guard.mjs bash");
+  assert.equal(hookCommandLine("session-start.mjs", [], "linux"), "/bin/sh .ai-dev/hooks/with-node.sh session-start.mjs");
+  assert.equal(hookCommandLine("guard.mjs", ["bash", "--cursor"], "win32"), "node .ai-dev/hooks/guard.mjs bash --cursor");
+  const linux = Object.values(claudeHookEntries("strict", { platform: "linux" })).flat().flatMap((entry) => entry.hooks.map((hook) => hook.command));
+  assert.ok(linux.length >= 9 && linux.every((command) => command.startsWith("/bin/sh .ai-dev/hooks/with-node.sh ")), linux.join("\n"));
+  const cursor = Object.values(cursorHooksDocument("standard", { platform: "darwin" }).hooks).flat().map((entry) => entry.command);
+  assert.ok(cursor.every((command) => command.startsWith("/bin/sh .ai-dev/hooks/with-node.sh ") && command.endsWith(" --cursor")), cursor.join("\n"));
+  // Git runs hooks through its own sh on every platform, Windows included.
+  assert.match(gitHookStub("pre-commit"), /^exec \/bin\/sh "\$\{0%\/\*\}\/\.\.\/hooks\/with-node\.sh" git-hooks\.mjs pre-commit "\$@"$/m);
+});
+
+test("the installer records this machine's Node out of git, and nothing from inside a container", async (t) => {
+  const { projectRoot } = await fixture(t);
+  const hooksDir = path.join(projectRoot, ".ai-dev", "hooks");
+  const installed = await installAgentHooks({ projectRoot, hooksSourceDir, targets: ["claude"], nodePath: "/opt/node/bin/node" });
+  assert.ok(installed.written.includes(".ai-dev/hooks/with-node.sh"));
+  assert.equal(await fs.readFile(path.join(hooksDir, ".node-path"), "utf8"), "/opt/node/bin/node\n");
+  assert.equal(await fs.readFile(path.join(hooksDir, ".gitignore"), "utf8"), ".node-path\n.ai-dev-home\n");
+  const ignored = spawnSync("git", ["-C", projectRoot, "check-ignore", ".ai-dev/hooks/.node-path"], { encoding: "utf8", windowsHide: true });
+  assert.equal(ignored.status, 0, "git ignores the recorded path");
+  const status = await agentHooksStatus(projectRoot);
+  assert.equal(status.recorded_node, "/opt/node/bin/node");
+  assert.equal(status.recorded_node_exists, false);
+  assert.equal(status.bare_node_commands, 0, "on Windows `node …` is the 3.0 registration, not a 2.x one");
+  const windowsEntries = { hooks: claudeHookEntries("standard", { platform: "win32" }) };
+  await fs.writeFile(path.join(projectRoot, ".claude", "settings.json"), JSON.stringify(windowsEntries));
+  assert.equal((await agentHooksStatus(projectRoot, { platform: "win32" })).bare_node_commands, 0);
+  assert.ok((await agentHooksStatus(projectRoot, { platform: "linux" })).bare_node_commands > 0, "the same lines elsewhere are 2.x ones");
+
+  const windows = await fixture(t);
+  await installAgentHooks({ projectRoot: windows.projectRoot, hooksSourceDir, targets: ["git"], platform: "win32", nodePath: "C:\\Program Files\\nodejs\\node.exe" });
+  assert.equal(await fs.readFile(path.join(windows.projectRoot, ".ai-dev", "hooks", ".node-path"), "utf8"), "C:/Program Files/nodejs/node.exe\n",
+    "forward slashes, which Git's shell reads");
+
+  const container = await fixture(t);
+  await installAgentHooks({ projectRoot: container.projectRoot, hooksSourceDir, targets: ["claude"], nodePath: "" });
+  await assert.rejects(fs.access(path.join(container.projectRoot, ".ai-dev", "hooks", ".node-path")));
+});
+
+test("hooks a client runs without AI_DEV_HOME keep their state where the server does", async (t) => {
+  const { root, projectRoot } = await fixture(t);
+  const runtime = path.join(root, "runtime-of-the-server");
+  await installAgentHooks({ projectRoot, hooksSourceDir, targets: ["claude"], nodePath: "", runtimeHome: runtime });
+  const hooksDir = path.join(projectRoot, ".ai-dev", "hooks");
+  assert.equal(await fs.readFile(path.join(hooksDir, ".ai-dev-home"), "utf8"), `${runtime}\n`);
+  const ignored = spawnSync("git", ["-C", projectRoot, "check-ignore", ".ai-dev/hooks/.ai-dev-home"], { encoding: "utf8", windowsHide: true });
+  assert.equal(ignored.status, 0, "git ignores it, as it does .node-path");
+  const home = path.join(root, "home");
+  const rootSeen = (extra = {}) => spawnSync(process.execPath, ["--input-type=module", "-e",
+    `import { runtimeStateRoot } from ${JSON.stringify(pathToFileURL(path.join(hooksDir, "lib.mjs")).href)}; process.stdout.write(runtimeStateRoot());`], {
+    encoding: "utf8", windowsHide: true, env: { PATH: process.env.PATH, HOME: home, USERPROFILE: home, ...extra }
+  }).stdout;
+  assert.equal(rootSeen(), runtime, "a GUI client's hooks: the server's folder");
+  assert.equal(rootSeen({ AI_DEV_HOME: path.join(root, "named") }), path.join(root, "named"), "AI_DEV_HOME in the hook's own environment still wins");
+  // Installed again by a server without AI_DEV_HOME: the record goes, and the hooks follow it to ~/.ai-dev.
+  const again = await installAgentHooks({ projectRoot, hooksSourceDir, targets: ["claude"], nodePath: "", runtimeHome: "" });
+  assert.ok(again.updated.includes(".ai-dev/hooks/.ai-dev-home (removed)"));
+  assert.equal(rootSeen(), path.join(home, ".ai-dev"));
+});
+
+test("a hook runs with no Node on PATH: the 2.x command fails, the launcher finds the recorded Node", { skip: process.platform === "win32" && "the launcher is the POSIX form" }, async (t) => {
+  const { root, projectRoot } = await fixture(t);
+  const marker = path.join(root, "used.log");
+  const fakeNode = async (name) => {
+    const file = path.join(root, name);
+    await fs.writeFile(file, `#!/bin/sh\nprintf '%s\\n' ${name} >> '${marker}'\nexec '${process.execPath}' "$@"\n`, { mode: 0o755 });
+    return file;
+  };
+  const recorded = await fakeNode("recorded-node");
+  await installAgentHooks({ projectRoot, hooksSourceDir, targets: ["claude"], nodePath: recorded });
+  const settings = JSON.parse(await fs.readFile(path.join(projectRoot, ".claude", "settings.json"), "utf8"));
+  const command = settings.hooks.SessionStart[0].hooks[0].command;
+  assert.equal(command, "/bin/sh .ai-dev/hooks/with-node.sh session-start.mjs");
+  // A PATH with git and nothing else: no node, not even `dirname`.
+  const bin = path.join(root, "only-git");
+  await fs.mkdir(bin);
+  const gitPath = spawnSync("/bin/sh", ["-c", "command -v git"], { encoding: "utf8" }).stdout.trim();
+  await fs.symlink(gitPath, path.join(bin, "git"));
+  const noNode = { PATH: bin, HOME: root, AI_DEV_HOME: path.join(root, "runtime") };
+  const runLine = (line, env) => spawnSync("/bin/sh", ["-c", line], {
+    cwd: projectRoot,
+    env,
+    input: JSON.stringify({ hook_event_name: "SessionStart", source: "startup", cwd: projectRoot }),
+    encoding: "utf8"
+  });
+
+  const before = runLine("node .ai-dev/hooks/session-start.mjs", noNode);
+  assert.equal(before.status, 127, "the 2.x registration: node is not on this PATH");
+  const after = runLine(command, noNode);
+  assert.equal(after.status, 0, after.stderr);
+  assert.deepEqual((await fs.readFile(marker, "utf8")).trim().split("\n"), ["recorded-node"]);
+
+  const chosen = await fakeNode("chosen-node");
+  assert.equal(runLine(command, { ...noNode, AI_DEV_NODE: chosen }).status, 0);
+  assert.deepEqual((await fs.readFile(marker, "utf8")).trim().split("\n"), ["recorded-node", "chosen-node"], "AI_DEV_NODE comes first");
+
+  const missing = runLine("/bin/sh .ai-dev/hooks/with-node.sh", noNode);
+  assert.equal(missing.status, 1, "1, not 2: Claude Code reads 2 as \"block\"");
+  assert.match(missing.stderr, /with-node\.sh needs the hook script to run/);
+
+  // Node's bin folder in AI_DEV_NODE is a slip, not the end of every hook.
+  const folder = runLine(command, { ...noNode, AI_DEV_NODE: path.dirname(chosen) });
+  assert.equal(folder.status, 0, folder.stderr);
+  assert.match(folder.stderr, /AI_DEV_NODE=.* is not a Node executable; looking for Node elsewhere/);
+  assert.deepEqual((await fs.readFile(marker, "utf8")).trim().split("\n"), ["recorded-node", "chosen-node", "recorded-node"]);
+});
+
+test("the launcher and the git stubs are checked out with LF where core.autocrlf would give them CRLF", { skip: process.platform === "win32" && "the launcher is the POSIX form" }, async (t) => {
+  const { root, projectRoot } = await fixture(t);
+  await installAgentHooks({ projectRoot, hooksSourceDir, targets: ["claude", "git"], nodePath: "" });
+  assert.equal(await fs.readFile(path.join(projectRoot, ".ai-dev", "hooks", ".gitattributes"), "utf8"), "*.sh text eol=lf\n");
+  assert.equal(await fs.readFile(path.join(projectRoot, ".ai-dev", "git-hooks", ".gitattributes"), "utf8"), "* text eol=lf\n");
+  runGit(projectRoot, ["add", "-A"]);
+  runGit(projectRoot, ["-c", "user.name=T", "-c", "user.email=t@example.invalid", "commit", "-q", "-m", "hooks"]);
+  const clone = path.join(root, "clone");
+  runGit(root, ["-c", "core.autocrlf=true", "clone", "-q", "--config", "core.autocrlf=true", projectRoot, clone]);
+  const crlf = await fs.readFile(path.join(clone, "index.js"), "utf8");
+  assert.ok(crlf.includes("\r\n"), "the clone does turn text into CRLF");
+  for (const relative of [".ai-dev/hooks/with-node.sh", ".ai-dev/git-hooks/pre-commit", ".ai-dev/git-hooks/pre-push"]) {
+    assert.ok(!(await fs.readFile(path.join(clone, ...relative.split("/")), "utf8")).includes("\r"), relative);
+  }
+  const run = spawnSync("/bin/sh", [".ai-dev/hooks/with-node.sh"], { cwd: clone, encoding: "utf8" });
+  assert.equal(run.status, 1, "the clone's launcher parses");
+  assert.match(run.stderr, /needs the hook script to run/);
+});
+
+test("a re-install keeps the hooks a person added to an AI Dev group", () => {
+  const ours = () => claudeHookEntries("standard", { platform: "linux" });
+  const installed = mergeClaudeSettings({}, ours());
+  installed.hooks.Stop[0].hooks.push({ type: "command", command: "./scripts/notify-me.sh" });
+  installed.hooks.PreToolUse.find((entry) => entry.matcher === "Bash").hooks.push({ type: "command", command: "./scripts/audit-bash.sh" });
+  const again = mergeClaudeSettings(installed, ours());
+  const text = JSON.stringify(again);
+  assert.ok(text.includes("notify-me.sh") && text.includes("audit-bash.sh"), "the person's hooks stay");
+  assert.deepEqual(again.hooks.PreToolUse.find((entry) => entry.hooks.some((hook) => hook.command === "./scripts/audit-bash.sh")),
+    { matcher: "Bash", hooks: [{ type: "command", command: "./scripts/audit-bash.sh" }] }, "in their group, under its matcher, without ours");
+  const commands = (document) => Object.values(document.hooks).flat().flatMap((entry) => entry.hooks.map((hook) => hook.command));
+  assert.equal(commands(again).filter((command) => command.includes(".ai-dev/hooks/")).length, commands(mergeClaudeSettings({}, ours())).length, "ours once each, not twice");
+  assert.deepEqual(mergeClaudeSettings(again, ours()), again, "and a third install changes nothing");
 });

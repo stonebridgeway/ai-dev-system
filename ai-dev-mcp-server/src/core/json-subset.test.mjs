@@ -88,7 +88,7 @@ test("the two wanted keys come back and nothing else does", () => {
 });
 
 test("the history is streamed past, not parsed, however large it is", async (t) => {
-  // The measurement from Д-17: a file where the two wanted keys are a rounding
+  // The measured case: a file where the two wanted keys are a rounding
   // error next to the conversation history.
   const big = claudeJson({ historyEntries: 20_000 });
   assert.ok(big.length > 2_000_000, `expected a large fixture, got ${big.length} bytes`);
@@ -176,7 +176,7 @@ test("a file that is not the object it was looking for says so", async (t) => {
   assert.deepEqual(cut.values, []);
   assert.deepEqual(cut.truncated, ["mcpServers"]);
   // …and the document itself is reported as cut off. Without this the caller
-  // reads a half-written file as "this machine declares no servers" (Д-25).
+  // reads a half-written file as "this machine declares no servers".
   assert.equal(cut.errors.length, 1);
   assert.match(cut.errors[0], /ends in the middle/);
   assert.match(cut.errors[0], /unknown rather than absent/);

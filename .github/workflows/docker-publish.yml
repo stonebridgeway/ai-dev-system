@@ -9,12 +9,18 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      freeze_2x:
+        description: "Copy the current :latest (2.x) to :2 — once, before the first 3.0 release tag"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+# A manual run (freeze_2x) is not cancelled by the next push to the same branch.
 concurrency:
-  group: docker-${{ github.ref }}
+  group: docker-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -33,23 +39,15 @@ jobs:
 
       - name: Install MCP dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Test distribution privacy policy
         working-directory: ai-dev-mcp-server
         run: npm test -- src/core/public-distribution.test.mjs
 
-      - name: Validate package definitions
+      - name: Validate what the install pages and scripts promise
         working-directory: ai-dev-mcp-server
         run: npm run packaging:check
-
-      - name: Validate Arch package shell and metadata
-        run: |
-          bash -n packaging/arch/PKGBUILD
-          docker run --rm \
-            --volume "$PWD:/src:ro" \
-            archlinux:base \
-            bash -lc 'source /src/packaging/arch/PKGBUILD; test "$pkgname" = ai-dev-system-git; test "${#arch[@]}" -eq 2'
 
       - name: Prepare allowlisted Docker context
         working-directory: ai-dev-mcp-server
@@ -66,9 +64,71 @@ jobs:
         run: |
           docker run --rm --network none --entrypoint gitleaks ai-dev-system:ci version
 
+      # A new volume (nothing rebuilt, the server's own handshake), the next
+      # session, and the model through the volume (a synthetic one).
       - name: Negotiate MCP over Docker stdio
         working-directory: ai-dev-mcp-server
         run: npm run docker:smoke -- --image ai-dev-system:ci
+
+      # bootstrap.sh end to end against this image, with a home outside /tmp: in
+      # the container /tmp is a tmpfs, where what the installer must not do — make
+      # a folder of the host's — goes through unnoticed.
+      - name: bootstrap.sh writes a client's config from the image
+        run: |
+          home="$RUNNER_TEMP/bootstrap-home"
+          mkdir -p "$home/.cursor"
+          HOME="$home" AI_DEV_DATA_VOLUME=ai-dev-bootstrap-ci sh ./bootstrap.sh --image ai-dev-system:ci --allow-stale-image --clients cursor
+          node -e 'const entry = require(process.argv[1]).mcpServers["ai-dev"]; if (!entry?.args?.includes("ai-dev-system:ci")) throw new Error(`no entry for the image: ${JSON.stringify(entry)}`); console.log(entry.command, entry.args.join(" "))' "$home/.cursor/mcp.json"
+          docker volume rm -f ai-dev-bootstrap-ci
+
+      # A 2.x volume and 2.x launchers against this image.
+      # The 2.x image is the production one, whichever line its tag names now.
+      - name: Upgrade a 2.x volume and run the 2.x launchers
+        working-directory: ai-dev-mcp-server
+        run: |
+          git fetch --no-tags --depth=1 origin 86aba56f9d2b7ebd6e883f4774778bd0625e17e3 || true
+          if docker pull ghcr.io/stonebridgeway/ai-dev-system:2 || docker pull ghcr.io/stonebridgeway/ai-dev-system:latest; then
+            old=$(docker image inspect ghcr.io/stonebridgeway/ai-dev-system:2 >/dev/null 2>&1 && echo ghcr.io/stonebridgeway/ai-dev-system:2 || echo ghcr.io/stonebridgeway/ai-dev-system:latest)
+            npm run docker:upgrade-check -- --old-image "$old" --new-image ai-dev-system:ci
+          else
+            echo "::notice::No 2.x image to upgrade from could be pulled; the upgrade check did not run."
+          fi
+
+  # The -browser variant: Chromium for Frontend QA, its own stage of the same Dockerfile.
+  validate-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ai-dev-mcp-server/package-lock.json
+
+      - name: Install MCP dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --no-audit --no-fund
+
+      - name: Prepare and audit the Docker context
+        working-directory: ai-dev-mcp-server
+        run: npm run docker:prepare && npm run docker:audit
+
+      - name: Build the browser variant
+        run: docker build --target browser --tag ai-dev-system:ci-browser .docker/build-context
+
+      - name: The pnpm in the image is the one Frontend QA names
+        run: |
+          expected=$(node -p "require('./frontend-qa/package.json').packageManager.split('@')[1].split('+')[0]")
+          actual=$(docker run --rm --network none --entrypoint pnpm ai-dev-system:ci-browser --version)
+          echo "packageManager $expected, image $actual"
+          test "$actual" = "$expected"
+
+      - name: Negotiate MCP over Docker stdio, with the Frontend QA runner
+        working-directory: ai-dev-mcp-server
+        run: npm run docker:smoke -- --image ai-dev-system:ci-browser --browser --no-model
 
   unix-launcher:
     strategy:
@@ -91,26 +151,39 @@ jobs:
 
       - name: Install MCP dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Test fast-start launcher contract
         working-directory: ai-dev-mcp-server
         run: npm run unix:launcher-smoke
 
       - name: Validate portable shell scripts
-        run: sh -n bootstrap.sh docker/run-mcp.sh docker/entrypoint.sh packaging/launcher.sh
-
-      - name: Validate Homebrew formula syntax
-        if: runner.os == 'macOS'
-        run: |
-          ruby -c packaging/homebrew/ai-dev-system.rb
-          brew style packaging/homebrew/ai-dev-system.rb
+        run: sh -n bootstrap.sh docker/run-mcp.sh docker/entrypoint.sh
 
   publish:
-    if: github.event_name != 'pull_request'
+    # The production repository only. A fork that works in its own main must
+    # not publish an image of its own from every push.
+    #
+    # The tags: a push to main is
+    # `:edge`, never `:latest` — a merge is not a release; a release tag vX.Y.Z
+    # of the newest line is `:X.Y.Z`, `:X.Y`, `:X` and `:latest` — a 2.x tag
+    # after 3.0, on a commit that carries this workflow, updates `:2` and `:2.Y`
+    # alone; a prerelease (vX.Y.Z-rc.N) only its own name. So `:2` is the 2.x
+    # line, frozen once 3.0 is tagged, and the way back:
+    # AI_DEV_IMAGE=ghcr.io/stonebridgeway/ai-dev-system:2. The browser variant
+    # carries the same tags with `-browser`.
+    if: github.event_name == 'push' && github.repository == 'stonebridgeway/ai-dev-system'
     needs:
       - validate
+      - validate-browser
       - unix-launcher
+    strategy:
+      matrix:
+        include:
+          - target: server
+            suffix: ""
+          - target: browser
+            suffix: "-browser"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -147,21 +220,81 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=false
+            suffix=${{ matrix.suffix }},onlatest=true
+          # :latest only from a release of the newest line: a 2.x maintenance tag
+          # after 3.0 updates :2 and nothing else. The line is named
+          # here: 4.0 adds v3. to it. sha-* only from the default
+          # branch and release tags.
           tags: |
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=edge,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') && !startsWith(github.ref_name, 'v1.') && !startsWith(github.ref_name, 'v2.') }}
+            type=sha,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and publish image
         uses: docker/build-push-action@v7
         with:
           context: .docker/build-context
+          target: ${{ matrix.target }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            VCS_REF=${{ github.sha }}
+            SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
           provenance: mode=max
           sbom: true
+
+  # Once, before the first 3.0 release tag: the 2.x image that `:latest` is now
+  # becomes `:2`, the line to roll back to. 2.x was
+  # published from main with no release tags, so no `:2` exists until then.
+  freeze-2x:
+    if: github.event_name == 'workflow_dispatch' && inputs.freeze_2x && github.repository == 'stonebridgeway/ai-dev-system'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out repository, with its tags
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Once 3.0 is released, :latest is not the 2.x line, and copying it would
+      # make the way back a 3.x image. A prerelease
+      # (v3.0.0-rc.1) does not move :latest, and so does not count.
+      - name: Refuse once a release of 3.0 or later is tagged
+        run: |
+          later=$(git tag --list 'v[3-9]*' 'v[1-9][0-9]*' | { grep -v -- - || true; } | head -n 1)
+          if [ -n "$later" ]; then
+            echo "::error::$later is tagged: :latest is not the 2.x line any more, and :2 stays as it is."
+            exit 1
+          fi
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Copy :latest to :2, unless :2 exists
+        run: |
+          image=ghcr.io/${{ github.repository }}
+          if docker buildx imagetools inspect "$image:2" >/dev/null 2>&1; then
+            echo "$image:2 exists already; it stays as it is."
+            exit 0
+          fi
+          docker buildx imagetools inspect "$image:latest"
+          docker buildx imagetools create --tag "$image:2" "$image:latest"

@@ -286,7 +286,7 @@ export function renderProjectCardMd({
     extractProjectCardSection(existingText, "Known Weak Spots");
   const preservedImprovements = extractProjectCardSection(existingText, "Next Practical Improvements");
   const preservedNotes = extractProjectCardSection(existingText, "Notes");
-  // `scan_agent_config` (PLAN.md 3.22) writes the A-F grade here. It is
+  // `scan_agent_config` writes the A-F grade here. It is
   // preserved rather than generated, because re-rendering a card must not
   // silently claim a grade nobody measured.
   const preservedAgentConfig = extractProjectCardSection(existingText, "Agent Configuration");

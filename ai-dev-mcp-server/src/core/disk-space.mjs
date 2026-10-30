@@ -4,8 +4,8 @@
  *
  * The macOS acceptance run filled a disk to about 3 GB free and started the
  * model download: the write rate fell from roughly 45 MB/min to roughly
- * 1 MB/min and nothing said a word (docs/DEFECTS.md, Д-81). From the outside
- * that is the same picture as the stalled CDN of Д-73 — a progress line that
+ * 1 MB/min and nothing said a word. From the outside
+ * that is the same picture as a stalled CDN — a progress line that
  * barely moves, no error — so the user cannot tell a full disk from a dead
  * source, and the two are fixed by opposite actions.
  *

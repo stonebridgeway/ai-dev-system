@@ -1,0 +1,9 @@
+{
+  "$comment": "The Node the macOS (Apple silicon) app ships: the same LTS release as the Windows installer's, pinned by version and sha256 and checked when the app is built. The archive's sum is nodejs.org's own (SHASUMS256.txt of the release); bin/node's, of the file in it.",
+  "version": "24.22.0",
+  "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-darwin-arm64.tar.gz",
+  "sha256": "6a9724d9b50a5f22b4816cded441b5a8d9ddae546191a5e5b7efa5a5e2ee26d5",
+  "entry": "node-v24.22.0-darwin-arm64/bin/node",
+  "binary_sha256": "b468fb9c67427c9d3aec07ee1105e63020923a631a9a2a00beb71a7ba3768bfd",
+  "license": "node-v24.22.0-darwin-arm64/LICENSE"
+}

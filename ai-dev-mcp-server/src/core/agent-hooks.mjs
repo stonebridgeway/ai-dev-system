@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteFile } from "./atomic-files.mjs";
+import { explicitRuntimeHome } from "./runtime-home.mjs";
 import { runProcess } from "./process-runner.mjs";
 import { LEFTOVER_PATTERNS, PLACEHOLDER_VALUE, PROTECTED_CONFIG_FILES, SECRET_FILE_PATTERN, SECRET_PATTERNS } from "./change-hygiene.mjs";
 
-export const HOOK_FILES = ["lib.mjs", "fact-force.mjs", "git-hooks.mjs", "guard.mjs", "post-edit.mjs", "session-start.mjs", "session-end.mjs", "cost-capture.mjs", "compact-advisor.mjs", "stop-check.mjs"];
+export const HOOK_FILES = ["lib.mjs", "semver-lite.mjs", "http-proxy.mjs", "supply-chain.mjs", "fact-force.mjs", "git-hooks.mjs", "guard.mjs", "post-edit.mjs", "session-start.mjs", "session-end.mjs", "cost-capture.mjs", "compact-advisor.mjs", "stop-check.mjs", "with-node.sh"];
 export const HOOK_TARGETS = ["claude", "cursor", "git"];
 export const HOOK_PROFILES = ["minimal", "standard", "strict"];
 export const HOOKS_RELATIVE_DIR = ".ai-dev/hooks";
@@ -14,6 +15,17 @@ export const GIT_HOOKS_RELATIVE_DIR = ".ai-dev/git-hooks";
 /** The git hooks we install. Each is a stub that hands the work to `git-hooks.mjs`. */
 export const GIT_HOOK_NAMES = ["pre-commit", "pre-push"];
 const COMMAND_MARKER = ".ai-dev/hooks/";
+/**
+ * The shell script that finds Node for a hook (hooks/with-node.sh). A hook
+ * command used to be a bare `node`, which an editor or Git client opened from
+ * the Dock or a launcher does not have on its PATH.
+ */
+export const NODE_LAUNCHER = "with-node.sh";
+/** The Node the hooks were installed with, on this machine; git ignores it. */
+export const NODE_PATH_FILE = ".node-path";
+
+/** Beside the hooks: the runtime folder `AI_DEV_HOME` named for the server that installed them. */
+export const RUNTIME_HOME_FILE = ".ai-dev-home";
 
 /**
  * Default `.ai-dev/policy.json`: hookify-style rules the project can extend.
@@ -75,6 +87,17 @@ export function defaultPolicy(profile = "standard") {
     // silent. pre-commit scans the staged diff for the findings hygiene calls
     // blocking; pre-push reads the active task's latest verification.
     git_hooks: { pre_commit: "block", pre_push: "warn" },
+    // Supply-chain guard (hooks/supply-chain.mjs), on under standard and
+    // strict: a package an install command names is looked up before the
+    // install runs. Malware is refused, a release younger than
+    // min_release_age_hours is refused, one younger than warn_release_age_days
+    // is warned about. `osv: false` keeps package names away from api.osv.dev.
+    supply_chain: { enabled: true, min_release_age_hours: 24, warn_release_age_days: 7, osv: true, timeout_ms: 3000, max_packages: 8 },
+    // When back- or front-end code or a dependency manifest changed after the
+    // last run_security_scan, the Stop hook sends the agent back to run the
+    // security review ("block", once per stop), tells the user ("remind"), or
+    // says nothing ("off").
+    security_review_on_stop: profile === "minimal" ? "off" : "block",
     allow_commands: [],
     rules: [
       {
@@ -135,17 +158,32 @@ export function renderHookPatterns() {
   };
 }
 
-function command(script, ...args) {
-  return { type: "command", command: ["node", `${HOOKS_RELATIVE_DIR}/${script}`, ...args].join(" ") };
+/**
+ * The command line that runs one hook script. On macOS and Linux it goes
+ * through the Node launcher; on Windows an app started from the Start menu
+ * has the user's PATH, where the Node installer and nvm-windows put `node`,
+ * and a `/bin/sh` command would need Git's shell to run at all.
+ *
+ * @param {string} script
+ * @param {string[]} args
+ * @param {string} [platform]
+ * @returns {string}
+ */
+export function hookCommandLine(script, args = [], platform = process.platform) {
+  return platform === "win32"
+    ? ["node", `${HOOKS_RELATIVE_DIR}/${script}`, ...args].join(" ")
+    : ["/bin/sh", `${HOOKS_RELATIVE_DIR}/${NODE_LAUNCHER}`, script, ...args].join(" ");
 }
 
 /**
  * Claude Code hook registrations for a profile.
  *
  * @param {string} profile
+ * @param {{ platform?: string }} [options]
  * @returns {Record<string, object[]>}
  */
-export function claudeHookEntries(profile = "standard") {
+export function claudeHookEntries(profile = "standard", { platform = process.platform } = {}) {
+  const command = (script, ...args) => ({ type: "command", command: hookCommandLine(script, args, platform) });
   const full = profile !== "minimal";
   const hooks = {
     PreToolUse: [
@@ -235,8 +273,8 @@ export const CURSOR_HOOKS_CONTRACT = {
  * What a person with a real Cursor has to do to settle what this adapter could
  * not, and what they should see if it works.
  *
- * The contract above records its confidence claim by claim because cursor.com
- * is unreachable from where this was built (Д-2). That leaves three statements
+ * The contract above records its confidence claim by claim because not every
+ * claim could be checked against a running Cursor. That leaves three statements
  * standing on secondary sources: whether Cursor knows the three session events,
  * whether the first registration for an event shadows the rest, and whether a
  * denial actually reaches the user. Each one is five minutes in front of a real
@@ -291,9 +329,9 @@ export function cursorVerificationPlan({ contract = CURSOR_HOOKS_CONTRACT, state
   };
 }
 
-function cursorHooksV1(profile) {
+function cursorHooksV1(profile, platform) {
   const full = profile !== "minimal";
-  const entry = (script, ...args) => ({ command: ["node", `${HOOKS_RELATIVE_DIR}/${script}`, ...args, "--cursor"].join(" ") });
+  const entry = (script, ...args) => ({ command: hookCommandLine(script, [...args, "--cursor"], platform) });
   const hooks = {
     beforeShellExecution: [entry("guard.mjs", "bash")],
     sessionEnd: [entry("session-end.mjs")],
@@ -317,18 +355,31 @@ export const CURSOR_HOOKS_FORMATS = [...CURSOR_HOOKS_BUILDERS.keys()];
  * format version.
  *
  * @param {string} profile
- * @param {{ version?: number }} [options]
+ * @param {{ version?: number, platform?: string }} [options]
  * @returns {object}
  */
-export function cursorHooksDocument(profile = "standard", { version = CURSOR_HOOKS_FORMAT_VERSION } = {}) {
+export function cursorHooksDocument(profile = "standard", { version = CURSOR_HOOKS_FORMAT_VERSION, platform = process.platform } = {}) {
   const build = CURSOR_HOOKS_BUILDERS.get(Number(version));
   if (!build) throw new Error(`Unknown .cursor/hooks.json format version: ${version}. Known: ${CURSOR_HOOKS_FORMATS.join(", ")}`);
-  return build(HOOK_PROFILES.includes(profile) ? profile : "standard");
+  return build(HOOK_PROFILES.includes(profile) ? profile : "standard", platform);
 }
 
 function isOurs(entry) {
   const hooks = Array.isArray(entry?.hooks) ? entry.hooks : [entry];
   return hooks.some((hook) => String(hook?.command || "").includes(COMMAND_MARKER));
+}
+
+/**
+ * A registration group with the AI Dev commands taken out, or null when
+ * nothing else was in it. Dropping the whole group took with it the hooks a
+ * person had added next to ours — and Claude Code's `/hooks` adds a hook for
+ * an event without a matcher to the group already there.
+ */
+function withoutOurs(entry) {
+  if (!Array.isArray(entry?.hooks)) return isOurs(entry) ? null : entry;
+  const kept = entry.hooks.filter((hook) => !String(hook?.command || "").includes(COMMAND_MARKER));
+  if (!kept.length) return null;
+  return kept.length === entry.hooks.length ? entry : { ...entry, hooks: kept };
 }
 
 /**
@@ -343,7 +394,7 @@ export function mergeClaudeSettings(current, entries) {
   const document = current && typeof current === "object" && !Array.isArray(current) ? structuredClone(current) : {};
   const hooks = document.hooks && typeof document.hooks === "object" ? { ...document.hooks } : {};
   for (const event of Object.keys(hooks)) {
-    if (Array.isArray(hooks[event])) hooks[event] = hooks[event].filter((entry) => !isOurs(entry));
+    if (Array.isArray(hooks[event])) hooks[event] = hooks[event].map(withoutOurs).filter(Boolean);
     if (!hooks[event]?.length) delete hooks[event];
   }
   for (const [event, list] of Object.entries(entries)) {
@@ -402,9 +453,11 @@ export function cursorHookWarnings(current, ours) {
 /**
  * The stub git runs. It is three lines of `sh` rather than a Node script so the
  * shebang question never comes up: Git for Windows runs hooks through its own
- * shell, and `node` is looked up on PATH exactly as it is on a Unix box. The
- * path to the implementation is relative to the stub, so moving or cloning the
- * repository keeps it working.
+ * shell. Node is found by the launcher, not by PATH alone: a Git client opened
+ * from the Dock commits without the shell's PATH, and the stub's own
+ * folder comes from `${0%/*}` rather than `dirname`, which needs one too.
+ * Paths are relative to the stub, so moving or cloning the repository keeps
+ * it working.
  *
  * @param {string} hook - `pre-commit` or `pre-push`.
  * @returns {string}
@@ -414,7 +467,7 @@ export function gitHookStub(hook) {
     "#!/bin/sh",
     "# Installed by ai-dev-system (install_agent_hooks, targets: [\"git\"]).",
     "# Delete .ai-dev/git-hooks or unset core.hooksPath to remove it.",
-    `exec node "$(dirname "$0")/../hooks/git-hooks.mjs" ${hook} "$@"`,
+    `exec /bin/sh "\${0%/*}/../hooks/${NODE_LAUNCHER}" git-hooks.mjs ${hook} "$@"`,
     ""
   ].join("\n");
 }
@@ -467,10 +520,17 @@ async function readText(target) {
  * Install the hook scripts, patterns, policy, and harness registrations into
  * a repository.
  *
- * @param {{ projectRoot: string, hooksSourceDir: string, targets?: string[], profile?: string, overwrite?: boolean, dryRun?: boolean, cursorFormatVersion?: number }} input
+ * `nodePath` is recorded for the Node launcher (`.ai-dev/hooks/.node-path`,
+ * kept out of git): the Node running this server, which the client found.
+ * `runtimeHome` — the folder `AI_DEV_HOME` names for this server — is recorded
+ * beside it (`.ai-dev-home`), so hooks a client runs without that variable keep
+ * their state where the server does. In a container
+ * neither is the host's, so nothing is recorded there.
+ *
+ * @param {{ projectRoot: string, hooksSourceDir: string, targets?: string[], profile?: string, overwrite?: boolean, dryRun?: boolean, cursorFormatVersion?: number, platform?: string, nodePath?: string, runtimeHome?: string }} input
  * @returns {Promise<{ profile: string, targets: string[], written: string[], updated: string[], skipped: string[], planned: string[], backups: string[], warnings: string[], cursor_format_version: number }>}
  */
-export async function installAgentHooks({ projectRoot, hooksSourceDir, targets = ["claude"], profile = "standard", overwrite = false, dryRun = false, cursorFormatVersion = CURSOR_HOOKS_FORMAT_VERSION }) {
+export async function installAgentHooks({ projectRoot, hooksSourceDir, targets = ["claude"], profile = "standard", overwrite = false, dryRun = false, cursorFormatVersion = CURSOR_HOOKS_FORMAT_VERSION, platform = process.platform, nodePath = process.env.AI_DEV_RUNTIME === "docker" ? "" : process.execPath, runtimeHome = process.env.AI_DEV_RUNTIME === "docker" ? "" : explicitRuntimeHome(process.env) }) {
   if (!HOOK_PROFILES.includes(profile)) throw new Error(`Unknown hook profile: ${profile}. Known: ${HOOK_PROFILES.join(", ")}`);
   for (const target of targets) {
     if (!HOOK_TARGETS.includes(target)) throw new Error(`Unknown hooks target: ${target}. Known: ${HOOK_TARGETS.join(", ")}`);
@@ -503,6 +563,28 @@ export async function installAgentHooks({ projectRoot, hooksSourceDir, targets =
     await writeManaged(`${HOOKS_RELATIVE_DIR}/${name}`, source);
   }
   await writeManaged(`${HOOKS_RELATIVE_DIR}/patterns.json`, `${JSON.stringify(renderHookPatterns(), null, 2)}\n`);
+  // The launcher runs through `/bin/sh`, but an executable bit costs nothing
+  // and lets a person run it by hand.
+  if (!dryRun) await fs.chmod(path.join(root, ...HOOKS_RELATIVE_DIR.split("/"), NODE_LAUNCHER), 0o755).catch(() => undefined);
+  // This machine's Node, for the launcher: forward slashes, which Git's shell
+  // on Windows reads too. The hooks are committed; this file is not.
+  await writeManaged(`${HOOKS_RELATIVE_DIR}/.gitignore`, `${NODE_PATH_FILE}\n${RUNTIME_HOME_FILE}\n`);
+  // Shell scripts keep the line endings they are written with: Git for Windows
+  // with core.autocrlf checks text out with CRLF, and a shell script with CRLF
+  // is a syntax error.
+  await writeManaged(`${HOOKS_RELATIVE_DIR}/.gitattributes`, "*.sh text eol=lf\n");
+  if (nodePath) await writeManaged(`${HOOKS_RELATIVE_DIR}/${NODE_PATH_FILE}`, `${platform === "win32" ? nodePath.replaceAll("\\", "/") : nodePath}\n`);
+  const runtimeRecord = `${HOOKS_RELATIVE_DIR}/${RUNTIME_HOME_FILE}`;
+  if (runtimeHome) {
+    await writeManaged(runtimeRecord, `${runtimeHome}\n`);
+  } else if (await readText(path.join(root, ...runtimeRecord.split("/"))) !== null) {
+    // AI_DEV_HOME is gone from this server: its hooks follow it to ~/.ai-dev.
+    if (dryRun) planned.push(`${runtimeRecord} (remove)`);
+    else {
+      await fs.rm(path.join(root, ...runtimeRecord.split("/")), { force: true });
+      updated.push(`${runtimeRecord} (removed)`);
+    }
+  }
 
   const policyPath = path.join(root, ...POLICY_RELATIVE_PATH.split("/"));
   const existingPolicy = await readText(policyPath);
@@ -525,7 +607,7 @@ export async function installAgentHooks({ projectRoot, hooksSourceDir, targets =
   if (targets.includes("claude")) {
     const settingsPath = path.join(root, ".claude", "settings.json");
     const current = await readJson(settingsPath);
-    const next = mergeClaudeSettings(current, claudeHookEntries(profile));
+    const next = mergeClaudeSettings(current, claudeHookEntries(profile, { platform }));
     const nextText = `${JSON.stringify(next, null, 2)}\n`;
     const currentText = current === null ? null : await readText(settingsPath);
     if (currentText === nextText) {
@@ -560,6 +642,8 @@ export async function installAgentHooks({ projectRoot, hooksSourceDir, targets =
         // lost its executable bit to a checkout, an unzip, or a copy.
         if (!dryRun) await fs.chmod(path.join(root, ...relativePath.split("/")), 0o755).catch(() => undefined);
       }
+      // The stubs are shell scripts without an extension: all of them LF.
+      await writeManaged(`${GIT_HOOKS_RELATIVE_DIR}/.gitattributes`, "* text eol=lf\n");
       if (foreign) {
         warnings.push(`core.hooksPath already points at ${configured}; it was left alone. Point it at ${GIT_HOOKS_RELATIVE_DIR}, or copy the two stubs there, to run these hooks.`);
       } else if (dryRun) {
@@ -575,13 +659,13 @@ export async function installAgentHooks({ projectRoot, hooksSourceDir, targets =
   if (targets.includes("cursor")) {
     const cursorPath = path.join(root, ".cursor", "hooks.json");
     const current = await readJson(cursorPath);
-    const ours = cursorHooksDocument(profile, { version: cursorFormatVersion });
+    const ours = cursorHooksDocument(profile, { version: cursorFormatVersion, platform });
     warnings.push(...cursorHookWarnings(current, ours));
     await writeManaged(".cursor/hooks.json", `${JSON.stringify(mergeCursorHooks(current, ours), null, 2)}\n`);
   }
 
   // What this adapter could not check itself, said where the person installing
-  // will see it rather than only in a source comment (Д-2).
+  // will see it rather than only in a source comment.
   const cursorUnverified = targets.includes("cursor") ? cursorVerificationPlan().unverified : [];
   return {
     profile,
@@ -606,9 +690,10 @@ export async function installAgentHooks({ projectRoot, hooksSourceDir, targets =
  * Report what is installed.
  *
  * @param {string} projectRoot
+ * @param {{ platform?: NodeJS.Platform }} [options]
  * @returns {Promise<object>}
  */
-export async function agentHooksStatus(projectRoot) {
+export async function agentHooksStatus(projectRoot, { platform = process.platform } = {}) {
   const root = path.resolve(projectRoot);
   const files = {};
   for (const name of [...HOOK_FILES, "patterns.json"]) {
@@ -630,6 +715,11 @@ export async function agentHooksStatus(projectRoot) {
   const cursor = await readJson(path.join(root, ".cursor", "hooks.json")).catch(() => null);
   const count = (document) => Object.values(document?.hooks ?? {}).flat().filter(isOurs).length;
   const cursorVersion = cursor === null ? null : Number(cursor?.version) || null;
+  const recordedNode = (await readText(path.join(root, ...HOOKS_RELATIVE_DIR.split("/"), NODE_PATH_FILE)))?.trim() || null;
+  const commands = [claude, cursor].flatMap((document) => Object.values(document?.hooks ?? {}).flat())
+    .flatMap((entry) => (Array.isArray(entry?.hooks) ? entry.hooks : [entry]))
+    .map((hook) => String(hook?.command ?? ""))
+    .filter((line) => line.includes(COMMAND_MARKER));
   return {
     project_path: root,
     hooks_dir: HOOKS_RELATIVE_DIR,
@@ -648,6 +738,12 @@ export async function agentHooksStatus(projectRoot) {
     // A file written for a format this adapter does not build is the signal to
     // add a builder, not to overwrite it.
     cursor_format_supported: cursorVersion === null ? null : CURSOR_HOOKS_FORMATS.includes(cursorVersion),
-    cursor_contract: CURSOR_HOOKS_CONTRACT
+    cursor_contract: CURSOR_HOOKS_CONTRACT,
+    // Registrations still written by 2.x run a bare `node`, which a client
+    // started from the Dock may not find; install_agent_hooks rewrites them.
+    // On Windows `node …` is what it writes, so there is nothing to rewrite.
+    bare_node_commands: platform === "win32" ? 0 : commands.filter((line) => /^node\s/.test(line)).length,
+    recorded_node: recordedNode,
+    recorded_node_exists: recordedNode ? await fs.access(recordedNode).then(() => true, () => false) : null
   };
 }

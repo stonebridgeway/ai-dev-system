@@ -1,0 +1,116 @@
+name: Windows installer
+
+# The Windows installer (docs/DESKTOP.md, "The desktop install"): built on
+# windows-latest by the one command a person runs on a Windows machine,
+# `npm run dist:win`, and kept as the run's artifact. On a v* tag of the
+# production repository it is also put on that tag's GitHub release — as a
+# draft when the release does not exist yet: electron-updater reads only
+# published releases, so an update reaches people when the owner publishes it.
+#
+# Signing comes from the environment: a certificate in WIN_CSC_LINK with its
+# password in WIN_CSC_KEY_PASSWORD, or Azure Trusted Signing named by the
+# AI_DEV_SIGN_AZURE_* variables and AI_DEV_SIGN_PUBLISHER, the certificate's
+# name, which the updater checks every update against — the build stops when
+# one of the four is missing (desktop/scripts/runtime-bundle.mjs). Without
+# either the installer is built unsigned.
+
+on:
+  pull_request:
+    paths:
+      - "desktop/**"
+      - "ai-dev-mcp-server/**"
+      - "docker/public-seed/**"
+      - ".github/workflows/desktop-windows.yml"
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the installer (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            ai-dev-mcp-server/package-lock.json
+            desktop/package-lock.json
+
+      - name: Install the server's dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --no-audit --no-fund
+
+      - name: Install the app's dependencies
+        working-directory: desktop
+        run: npm ci --no-audit --no-fund
+
+      - name: Desktop unit tests
+        working-directory: desktop
+        run: npm run test:unit
+
+      - name: Build the installer
+        working-directory: desktop
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          AI_DEV_SIGN_AZURE_ENDPOINT: ${{ vars.AI_DEV_SIGN_AZURE_ENDPOINT }}
+          AI_DEV_SIGN_AZURE_ACCOUNT: ${{ vars.AI_DEV_SIGN_AZURE_ACCOUNT }}
+          AI_DEV_SIGN_AZURE_PROFILE: ${{ vars.AI_DEV_SIGN_AZURE_PROFILE }}
+          AI_DEV_SIGN_PUBLISHER: ${{ vars.AI_DEV_SIGN_PUBLISHER }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: npm run dist:win
+
+      - name: Keep the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            dist/windows/installer/*.exe
+            dist/windows/installer/*.blockmap
+            dist/windows/installer/latest.yml
+            dist/windows/build-report.json
+          if-no-files-found: error
+
+  release:
+    # The production repository only, on a version tag: a fork that works in
+    # its own main publishes nothing.
+    if: github.repository == 'stonebridgeway/ai-dev-system' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Take the installer
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          # The artifact keeps the paths below dist/windows: installer/…, build-report.json.
+          path: artifact
+
+      - name: Put it on the tag's release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --title "$TAG" --notes "Draft: publish it to send the update to installed apps."
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            artifact/installer/*.exe \
+            artifact/installer/*.blockmap \
+            artifact/installer/latest.yml

@@ -8,8 +8,7 @@
  * skills imported from ECC: their `use_when` is English, and the tasks this
  * server is asked to route are usually Russian. "настроить разработку через
  * тесты" and `tdd-workflow`'s "test-driven development" share no substring, so
- * the skill scored zero and never reached the answer (docs/DEFECTS.md,
- * Д-1).
+ * the skill scored zero and never reached the answer.
  *
  * So the task is expanded before it is scored: a concept the task names in
  * Russian contributes the English terms the catalogue uses for the same thing.
@@ -97,7 +96,7 @@ const CONCEPT_TRIGGERS = (() => {
  * The `ru` regexes are the Russian bridge. English tasks used to come back
  * empty — the table was written as a bridge *from* Russian — and an empty
  * concept list stopped `pickTaskSpecialist` before it scored anything, so no
- * English task ever reached an imported skill (Д-29). An English task now
+ * English task ever reached an imported skill. An English task now
  * matches on the concept's own English vocabulary.
  *
  * @param {string} task
@@ -205,7 +204,7 @@ export function stackAlignment(item, ownTerms) {
  *
  * A skill author who writes "Do not trigger for … code review" has answered the
  * routing question for that situation, and reading only the first half of the
- * sentence turns the answer upside down (docs/DEFECTS.md, Д-20). The
+ * sentence turns the answer upside down. The
  * clause runs to the end of its sentence, which is where such a list ends.
  *
  * No `\b` on the Russian branch: word boundaries are ASCII-only in JavaScript.
@@ -261,7 +260,7 @@ export function splitSituationText(text) {
  * amount against it. It is the author's own sentence either way, and a skill
  * whose `use_when` reads "do not trigger for … code review" should not be the
  * pick for a code review — which is what happened while only the first half was
- * read (Д-20).
+ * read.
  *
  * @param {object} item - Registry entry.
  * @param {string[]} terms - From {@link expandTaskVocabulary}.
@@ -306,7 +305,7 @@ export function specialistMatchScore(item, terms) {
     // sentences share their nouns — "do not trigger for … implementation
     // requests whose acceptance conditions are already clear" sits under a
     // use_when about acceptance criteria — and subtracting a word that appears
-    // on both sides would cancel the skill on its own subject (Д-20).
+    // on both sides would cancel the skill on its own subject.
     if (!hit && !FUNCTION_WORDS.has(term) && excluded.includes(term)) {
       score -= 3;
       situationHits -= 1;

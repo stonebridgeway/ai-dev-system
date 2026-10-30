@@ -17,7 +17,7 @@
 // repositories and cannot be updated with the server, so it stays a recorder.
 import fs from "node:fs";
 import path from "node:path";
-import { git, hooksDisabled, memoryKeysOf, migrateSessions, normalizeInput, projectIdOf, projectRootOf, readStdin, relativePosix, sessionsDirectory } from "./lib.mjs";
+import { git, hooksDisabled, identityRootOf, memoryKeysOf, migrateSessions, normalizeInput, projectIdOf, readStdin, relativePosix, sessionsDirectory } from "./lib.mjs";
 
 const MAX_TRANSCRIPT_BYTES = 16 * 1024 * 1024;
 /** Caps on the observation log: newest events win, and one file stays small enough to read whole. */
@@ -119,7 +119,9 @@ async function main() {
   if (!input.transcriptPath) process.exit(0);
   const summary = extract(input.transcriptPath);
   if (!summary || summary.userMessages.length < 2) process.exit(0);
-  const projectRoot = projectRootOf(input.cwd);
+  // The capture is memory, keyed by the project the server names for this
+  // directory: in a monorepo, the package.
+  const projectRoot = identityRootOf(input.cwd);
   const isGit = Boolean(git(projectRoot, ["rev-parse", "--show-toplevel"]));
   // Captures land under the repository key so a task worktree and the main
   // checkout share one memory; the project key stays on the record.

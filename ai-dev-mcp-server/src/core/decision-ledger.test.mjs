@@ -56,6 +56,14 @@ test("records numbered ADR files, lists newest first, and supersedes older decis
   assert.match(summary, /ADR-0001 \(superseded\)/);
 });
 
+test("a list field sent as one string is a list of one", async (t) => {
+  const root = await tempProject(t);
+  const recorded = await recordDecision(root, {
+    title: "Reports export CSV", decision: "Export plain CSV.", alternatives: "XLSX through a library", consequences: "", tags: "reports"
+  });
+  assert.deepEqual([recorded.record.alternatives, recorded.record.consequences, recorded.record.tags], [["XLSX through a library"], [], ["reports"]]);
+});
+
 test("render and parse round-trip preserves fields and rejects bad input", async (t) => {
   const record = {
     id: "ADR-0007",

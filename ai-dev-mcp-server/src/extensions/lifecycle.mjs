@@ -12,11 +12,11 @@
  *
  * Everything the arc touches arrives through `host`: the task store, project
  * identity and detection, project state capture, the frontend product state,
- * the Archify receipt store and the project-card writers. The four sibling
- * tools it drives — `recommend_skills`, `run_quality_gate`, `run_frontend_qa`
- * and `prepare_pull_request` — arrive the same way, as host wrappers over the
- * registry, so each stays the single implementation of its own job and none of
- * these calls is counted twice in the usage ledger.
+ * the Archify receipt store and the project-card writers. The five sibling
+ * tools it drives — `recommend_skills`, `run_quality_gate`, `run_frontend_qa`,
+ * `run_security_scan` and `prepare_pull_request` — arrive the same way, as
+ * host wrappers over the registry, so each stays the single implementation of
+ * its own job and none of these calls is counted twice in the usage ledger.
  *
  * The judgements are pure and live in `src/core`: whether a run passed and
  * what it proves in `task-verification.mjs`, the completion note and what to
@@ -42,6 +42,7 @@ import { compileContextPack } from "../core/context-compiler.mjs";
 import { loadContextExtras } from "../core/context-extras.mjs";
 import { bindEvidence } from "../core/evidence.mjs";
 import { evaluateFrontendProductGate } from "../core/frontend-product-quality.mjs";
+import { beginTaskView, checkpointView, completeView, verifyView, wantsDetails } from "../core/response-budget.mjs";
 import { taskLooksFrontendProduct } from "../core/skill-recommendation.mjs";
 import {
   activeWorktree,
@@ -353,7 +354,9 @@ async function verifyTask(host, {
         type: "quality_gate",
         result: {
           status: "unavailable",
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
+          // The way forward, when the gate knows one: no gate file yet.
+          ...(typeof error?.hint === "string" && error.hint ? { hint: error.hint } : {})
         }
       });
     }
@@ -433,7 +436,7 @@ async function verifyTask(host, {
   if (run_security_scan) {
     // The rendered report is dropped — it is the same scan as prose — but
     // `next_step` stays: it is the only line that says a scan came back
-    // `unchecked` because nothing could run (docs/DEFECTS.md, Д-55).
+    // `unchecked` because nothing could run.
     const { markdown: _markdown, ...scan } = await host.runSecurityScan({
       project_path: projectRoot,
       scanners: Array.isArray(security_scanners) ? security_scanners : undefined
@@ -616,6 +619,11 @@ async function completeTask(host, {
   };
 }
 
+/** The summary an agent acts on, or the whole record when the call or the environment asks for it. */
+function shaped(args, result, view) {
+  return wantsDetails(args) ? result : view(result);
+}
+
 /**
  * @param {object} host - Shared runtime services (see `src/tool-extensions.mjs`).
  * @returns {{ definitions: Array<object>, handlers: object, readOnly: Array<string> }}
@@ -629,6 +637,7 @@ export function createLifecycleTools(host) {
         inputSchema: {
           type: "object",
           properties: {
+            include_details: { type: "boolean", default: false, description: "Return the whole task record instead of the summary. get_task returns it too." },
             project_path: { type: "string" },
             project_name: { type: "string" },
             task: { type: "string" },
@@ -647,6 +656,7 @@ export function createLifecycleTools(host) {
         inputSchema: {
           type: "object",
           properties: {
+            include_details: { type: "boolean", default: false, description: "Return the whole task record instead of the summary. get_task returns it too." },
             task_id: { type: "string" },
             summary: { type: "string" },
             changed_files: {
@@ -680,6 +690,7 @@ export function createLifecycleTools(host) {
         inputSchema: {
           type: "object",
           properties: {
+            include_details: { type: "boolean", default: false, description: "Return the whole task record instead of the summary. get_task returns it too." },
             task_id: { type: "string" },
             run_quality: { type: "boolean", default: true },
             quality_labels: { type: "array", items: { type: "string" }, default: [] },
@@ -701,6 +712,7 @@ export function createLifecycleTools(host) {
         inputSchema: {
           type: "object",
           properties: {
+            include_details: { type: "boolean", default: false, description: "Return the whole task record instead of the summary. get_task returns it too." },
             task_id: { type: "string" },
             summary: { type: "string" },
             allow_waived: { type: "boolean", default: false },
@@ -713,10 +725,10 @@ export function createLifecycleTools(host) {
       },
     ],
     handlers: {
-      begin_task: (args) => beginTask(host, args),
-      checkpoint_task: (args) => checkpointTask(host, args),
-      verify_task: (args) => verifyTask(host, args),
-      complete_task: (args) => completeTask(host, args)
+      begin_task: async (args) => shaped(args, await beginTask(host, args), beginTaskView),
+      checkpoint_task: async (args) => shaped(args, await checkpointTask(host, args), checkpointView),
+      verify_task: async (args) => shaped(args, await verifyTask(host, args), verifyView),
+      complete_task: async (args) => shaped(args, await completeTask(host, args), completeView)
     },
     readOnly: []
   };

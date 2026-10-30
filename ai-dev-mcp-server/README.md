@@ -7,28 +7,55 @@ evidence-bound task completion.
 
 ## Runtime
 
-- `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.29.0`.
-- `src/mcp-stdio-legacy.mjs`: single source of truth for tool dispatch (`callTool`), the
-  `tools` contract list, and the hand-rolled JSON-RPC fallback server (`start:legacy`).
-- `src/mcp-stdio.mjs`: thin compatibility shim that re-exports the legacy module for
-  `server.mjs`, the scripts, and the tests.
+- `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.30.0`.
+- `src/mcp-stdio.mjs`: tool dispatch (`callTool`), the `tools` contract list, and the
+  hand-rolled JSON-RPC fallback server (`startLegacyServer`, `npm run start:legacy`);
+  `server.mjs`, the scripts and the tests import it.
 - `src/tool-definitions.mjs`: typed MCP tool contracts, separated from runtime dispatch.
+- `src/extensions/`: tools added as extensions, registered in `src/tool-extensions.mjs`.
 - `src/core/`: path, command, process, project identity, context, task, routing, outcome, dashboard,
   overlay, frontend-quality, and distribution modules.
-- Node.js: 22.12+ on `PATH` (any distribution). No agent-specific runtime is required.
-- Regenerable runtime data lives under the **AI Dev home** — `AI_DEV_HOME`, default `~/.ai-dev`:
+- Node.js: 22.16+ or 24+ on `PATH` (any distribution) — all of search lives in `node:sqlite`,
+  which has FTS5 from 22.16; on an older Node, every search tool answers with the version it
+  needs. No Python and no agent-specific runtime is required.
+- Runtime data lives under the **AI Dev home** — `AI_DEV_HOME`, default `~/.ai-dev`:
   - `~/.ai-dev/state` — task lifecycle, skill outcomes, pilots (override: `AI_DEV_STATE_ROOT`)
+  - `~/.ai-dev/config.json` — the settings the desktop app and `settings_set` change; a variable
+    set in the environment still wins
+  - `~/.ai-dev/vault` — the vault of a package or Windows install, made from the package's seed
+    and kept current with it (a clone reads its `docker/public-seed`; override: `AI_DEV_VAULT_ROOT`)
   - `~/.ai-dev/cache/search-index` — SQLite + dense index (override: `AI_DEV_SEARCH_INDEX_DIR`)
   - `~/.ai-dev/artifacts/frontend-qa` — QA screenshots (override: `AI_DEV_FRONTEND_QA_ARTIFACT_ROOT`)
-  - `~/.ai-dev/models/bge-m3` — embedding model (override: `BGE_M3_MODEL_DIR`)
-  - A pre-existing `~/.codex/<...>` layout is used automatically if the `~/.ai-dev` path is absent,
-    so installs migrated from the Codex-only runtime keep their history.
+  - `~/.ai-dev/models/bge-m3-onnx` — the ONNX embedding model `--model` installs
+    (override: `BGE_M3_ONNX_DIR`)
+  - `~/.ai-dev/cache/dense-model` — the record of which model files hashed right, so a
+    check does not read 570 MB again
+  - `~/.ai-dev/app` — the runtime copies that `npx … setup` and the Windows app make, one folder
+    per `<version>-<fingerprint>`, and the Windows install's link to the current one, `app/current`
+  - `~/.ai-dev/run` — the daemon's descriptor, lock and usually its socket, a folder of mode 0700
+  - `~/.ai-dev/logs` — the daemon's log, `daemon.log`
+  - `~/.ai-dev/backups` — the archives `ai-dev backup` writes
+  - What the Codex-era runtime kept under `.codex` (`state/ai-dev-system`, its search index,
+    artifacts and models) moves into the runtime home once, at the first start, and is recorded in
+    `state/runtime-home-migration.json`: from `~/.codex` into `~/.ai-dev`, or, with `AI_DEV_HOME`
+    set, from `$AI_DEV_HOME/.codex` — where 2.x read it for that install — into `$AI_DEV_HOME`. A
+    place its own variable names is not looked for there, the rest of `.codex` is Codex's own and
+    stays, and `.codex` is not read after that.
 
 Start:
 
 ```bash
-AI_DEV_VAULT_ROOT="/path/to/vault" node src/server.mjs
+node bin/ai-dev.mjs mcp
 ```
+
+That is what a client runs: MCP on stdin and stdout, served by the daemon. `AI_DEV_VAULT_ROOT`
+names a vault of your own; without it a clone reads its `docker/public-seed` and a package its
+`~/.ai-dev/vault`. From a plain clone no vault is needed, and `npm run setup` — or
+`npm run clients:install` on its own — writes the entry into Claude Code, Claude Desktop, Cursor,
+VS Code, Codex and Gemini for you: the absolute path of the Node that ran it, then
+`bin/ai-dev.mjs mcp`, no vault variable, `"type": "stdio"` for VS Code and Claude Code, and
+`servers` instead of `mcpServers` for VS Code. `node src/server.mjs`, what 2.x configs run, serves
+the same tools in the client's own process.
 
 The server negotiates MCP over stdio and exposes structured tool results, Resources, resource
 templates, Prompts, progress notifications, and tool annotations. Any stdio MCP client works —
@@ -37,9 +64,9 @@ Claude Code / Desktop, Cursor, VS Code, Gemini, Codex. Minimal client entry:
 ```jsonc
 {
   "mcpServers": {
-    "ai-dev-system": {
-      "command": "node",
-      "args": ["/path/to/vault/09-mcp/ai-dev-mcp-server/src/server.mjs"],
+    "ai-dev": {
+      "command": "/absolute/path/to/node",
+      "args": ["/path/to/vault/09-mcp/ai-dev-mcp-server/bin/ai-dev.mjs", "mcp"],
       "env": { "AI_DEV_VAULT_ROOT": "/path/to/vault" }
     }
   }
@@ -99,7 +126,9 @@ UI/UX design intelligence:
   effects, anti-patterns, and optional bounded persistence to
   `.ai-dev/frontend/design-system.md`
 - `query_ui_ux_knowledge`: focused local lookup by domain or implementation stack
-- curated `ui-ux-pro-max` core pinned to an audited upstream commit; no network or Python packages
+- curated `ui-ux-pro-max` core pinned to an audited upstream commit; no network and no Python
+  packages, but both tools above run the dataset's own Python script — the only tools that need
+  Python 3 (`AI_DEV_PYTHON`); without it they say so and `doctor` marks `ui_ux_knowledge` skipped
 - deterministic Russian-to-English query hints for common frontend concepts
 - generated recommendations remain drafts; rendered UI and inspected browser evidence are required
 
@@ -182,7 +211,9 @@ Resources are bounded views, not a dump of the vault.
 - `review_frontend_beta`
 - `build_frontend_product`
 - `generate_frontend_references`
+- `learn_from_task`
 - `refresh_project_context`
+- `build_architecture_diagram`
 
 ## Skill Quality
 
@@ -214,66 +245,85 @@ displacing the exact workflow skill. Golden cases live in:
 ## Semantic search (BGE-M3)
 
 Hybrid search works without a model: SQLite FTS, sparse aliases, and deterministic
-intent routing are always on. The optional local `BAAI/bge-m3` reranker improves
-concept and document retrieval. The Docker image never bundles the weights
-(~2.3 GB); the container mounts a host folder read-only at `/models/bge-m3`.
+intent routing are always on. The optional local BGE-M3 model improves concept and
+document retrieval. The Docker image never bundles the weights: they go into the
+data volume once, or a host folder holding `bge-m3-onnx/` is mounted read-only at
+`/models`, and the image reads `/models/bge-m3-onnx` first when it holds anything,
+else the volume's ([With the Docker image](#with-the-docker-image)).
 
 ### From a source checkout
 
 ```bash
-npm run setup -- --dense
+npm run setup -- --model
 ```
 
-That builds the Python environment, downloads the weights (~2.3 GB) into the
-directory the loader expects (`$BGE_M3_MODEL_DIR`, else
-`~/.ai-dev/models/bge-m3`), and then embeds the documents already in the search
-index — the last part is what makes a query semantic, and the weights on their
-own do not do it. Adding notes later leaves them without a vector until the next
-`npm run setup -- --dense`, which re-embeds only what changed and reports the
-coverage it ended with.
+That downloads the pinned ONNX export `Xenova/bge-m3` — five files, int8, each
+checked against the sha256 in `models/bge-m3.manifest.json` — into
+`~/.ai-dev/models/bge-m3-onnx` (`$BGE_M3_ONNX_DIR` overrides it), and then embeds
+the documents already in the search index, Membrane connectors left out. The model
+runs in Node through `onnxruntime-node`: no Python packages, no torch. Both halves
+show progress and stop cleanly on Ctrl-C: the download keeps its `.part` and the
+next run continues from that byte, the embedding stores every 64 documents and the
+next run starts where it stopped. Adding notes later leaves them without a vector
+until the next `npm run setup -- --model`, which embeds only what changed.
+`npm run dense:doctor` walks the model check stage by stage and names the one that
+stopped.
 
-Set `BGE_M3_DEVICE=cuda` to use a GPU. The loader checks for `pytorch_model.bin`
-in the model directory and says so plainly when it is missing.
+### The model command
 
-By hand, if you would rather do each step yourself (paths are for a plain
-checkout; in an Obsidian vault the helper trees live under `09-mcp/`):
+```bash
+npm run model -- status            # installed, missing, stopped partway, where it downloads from
+npm run model -- install           # download (resumable), then embed the documents
+npm run model -- import <path>     # copy from a folder or a .zip made on another machine, then embed
+npm run model -- verify            # hash every file against the manifest
+npm run model -- remove            # delete the model's files and nothing else
+```
 
-1. Install the Python helper dependencies:
+`--dir <path>` works on another folder, `--mirror <url>` uses a Hugging Face mirror
+for one run, `--no-index` skips the embedding, `--json` prints the result. Sources
+are `AI_DEV_MODEL_MIRROR`, then `HF_ENDPOINT`, then huggingface.co, a failing one
+handing its partial file to the next; `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY`
+are honoured without `NODE_USE_ENV_PROXY`. `AI_DEV_OFFLINE=1` forbids downloads,
+leaving `import`. Exit codes: 0 done, 1 failed, 2 a usage mistake, 130 stopped with
+Ctrl-C.
 
-   ```bash
-   python3 -m venv embeddings/.venv
-   embeddings/.venv/bin/pip install -r embeddings/requirements-bge-m3.txt
-   ```
+`AI_DEV_MODEL_MANIFEST` names another manifest pinned the same way — the tests point
+it at a five-kilobyte stand-in for BGE-M3 (`src/core/synthetic-model.mjs`) and run
+import, embedding and hybrid search through the real server with it.
 
-2. Download the weights:
+An Intel Mac has no onnxruntime-node 1.30 build, so the model cannot run there:
+`dense:doctor` and the health check say so, `setup -- --model` refuses before
+downloading, and keyword and sparse search work as everywhere else.
 
-   ```bash
-   embeddings/.venv/bin/python - <<'PY'
-   from pathlib import Path
-   from huggingface_hub import snapshot_download
-   target = Path.home() / ".ai-dev" / "models" / "bge-m3"
-   snapshot_download(
-       "BAAI/bge-m3",
-       local_dir=target,
-       allow_patterns=["*.json", "*.model", "sentencepiece.bpe.model", "pytorch_model.bin"],
-   )
-   print("downloaded to", target)
-   PY
-   ```
+### Coming from the Python backend
 
-3. Point `AI_DEV_PYTHON` at that venv's interpreter (or keep `python3` on `PATH`
-   with the packages installed), then call `rebuild_search_index` with
-   `dense_embeddings: true` to embed the index, and `run_search_eval` /
-   `system_health_check` to confirm the dense backend is picked up.
+2.x could embed with a Python virtualenv and torch (`--dense-python`,
+`AI_DEV_DENSE_BACKEND=python`). 3.0 removed that backend. `npm run setup -- --model`
+moves an install over: it installs the ONNX model and embeds the documents again —
+vectors made by the Python backend belong to another model, are never compared
+with ONNX questions, and are replaced by this run. `--dense-python` still works as a
+name for `--model`; the old variables are no longer read, and the health check names
+any that are still set. See
+[INSTALL](../docs/INSTALL.md#coming-from-the-python-backend).
 
 ### With the Docker image
 
+The default image already carries the ONNX runtime. Put the weights into the data
+volume once, with the network that one run needs; every session after it keeps
+`--network none`:
+
 ```bash
-docker build --build-arg INSTALL_BGE_M3=1 --tag ai-dev-system:bge .docker/build-context
+docker run --rm -it --network bridge --mount type=volume,source=ai-dev-system-data,target=/data \
+  ghcr.io/stonebridgeway/ai-dev-system:latest ai-dev model install
 ```
 
-Download the weights on the host as above, then set `AI_DEV_MODEL_PATH` to that
-folder; the launcher mounts it read-only as `/models/bge-m3`.
+Or mount a host folder that holds `bge-m3-onnx/` — `~/.ai-dev/models`, where
+`npm run model -- install` puts it — read-only at `/models`:
+`ai-dev clients install --docker --model=<folder>`, `bootstrap.sh --model-path <folder>`
+or `bootstrap.ps1 -ModelPath <folder>` writes the mount into the entries. The image
+reads `/models/bge-m3-onnx` first when it holds anything, else the volume's model.
+`AI_DEV_MODEL_PATH` is read by the 2.x launchers, kept until 4.0, and by bootstrap
+as the default of its model path; a 3.0 entry does not read it.
 
 ## Frontend QA Config
 
@@ -327,93 +377,174 @@ See `docs/SECURITY.md`.
 Pinned dependencies, then the first run:
 
 ```bash
-npm ci --ignore-scripts --no-audit --no-fund
+npm ci
 npm run setup
 ```
 
-`npm run setup` builds what a clone does not ship — the skill registry, the
-SQLite search index and the skill-routing benchmark — and ends with the health
-check, so what is still missing is on the screen. It reaches the network only
-when asked: `--frontend-qa` installs the Frontend QA runner's dependencies,
-`--dense` builds the Python environment, downloads the BGE-M3 weights and embeds
-the index with them. Everything it builds is idempotent, and anything that has
-gone out of date since is rebuilt rather than skipped.
+`npm run setup` builds what a clone does not ship — the skill registry and its
+quality report, the SQLite search index and the skill-routing benchmark — and
+ends with the health check, so what is still missing is on the screen. It
+reaches the network only when asked: `--frontend-qa` installs the Frontend QA
+runner's lockfile with the pnpm it pins and then Playwright's Chromium, and
+passes only when that browser launches; `--model` (2.x's `--dense`) downloads the pinned ONNX
+export of BGE-M3 (no Python packages) and embeds the index with it. Everything it
+builds is idempotent, and anything that has gone out of date since is rebuilt
+rather than skipped.
 
-Or restore both MCP and Frontend QA runtimes (`../scripts/restore-runtime.ps1`) — it prefers
-`node` / `npm` / `pnpm` on `PATH` and falls back to a bundled Codex runtime only if one is present.
+After restoring a backup into a clone, `npm ci` and `npm run setup -- --frontend-qa` bring the
+dependencies back (`../scripts/restore-runtime.ps1` runs those two, as a wrapper until 4.0).
 
 Environment overrides:
 
 ```text
-AI_DEV_VAULT_ROOT   absolute path to the Obsidian vault (required outside the repo)
+AI_DEV_VAULT_ROOT   the vault the server reads and writes (optional; default: the vault around the
+                    server, a clone's docker/public-seed, $AI_DEV_HOME/vault for a package or the
+                    Windows install, /data/ai-dev-system in Docker)
 AI_DEV_HOME         runtime-data root (default ~/.ai-dev)
+AI_DEV_PROFILES     capability profiles listed to the client (default: every one an agent gets;
+                    the `profiles` setting in config.json fills it when unset; ../docs/CAPABILITIES.md)
 AI_DEV_STATE_ROOT   task/outcome/pilot state (default $AI_DEV_HOME/state)
 AI_DEV_SEARCH_INDEX_DIR   search index dir (default $AI_DEV_HOME/cache/search-index)
 AI_DEV_FRONTEND_QA_ARTIFACT_ROOT   QA artifacts (default $AI_DEV_HOME/artifacts/frontend-qa)
-AI_DEV_RUNTIME_CONFIG   path to a runtime profile JSON
-AI_DEV_PYTHON       python interpreter (default: python3 on PATH)
-BGE_M3_MODEL_DIR    embedding model dir (default $AI_DEV_HOME/models/bge-m3)
-BGE_M3_DEVICE       cpu | cuda
+AI_DEV_PYTHON       python for the two UI UX Pro Max tools (default: python3; python on Windows)
+BGE_M3_ONNX_DIR     ONNX embedding model dir (default $AI_DEV_HOME/models/bge-m3-onnx)
+AI_DEV_MODEL_MIRROR Hugging Face mirror tried first for the model (HF_ENDPOINT format)
+AI_DEV_MODEL_MANIFEST  another pinned manifest instead of models/bge-m3.manifest.json
+AI_DEV_OFFLINE      1 forbids model downloads; `npm run model -- import` still works
+HTTPS_PROXY / HTTP_PROXY / NO_PROXY   honoured by the model download
+AI_DEV_DAEMON       0 serves the client in its own process instead of the shared daemon
+AI_DEV_IDLE_TIMEOUT_MS   how long the daemon stays without a client (default 1800000; 0 = until stopped; at most 2147483647, about 24.8 days)
+AI_DEV_DAEMON_START_TIMEOUT_MS   how long `ai-dev mcp` waits for a daemon it started (default 20000)
 ```
+
+`AI_DEV_HOME` is the runtime folder itself: `state/`, `cache/` and `models/` sit directly in
+it. Earlier versions put them one level deeper, in `$AI_DEV_HOME/.ai-dev`. The server, `npm run setup` and the `ai-dev` CLI move such a tree up when they start:
+files missing at the new place are moved, identical ones dropped, JSONL ledgers appended, and a
+file that differs on the two sides stays where it was. `npm run doctor` names what is left in its
+`runtime_home` check, and `state/runtime-home-migration.json` records every run that found something. `AI_DEV_HOME`
+set to your home directory itself keeps meaning `~/.ai-dev`, as it did. Hooks installed into a
+repository by an earlier version still look for the old tree; run `install_agent_hooks` again
+to update them.
 
 ## Docker
 
-The repository ships a local-only, non-root Docker runtime with Chromium, Python search, a clean
-public skill seed, persistent local state, and no network listener. It is built from a generated
-allowlist context rather than from the Vault or repository root.
+The repository ships a local-only, non-root Docker image: the distribution `npm run dist` builds,
+with the clean public skill seed, the registry and search index built from it, persistent local
+state in a volume, and no network listener (a `-browser` variant adds Chromium for Frontend QA).
+Clients run it themselves, one `docker run -i --rm …` per session, which answers the MCP handshake
+in about a second. It is built from a generated allowlist context rather than from the Vault or
+repository root.
 
 ```bash
-node scripts/prepare-docker-context.mjs
+npm run docker:prepare && npm run docker:audit
 docker build --tag ai-dev-system:local ../.docker/build-context
-node scripts/docker-smoke.mjs --image ai-dev-system:local
+npm run docker:smoke -- --image ai-dev-system:local
 ```
 
-Passwords, project contexts, task history, indexes, models, caches, logs, backups, `.codex`,
-`.ai-dev`, `.obsidian`, and Git history are excluded by policy and audited before every build.
-Repositories are visible only when the user explicitly mounts a selected path under `/workspace`.
+Passwords, project contexts, task history, models, caches, logs, backups, `.codex`, `.ai-dev`,
+`.obsidian`, and Git history are excluded by policy and audited before every build. Repositories
+are visible only when the user mounts a chosen projects folder: at its own path on macOS and Linux,
+under `/workspace` on Windows.
 
 See [the complete Windows, macOS, Linux, client configuration, Compose, BGE-M3, and GHCR guide](../docker/README.md).
 
 ## Acceptance
 
-Fast:
-
-```powershell
-..\scripts\run-acceptance.ps1
+```bash
+npm run check         # the gate, once
+npm run acceptance    # the gate, ten times in a row
 ```
 
-Including the full BGE-M3 golden suite:
+The gate runs the static modularity checks, the unit tests with their coverage thresholds, the
+security checks, real stdio negotiation and the lifecycle smoke. With the local model installed,
+`node bin/ai-dev.mjs doctor --dense-smoke --search-eval` adds the dense checks and the golden
+search suite. `../scripts/run-acceptance.ps1` is a wrapper over `npm run check` until 4.0.
 
-```powershell
-..\scripts\run-acceptance.ps1 -IncludeDense
+## Distribution
+
+```bash
+npm run dist          # ../dist/ai-dev/: the package folder, with its production dependencies
+npm run dist:pack     # and ../dist/ai-dev-system-<version>.tgz beside it
 ```
 
-The suite runs MCP unit tests, real stdio negotiation, lifecycle smoke, real Chromium Frontend QA,
-Python search-index tests, coverage thresholds, static modularity checks, and local security checks.
+What ships is `distribution.allowlist.json` — the same list `npm run docker:prepare` builds the
+image's context from. The folder holds `distribution.json` (every file with its sha256), the
+package's `package.json` and the server's lockfile as `npm-shrinkwrap.json`; `prepack` checks the
+folder against the list, and `dist:pack` checks the tarball, unpacked, byte for byte. Nothing is
+published from here.
+
+The desktop app's packages are made from the same folder: `cd ../desktop && npm run dist:win`
+(`dist:linux`; `dist:mac` too, though macOS is in development and its `.dmg` is not released) adds
+the dependencies for the target, a pinned Node and `bundle.json`, and builds the NSIS installer, the
+AppImage and `.deb`, or the `.dmg` and `.zip`
+([The desktop install](../docs/DESKTOP.md#the-desktop-install)). `ai-dev uninstall [--clients]
+[--data] --yes` is what the Windows uninstaller runs, and what a person runs before removing the app
+on macOS or Linux: it stops the daemon and removes the runtime copies the
+app made in `<runtime home>/app` and their link, the clients' entries that run them with
+`--clients`, and the runtime home itself with `--data` — only when what is at its top, and inside
+its `models`, `cache` and `backups` folders, is AI Dev's own, and not while a runtime copy is in
+use. Its exit status tells the uninstaller what is left: 3 files an AI client still runs, 4 the
+data kept.
 
 ## Local Operations
 
-```bash
-./scripts/start-local.ps1   # or: node src/server.mjs
-node scripts/ai-dev.mjs doctor
-node scripts/ai-dev.mjs dashboard
-node scripts/ai-dev.mjs reindex
-node scripts/ai-dev.mjs refresh --full
-node scripts/ai-dev.mjs distribution
-```
-
-Install or refresh the same local stdio server for Cursor, Gemini Code Assist, native VS Code MCP,
-and Claude Code. Existing JSON files are merged and backed up before they are changed:
+Everything a person does with the server is one command line, `bin/ai-dev.mjs` — from a clone
+`npm run ai-dev -- <command>`, or `ai-dev <command>` after `npm link`:
 
 ```bash
-node scripts/install-local-mcp-clients.mjs           # dry run
-node scripts/install-local-mcp-clients.mjs --apply
+ai-dev                           # at a terminal: a menu over everything below you set up and change
+ai-dev setup [--yes] [--model] [--frontend-qa] [--clients=all|<names>]
+ai-dev clients list | install | remove | doctor [--clients=<names>] [--dry-run] [--json]
+ai-dev settings [list | get <name> | set <name> <value> | reset <name>... | path] [--json]
+ai-dev skills search | groups | browse | show | mine | add <folder> | new <name> <description> | remove | import <url> | rebuild | check
+ai-dev rules list | add <id> | on | off | remove | hooks [install] | packs | install [--project <path>]
+ai-dev servers [--project <path>] [--mine]
+ai-dev status [--quick] [--json]
+ai-dev model status | install | import <path> | verify | remove | doctor
+ai-dev mcp                       # what a client starts: its stdio, bridged to the daemon
+ai-dev daemon start | stop | status | run [--json]
+ai-dev doctor [--dense-smoke] [--search-eval]
+ai-dev dashboard | galaxy [scope...] | reindex | refresh [flags] | distribution
+ai-dev help [command]
 ```
 
-Client configurations point to this repository's `src/server.mjs` (set `AI_DEV_VAULT_ROOT` to
-override the vault root) and to `node` / `python3` on `PATH`. Restart or reload each client after
-installation. Any model selected inside an MCP-capable client can use the same tools; a raw model
-endpoint still needs an MCP-capable host.
+Exit codes: 0 done, 1 failed, 2 wrong usage, 130 stopped with Ctrl-C. `npm run setup`,
+`doctor`, `clients:install`, `model`, `dense:doctor`, `dashboard`, `galaxy`, `refresh`,
+`backup` and `distribution` run the same commands. The 2.x paths still work until 4.0, with a
+note on stderr where they were documented: `node scripts/ai-dev.mjs <command>`,
+`scripts/start-local.ps1` (now `ai-dev mcp`), `scripts/install-local-mcp-clients.mjs [--apply]`
+(now `ai-dev clients install`; as before, a dry run without `--apply`, and the four clients 2.x
+wrote — Cursor, Gemini, VS Code, Claude Code — unless `--clients` names others).
+
+`ai-dev clients install` writes one entry, `ai-dev`, into Claude Code, Claude Desktop (and its
+Microsoft Store copy), Cursor, VS Code, Codex and Gemini: the absolute path of this Node, this
+clone's `bin/ai-dev.mjs` and `mcp`, plus `AI_DEV_VAULT_ROOT` for a vault install and
+`AI_DEV_HOME` when it names a runtime folder of its own. Each file is
+edited in place — other servers, comments and formatting stay byte for byte — written through a
+temp file and a rename, and backed up as `<file>.backup-<time>`; `ai-dev-system`, the 2.x
+name, is removed. `clients doctor` starts each entry's command and checks that it answers
+`initialize` with instructions; `clients remove` gives an untouched file back as it was, less any
+`ai-dev` or `ai-dev-system` entry the install replaced (its backup keeps it). Restart or reload
+each client after installation. Any model selected inside an MCP-capable client can use
+the same tools; a raw model endpoint still needs an MCP-capable host.
+
+`ai-dev mcp` does not serve the client itself: it hands the client's stdin and stdout to the
+daemon, one warm server for every client of this user, and starts it when none runs — so the
+index and the model are in memory once, not once per client, and the state has one writer. The
+handshake passes through, instructions included. Each client's session runs in that client's own
+environment — its PATH, proxy and certificates — as its own process did in 2.x. Clients whose
+code, Node or data differ (another copy of AI Dev, another Node, another `AI_DEV_VAULT_ROOT`) get a
+daemon each; two spellings of one folder are one.
+A daemon that dies is replaced at the client's next request (the request it was running gets an
+error that says so); one that cannot start leaves the client served in its own process, with the
+reason on stderr. A client that writes its requests and closes its input still gets every answer.
+`ai-dev daemon status` shows the pid, the sessions, the memory, the log
+(`~/.ai-dev/logs/daemon.log`) and any other daemon of the runtime home with why it is another;
+`stop` stops them all, and the next request of a client starts a new one. The channel — a random
+address per start, a secret in `run/daemon-<build>.json` that each side proves it holds — is
+described in [docs/SECURITY.md](docs/SECURITY.md#the-daemon). `AI_DEV_DAEMON=0` in a client's
+environment, `npm start`, and the 2.x entry `node src/server.mjs` serve in the client's own
+process, as 2.x did.
 
 The shipped runtime profile is local stdio. A future remote profile is configuration scaffolding,
 not an enabled network server: remote mode remains blocked until TLS, authentication, allowlists,
@@ -421,12 +552,14 @@ rate limits, and threat review are implemented.
 
 ## Backup And Recovery
 
-```powershell
-..\scripts\backup-ai-dev-system.ps1 -Label before-upgrade
-..\scripts\restore-ai-dev-system.ps1 -Archive <backup.zip> -TargetRoot <empty-folder> -ConfirmRestore
+```bash
+node bin/ai-dev.mjs backup before-upgrade
+node bin/ai-dev.mjs restore <backup.zip> --confirm --to <empty-folder>
 ```
 
-Backups contain local vault content, including owner-kept private notes. They remain local and must
-not be pushed to a public repository.
+On every system and in every layout: the vault this install reads and AI Dev's state, every file
+with its sha256. Backups contain local vault content, including owner-kept private notes. They
+remain local and must not be pushed to a public repository. The 2.x PowerShell scripts are
+wrappers over these commands until 4.0.
 
 See `docs/RECOVERY.md`.

@@ -1,29 +1,25 @@
 name: Dense search evaluation
 
-# The measurement Д-62's acceptance criterion (2) is decided on, and the only
-# place it can be taken: the model weights come from huggingface.co and the
-# legacy stack's torch build from download.pytorch.org, neither of which the
-# development sandbox can reach. Runners can.
+# Dense search on the real weights, measured where they can be fetched: the
+# model comes from huggingface.co, which runners can reach.
 #
-# Two jobs, one per backend, running the same golden cases against the same
-# vault so the numbers are comparable. If int8 ONNX loses to Python-fp32 by more
-# than noise, the manifest's `dtype` moves to fp16 or fp32 — that is a field,
+# 3.0 runs dense search on the ONNX export alone; the Python backend it was
+# once compared with is gone. That
+# comparison — int8 against fp32 — can still be taken on
+# the 2.x line, whose copy of this workflow keeps both jobs. If int8 ever loses
+# by more than noise, the manifest's `dtype` moves to fp16 or fp32: a field,
 # not a code change.
 #
-# Dispatch only. It downloads about 600 MB (ONNX) and about 2.3 GB (Python), so
-# it is not something every push should pay for.
+# Dispatch only. It downloads about 600 MB, so it is not something every push
+# should pay for.
 
 on:
   workflow_dispatch:
     inputs:
       max_cases:
-        description: Golden cases to run per backend (45 exist; anything larger scores all of them)
+        description: Golden cases to run (45 exist; anything larger scores all of them)
         required: false
         default: "50"
-      python_revision:
-        description: Commit of BAAI/bge-m3 for the legacy download (blank uses the BGE_M3_PYTHON_REVISION variable, or no pin at all)
-        required: false
-        default: ""
 
 permissions:
   contents: read
@@ -64,13 +60,14 @@ jobs:
 
       - name: Install dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
-      # The same flags the Dockerfile uses. onnxruntime-node ships its prebuilt
-      # binaries inside the npm package, so --ignore-scripts must not break it;
-      # if that ever changes, this is where it is caught rather than in a user's
-      # first search (docs/DEFECTS.md, Д-62).
-      - name: The native binding survives --ignore-scripts
+      # No dependency install scripts ran: the package's .npmrc turns them off,
+      # and the Dockerfile passes --ignore-scripts.
+      # onnxruntime-node ships its prebuilt binaries inside the npm package, so
+      # that must not break it; if that ever changes, this is where it is caught
+      # rather than in a user's first search.
+      - name: The native binding works without install scripts
         working-directory: ai-dev-mcp-server
         run: node -e "import('onnxruntime-node').then((m) => { if (!m.InferenceSession) { throw new Error('onnxruntime-node loaded without InferenceSession'); } console.log('onnxruntime-node loaded'); })"
 
@@ -82,7 +79,7 @@ jobs:
         working-directory: ai-dev-mcp-server
         env:
           AI_DEV_DENSE_BACKEND: onnx
-        run: npm run setup -- --dense --no-health
+        run: npm run setup -- --model --no-health
 
       - name: Dense search is READY
         working-directory: ai-dev-mcp-server
@@ -106,149 +103,32 @@ jobs:
           name: dense-eval-onnx
           path: ${{ runner.temp }}/dense-onnx.json
 
-  python:
-    name: Legacy Python backend
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    # The pin for the legacy download, and the one place it is decided. It is
-    # read three times below — by the cache key, by `snapshot_download` inside
-    # `npm run setup`, and by the index that records where a vector came from —
-    # and every one of them reads it from the environment, so defining it here
-    # is what makes a pinned run possible at all. Before this, the cache key
-    # named `env.BGE_M3_PYTHON_REVISION` and nothing ever set it: the sha this
-    # workflow prints had nowhere to go, and the run was always unpinned
-    # (docs/DEFECTS.md, Д-62, point 1).
-    env:
-      BGE_M3_PYTHON_REVISION: ${{ inputs.python_revision || vars.BGE_M3_PYTHON_REVISION }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: ai-dev-mcp-server/package-lock.json
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Restore the model
-        uses: actions/cache@v4
-        with:
-          path: ~/.ai-dev/models/bge-m3
-          key: bge-m3-torch-${{ env.BGE_M3_PYTHON_REVISION || 'unpinned' }}-v1
-
-      - name: Install dependencies
-        working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Build the legacy stack and the dense index
-        working-directory: ai-dev-mcp-server
-        env:
-          AI_DEV_DENSE_BACKEND: python
-        run: npm run setup -- --dense-python --no-health
-
-      # Where the sha comes from. The development sandbox cannot reach
-      # huggingface.co and a commit hash is not something to invent, so the one
-      # place the value can be read is a runner — printed here, alongside what
-      # this run actually used, so a pinned run can be told from an unpinned one
-      # and drift from neither (docs/DEFECTS.md, Д-62, point 1).
-      - name: Report the revision this run used
-        run: |
-          python -m pip install --quiet huggingface_hub
-          python - <<'PY'
-          import os
-          from huggingface_hub import HfApi
-
-          live = HfApi().model_info("BAAI/bge-m3").sha
-          pinned = os.environ.get("BGE_M3_PYTHON_REVISION", "").strip()
-          print(f"BAAI/bge-m3 is at {live} right now.")
-          if not pinned:
-              print("This run was UNPINNED: it took whatever that repository holds today, and a later")
-              print("run may score different weights under the same name. Set the repository variable")
-              print(f"BGE_M3_PYTHON_REVISION to {live} — or dispatch with that value in python_revision —")
-              print("and every run after it downloads exactly those bytes.")
-          elif pinned == live:
-              print(f"This run was pinned to {pinned}, which is where the repository still is.")
-          else:
-              print(f"This run was pinned to {pinned}; the repository has moved to {live} since.")
-              print("The numbers below are the pinned weights'. That difference is the whole point of")
-              print("the pin: without it this run would have scored something else without saying so.")
-          PY
-
-      - name: Measure
-        working-directory: ai-dev-mcp-server
-        env:
-          AI_DEV_DENSE_BACKEND: python
-        run: node scripts/dense-benchmark.mjs --label python --max-cases "${{ inputs.max_cases }}" --out "${{ runner.temp }}/dense-python.json"
-
-      - name: Upload the report
-        uses: actions/upload-artifact@v4
-        with:
-          name: dense-eval-python
-          path: ${{ runner.temp }}/dense-python.json
-
-  compare:
-    name: Compare the two backends
-    runs-on: ubuntu-latest
-    needs: [onnx, python]
-    # The ONNX numbers are the ones being accepted; the legacy job is the
-    # yardstick and its stack is the fragile one. If it fails, say so in the
-    # table rather than losing the half that worked.
-    if: always()
-    steps:
-      - name: Download the reports
-        uses: actions/download-artifact@v4
-        with:
-          path: reports
-        continue-on-error: true
-
       - name: Write the summary
+        if: always()
         run: |
-          node - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          node - "${{ runner.temp }}/dense-onnx.json" <<'JS' >> "$GITHUB_STEP_SUMMARY"
           const fs = require("node:fs");
-          const read = (name) => {
-            try {
-              return JSON.parse(fs.readFileSync(`reports/dense-eval-${name}/dense-${name}.json`, "utf8"));
-            } catch {
-              return null;
-            }
-          };
-          const onnx = read("onnx");
-          const python = read("python");
-          const cell = (report, pick) => (report ? pick(report) : "job did not report");
+          let report = null;
+          try {
+            report = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          } catch {
+            console.log("_The measurement did not produce a report; the steps above say why._");
+            process.exit(0);
+          }
           const rows = [
-            ["Backend", (r) => r.backend],
-            ["Revision", (r) => String(r.revision).slice(0, 12)],
-            ["dtype", (r) => r.dtype],
-            ["Documents embedded", (r) => `${r.index.dense_documents} (${r.index.dense_pending_documents} pending)`],
-            ["Mean reciprocal rank", (r) => r.eval.mean_reciprocal_rank],
-            ["Top-1 accuracy", (r) => r.eval.top_1_accuracy],
-            ["Mean nDCG", (r) => r.eval.mean_ndcg],
-            ["Golden cases passed", (r) => `${r.eval.passed}/${r.eval.total}`],
-            ["Cold start (ms)", (r) => r.latency_ms.cold_start],
-            ["Warm query, median (ms)", (r) => r.latency_ms.warm_median],
-            ["Resident memory (MB)", (r) => r.memory_mb.rss],
+            ["Revision", String(report.revision).slice(0, 12)],
+            ["dtype", report.dtype],
+            ["Documents embedded", `${report.index.dense_documents} (${report.index.dense_pending_documents} pending)`],
+            ["Mean reciprocal rank", report.eval.mean_reciprocal_rank],
+            ["Top-1 accuracy", report.eval.top_1_accuracy],
+            ["Mean nDCG", report.eval.mean_ndcg],
+            ["Golden cases passed", `${report.eval.passed}/${report.eval.total}`],
+            ["Cold start (ms)", report.latency_ms.cold_start],
+            ["Warm query, median (ms)", report.latency_ms.warm_median],
+            ["Resident memory (MB)", report.memory_mb.rss]
           ];
-          console.log("## Dense search: ONNX against the legacy Python stack\n");
-          console.log("The same golden cases, the same vault, one run each.\n");
-          console.log("| | ONNX (int8) | Python (fp32) |");
-          console.log("| --- | --- | --- |");
-          for (const [label, pick] of rows) {
-            console.log(`| ${label} | ${cell(onnx, pick)} | ${cell(python, pick)} |`);
-          }
-          console.log("");
-          if (onnx && python) {
-            const drop = python.eval.mean_reciprocal_rank - onnx.eval.mean_reciprocal_rank;
-            console.log(drop > 0.02
-              ? `**int8 loses ${drop.toFixed(4)} MRR to fp32.** That is past noise: move \`dtype\` in `
-                + "`models/bge-m3.manifest.json` to `fp16` or `fp32` and run this again. It is a field, not a code change."
-              : `**int8 is within ${Math.abs(drop).toFixed(4)} MRR of fp32.** Criterion (2) of Д-62 holds; keep the manifest as it is.`);
-          } else {
-            console.log("_One of the two jobs did not produce a report, so criterion (2) is not decided by this run._");
-          }
-          PY
+          console.log("## Dense search on the pinned ONNX export\n");
+          console.log("| | ONNX |");
+          console.log("| --- | --- |");
+          for (const [label, value] of rows) console.log(`| ${label} | ${value} |`);
+          JS

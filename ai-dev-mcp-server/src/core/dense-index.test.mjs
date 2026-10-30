@@ -1,13 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  DENSE_PLAN_BATCH,
-  denseProvenanceArgs,
-  embedDensePlan,
-  planAndEmbedDenseVectors
-} from "./dense-index.mjs";
-
-const PROVENANCE = Object.freeze({ backend: "onnx", revision: "d".repeat(40), dtype: "int8", dimensions: 4 });
+import { DENSE_PLAN_BATCH, denseCoverage, embedDensePlan } from "./dense-index.mjs";
 
 const records = (count) => new Array(count).fill(0).map((_value, index) => ({
   id: `doc-${index}`,
@@ -16,18 +9,6 @@ const records = (count) => new Array(count).fill(0).map((_value, index) => ({
 }));
 
 const vectorsFor = (texts) => ({ embeddings: texts.map(() => [0.1, 0.2, 0.3, 0.4]) });
-
-test("provenance travels as three flags, whichever backend produced the vectors", () => {
-  assert.deepEqual(denseProvenanceArgs(PROVENANCE), [
-    "--dense-backend", "onnx",
-    "--dense-revision", "d".repeat(40),
-    "--dense-dtype", "int8"
-  ]);
-  assert.deepEqual(
-    denseProvenanceArgs({ backend: "python", revision: "unpinned", dtype: "fp32" }),
-    ["--dense-backend", "python", "--dense-revision", "unpinned", "--dense-dtype", "fp32"]
-  );
-});
 
 test("a plan is embedded in batches and paired back with its document ids", async () => {
   const seen = [];
@@ -93,48 +74,6 @@ test("a missing embeddings key is a mismatch, not an empty success", async () =>
   );
 });
 
-test("the whole pass plans, embeds and writes the file the rebuild reads", async () => {
-  const written = [];
-  const planArgs = ["--vault-root", "/vault", "--index-path", "/index.sqlite"];
-
-  const result = await planAndEmbedDenseVectors({
-    runPlan: async (args) => {
-      assert.equal(args[0], "dense-plan");
-      assert.ok(args.includes("--dense-backend"), "the plan is asked for this backend's gaps, not any backend's");
-      assert.ok(args.includes("d".repeat(40)));
-      return { records: records(3), reusable: 17 };
-    },
-    planArgs,
-    embed: async (texts) => vectorsFor(texts),
-    provenance: PROVENANCE,
-    writeJson: async (target, value) => written.push({ target, value }),
-    vectorsPath: "/scratch/vectors.json"
-  });
-
-  assert.deepEqual(result, { planned: 3, embedded: 3, reusable: 17, vectorsPath: "/scratch/vectors.json" });
-  assert.equal(written.length, 1);
-  assert.equal(written[0].target, "/scratch/vectors.json");
-  assert.deepEqual(written[0].value.provenance, PROVENANCE);
-  assert.equal(written[0].value.vectors.length, 3);
-});
-
-test("a plan with nothing to do writes an empty file rather than skipping the rebuild's input", async () => {
-  const written = [];
-  const result = await planAndEmbedDenseVectors({
-    runPlan: async () => ({ records: [], reusable: 42 }),
-    planArgs: [],
-    embed: async () => {
-      throw new Error("the model must not be loaded for an empty plan");
-    },
-    provenance: PROVENANCE,
-    writeJson: async (target, value) => written.push({ target, value }),
-    vectorsPath: "/scratch/vectors.json"
-  });
-
-  assert.deepEqual(result, { planned: 0, embedded: 0, reusable: 42, vectorsPath: "/scratch/vectors.json" });
-  assert.deepEqual(written[0].value.vectors, []);
-});
-
 test("the default batch size is the documented one", async () => {
   const seen = [];
   await embedDensePlan({
@@ -146,4 +85,26 @@ test("the default batch size is the documented one", async () => {
     dimensions: 4
   });
   assert.deepEqual(seen, [DENSE_PLAN_BATCH, 1]);
+});
+
+test("coverage counts the current model's vectors; another model's wait for --model", () => {
+  const onnx = { backend: "onnx", revision: "4de1", dtype: "int8" };
+  const python = { backend: "python", revision: "unpinned", dtype: "fp32" };
+  const status = () => ({
+    dense_documents: 365,
+    dense_pending_documents: 0,
+    dense_eligible_documents: 365,
+    dense_models: [{ ...python, documents: 300 }, { ...onnx, documents: 65 }]
+  });
+  const mixed = denseCoverage(status(), onnx);
+  assert.deepEqual([mixed.dense_documents, mixed.dense_pending_documents, mixed.dense_other_model_documents], [65, 300, 300]);
+  const fromPython = denseCoverage({ ...status(), dense_models: [{ ...python, documents: 365 }] }, onnx);
+  assert.deepEqual([fromPython.dense_documents, fromPython.dense_pending_documents, fromPython.dense_other_model_documents], [0, 365, 365]);
+  const current = denseCoverage({ ...status(), dense_models: [{ ...onnx, documents: 360 }], dense_pending_documents: 5 }, onnx);
+  assert.deepEqual([current.dense_documents, current.dense_pending_documents, current.dense_other_model_documents], [360, 5, 0]);
+  const noEligibleKey = denseCoverage({ dense_documents: 10, dense_pending_documents: 2, dense_models: [{ ...python, documents: 10 }] }, onnx);
+  assert.equal(noEligibleKey.dense_pending_documents, 12, "an index without the key: what it had plus what waited");
+  const untouched = { dense_documents: 7, dense_pending_documents: 1 };
+  assert.deepEqual(denseCoverage({ ...untouched }, onnx), untouched, "no per-model counts, nothing to say");
+  assert.deepEqual(denseCoverage({ ...status() }, null), status(), "no model to compare with, nothing changed");
 });

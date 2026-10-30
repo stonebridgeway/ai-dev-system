@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 // PostToolUse (Write|Edit|MultiEdit): format the edited file with the project's
-// own formatter when one is installed locally. Never blocks, never installs
-// anything, never uses npx.
+// own formatter when one is installed locally, and tell the agent when it has
+// just changed a dependency manifest or lockfile, whose packages nothing has
+// scanned yet. Never blocks, never installs anything, never uses npx.
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { hooksDisabled, loadPolicy, log, normalizeInput, profileAllows, projectRootOf, readStdin } from "./lib.mjs";
+import { emitContext, hooksDisabled, loadPolicy, log, normalizeInput, profileAllows, projectRootOf, readStdin } from "./lib.mjs";
+
+/** Files whose edit changes what gets installed. */
+export const DEPENDENCY_FILES = new Set(["package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "yarn.lock", "bun.lock", ".npmrc", ".yarnrc.yml", "bunfig.toml"]);
 
 const FORMATTERS = [
   { extensions: [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".json", ".css", ".scss", ".md", ".vue", ".svelte", ".html", ".yaml", ".yml"], binaries: [["node_modules/.bin/biome", ["format", "--write"]], ["node_modules/.bin/prettier", ["--write", "--log-level", "warn"]]] },
@@ -49,24 +53,42 @@ function formatFile(projectRoot, filePath) {
   return "";
 }
 
+/**
+ * The note for an edit that touched what gets installed, or "".
+ *
+ * @param {string[]} relativeFiles
+ * @returns {string}
+ */
+export function dependencyNote(relativeFiles) {
+  const touched = relativeFiles.filter((file) => DEPENDENCY_FILES.has(path.basename(file)));
+  if (!touched.length) return "";
+  return `[ai-dev security] ${touched.join(", ")} changed what this project installs, and nothing has scanned it since. Before relying on it: run_security_scan (ar-security-review skill), and plan_security_fixes for anything it finds. Install nothing the plan has not been confirmed for.`;
+}
+
 async function main() {
   const { raw } = await readStdin();
   if (hooksDisabled("post:edit:format")) process.exit(0);
   const input = normalizeInput(raw);
   const projectRoot = projectRootOf(input.cwd);
   const policy = loadPolicy(projectRoot);
-  if (!profileAllows(policy.profile, ["standard", "strict"]) || policy.format_on_edit === false) process.exit(0);
-  const files = input.edits.length ? input.edits.map((edit) => String(edit.file_path || "")) : [input.filePath];
-  for (const file of new Set(files.filter(Boolean))) {
-    const absolute = path.isAbsolute(file) ? file : path.join(projectRoot, file);
-    if (!fs.existsSync(absolute)) continue;
-    const formatter = formatFile(projectRoot, absolute);
-    if (formatter) log(`[ai-dev post-edit] formatted ${path.relative(projectRoot, absolute)} with ${formatter}`);
+  if (!profileAllows(policy.profile, ["standard", "strict"])) process.exit(0);
+  const files = [...new Set((input.edits.length ? input.edits.map((edit) => String(edit.file_path || "")) : [input.filePath]).filter(Boolean))];
+  const absolutes = files.map((file) => (path.isAbsolute(file) ? file : path.join(projectRoot, file)));
+  if (policy.format_on_edit !== false) {
+    for (const absolute of absolutes) {
+      if (!fs.existsSync(absolute)) continue;
+      const formatter = formatFile(projectRoot, absolute);
+      if (formatter) log(`[ai-dev post-edit] formatted ${path.relative(projectRoot, absolute)} with ${formatter}`);
+    }
   }
+  emitContext("PostToolUse", dependencyNote(absolutes.map((absolute) => path.relative(projectRoot, absolute).split(path.sep).join("/"))));
   process.exit(0);
 }
 
-main().catch((error) => {
-  log(`[ai-dev post-edit] error: ${error.message}`);
-  process.exit(0);
-});
+// Run as the hook; imported by the tests for dependencyNote.
+if (process.argv[1] && path.basename(process.argv[1]) === "post-edit.mjs") {
+  main().catch((error) => {
+    log(`[ai-dev post-edit] error: ${error.message}`);
+    process.exit(0);
+  });
+}

@@ -1,5 +1,5 @@
 /**
- * Which module depends on which, read out of the source (PLAN.md, stage 3.8).
+ * Which module depends on which, read out of the source.
  *
  * The project map already says what a repository is made of. What it could not
  * say is where the weight sits: which module half the codebase imports, which
@@ -25,6 +25,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { atomicWriteFile } from "./atomic-files.mjs";
+import { ignoreMachineFiles } from "./project-ignore.mjs";
 
 /** Where the cached graph is kept, relative to the project root. */
 export const IMPORT_GRAPH_CACHE_PATH = ".ai-dev/cache/import-graph.json";
@@ -312,6 +313,8 @@ export async function loadImportGraph(projectRoot, { cachePath = IMPORT_GRAPH_CA
   }
   const graph = await scanImportGraph(root, options);
   await fs.mkdir(path.dirname(cacheFile), { recursive: true }).catch(() => undefined);
+  // The cache is this machine's: kept out of the project's history.
+  if (cachePath.startsWith(".ai-dev/")) await ignoreMachineFiles(root);
   await atomicWriteFile(cacheFile, `${JSON.stringify(graph, null, 2)}\n`, "utf8").catch(() => undefined);
   return { ...graph, from_cache: false };
 }
