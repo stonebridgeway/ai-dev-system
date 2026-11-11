@@ -91,7 +91,7 @@ test("catalog is well formed and stack mapping is additive", () => {
   assert.deepEqual(packsForStack(["Node.js", "React", "React Native/Expo"]), ["typescript", "react", "react-native"],
     "a React Native app gets no web rules: there is no DOM");
   assert.deepEqual(packsForStack(["PHP", "Laravel"]), ["php"]);
-  // Д-18: the three packs that had no detector label until the root directory
+  // The three packs that had no detector label until the root directory
   // was listed. ArkTS was the last one still missing — the detector labelled a
   // HarmonyOS project and the rules library had nothing to give it.
   assert.deepEqual(packsForStack(["Perl"]), ["perl"]);

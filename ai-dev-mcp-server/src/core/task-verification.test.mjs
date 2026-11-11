@@ -125,7 +125,7 @@ test("the evidence digest names each check and how it reported itself", () => {
   assert.deepEqual(verificationCheckSummary([]), []);
 });
 
-// Д-54: a failed verification reduced to `quality_gate: failed` and the reason
+// A failed verification reduced to `quality_gate: failed` and the reason
 // stayed in a command's stdout nobody reading the verdict ever saw.
 test("a failed check carries the line that says why, and the gate's hint", () => {
   const hint = "Node >= 21 treats positional arguments as glob patterns; a directory is run as a test file.";
@@ -169,7 +169,7 @@ test("a check that came back good carries no detail, and neither does a silent f
   assert.equal(Object.hasOwn(passed, "detail"), false, "a passing check explains nothing");
 
   // `unchecked` passes, so it is not dressed up as a failure either — its
-  // `next_step` is what says nothing ran (Д-55).
+  // `next_step` is what says nothing ran.
   const [unchecked] = verificationCheckSummary([
     check("security_scan", { status: "unchecked", summary: { checked: 0 } })
   ]);
@@ -186,7 +186,7 @@ test("a check that came back good carries no detail, and neither does a silent f
   assert.equal(Object.hasOwn(unavailable.detail, "hint"), false);
 });
 
-// Д-67: the gate now compares the project's `engines.node` with the Node it ran
+// The gate compares the project's `engines.node` with the Node it ran
 // on. A verdict that only shows the mismatch when something else already failed
 // is not a warning, so it survives a passing check too.
 test("a Node the project did not choose is carried into the verdict", () => {

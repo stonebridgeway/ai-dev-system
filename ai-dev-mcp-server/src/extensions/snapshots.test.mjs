@@ -113,8 +113,8 @@ test("snapshot_task, list_task_snapshots and rollback_task carry one task throug
   assert.equal(rolledBack.action, "rolled_back");
   assert.deepEqual(rolledBack.removed_files, ["src/broken.js"]);
   assert.equal(rolledBack.undo_snapshot.snapshot_id, "snapshot-2");
-  // Д-15: the deletion is named in the answer, with the undo snapshot that can
-  // bring it back. Д-28: the warning says the same thing about every deleted
+  // The deletion is named in the answer, with the undo snapshot that can
+  // bring it back. The warning says the same thing about every deleted
   // file, because which of them is whose is not something snapshots know.
   assert.deepEqual(rolledBack.removed_unsnapshotted_files, ["src/broken.js"]);
   assert.equal(rolledBack.removed_snapshot_history_complete, true);
@@ -190,7 +190,8 @@ test("checkpoint_task snapshots the turn it records, and says so when it cannot"
   const plain = await call("checkpoint_task", { task_id: moved.id, summary: "Outline drafted." });
   assert.equal(plain.snapshot.status, "skipped");
   assert.match(plain.snapshot.reason, /Not a git repository/);
-  assert.equal(plain.checkpoints.length, 1, "the checkpoint itself is recorded either way");
+  assert.equal(plain.checkpoints, 1, "the checkpoint itself is recorded either way");
+  assert.equal(plain.checkpoint.summary, "Outline drafted.");
 });
 
 test("complete_task deletes the task's snapshot refs and reports what it deleted", async (t) => {

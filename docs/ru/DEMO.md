@@ -5,16 +5,22 @@
 **«Добавить авторизацию в API».** Одна задача — от первой команды до закрытой,
 включая тот момент, когда всё идёт не так.
 
-Всё, что ниже, — настоящий вывод. Вы можете получить его сами примерно за
-двадцать секунд, не устанавливая MCP-клиент и не трогая свои репозитории:
+Всё, что ниже, — настоящий вывод. Вы можете получить его сами из клона
+репозитория за несколько секунд, не устанавливая MCP-клиент и не трогая свои
+репозитории:
 
 ```bash
 cd ai-dev-mcp-server
+npm ci          # один раз, в свежем клоне
 npm run demo
 ```
 
 Скрипт создаёт одноразовый проект API во временной папке, прогоняет задачу через
-настоящий сервер и удаляет за собой всё, что создал.
+настоящий сервер — его runtime home, состояние и поисковый индекс лежат в той же
+папке — и удаляет за собой всё, что создал. Оставить он может одно: реестр skills
+клона. Если его нет или он устарел, демо сначала строит его, как это делает
+`npm run setup`, — в три папки `docker/public-seed/03-skills-catalog`, которые git
+игнорирует: `registries/` и при нём `groups/` и `cards/`.
 
 ---
 
@@ -25,7 +31,7 @@ begin_task — «Add authentication to the API»
 ```
 
 ```text
-task task-20260914T105142-942dc4f2 is open
+task task-20261019T003825-989724d2 is open
 
 It loaded the project, without being told about it:
   stack Node.js, 4 relevant files read
@@ -33,7 +39,7 @@ It loaded the project, without being told about it:
     src/routes.mjs - application source
     src/server.mjs - application source
 
-It routed 3 skills out of 3,227 - nobody named them:
+It routed 3 skills out of 614 - nobody named them:
   feature-builder (workflow)
   application-security-reviewer (domain)
   secrets-dependencies-auditor (verification)
@@ -46,7 +52,7 @@ And it wrote down what finished has to mean:
 
 Никто не говорил «это Node-проект», «прочитай эти файлы» или «возьми
 security-ревьюера». Пять слов описания дали скомпилированный пакет контекста, три
-маршрутизированных skill из 3 227 и записанное определение готовности.
+маршрутизированных skill из 614 и записанное определение готовности.
 
 ## 2. Агент пишет код — и ошибается
 
@@ -56,7 +62,7 @@ security-ревьюера». Пять слов описания дали ско�
 ```text
 checkpoint_task
 
-checkpoint recorded, snapshot-1 holds 3 files at commit 6a110c13
+checkpoint recorded, snapshot-1 holds 3 files at commit 1d46c9f7
 nothing was written to your branch, stash or index - rollback_task can undo this turn
 ```
 
@@ -82,13 +88,15 @@ The report claims more than the evidence shows: 2 rationalizations are not backe
 - tests_failing_deferred in notes: The report leaves a red test for later; the project quality gate
   (verify_task with run_quality) never ran. Make the suite green before the report claims the change
   is done. Quoted: "One test is failing but it's a pre-existing issue, will fix later."
-Fix the check and run verify_task again, or rewrite the report to say what actually happened.
+Fix the check and run verify_task again, or rewrite the report to say what actually happened. If the
+reason is real, state it in the report ("reason: …") and waive the rule in .ai-dev/policy.json:
+{"completion_claims":{"waivers":[{"rule":"pre_existing_failure","reason":"…"}]}}
 ```
 
 Два названных правила, проверка за каждым из них, фраза, которая его вызвала, и
 что именно его удовлетворит. Чекпоинт не записан. Если причина действительно
-реальна, вы пишете её в отчёт и отключаете правило в `.ai-dev/policy.json` — но
-делаете это осознанно, в файле, который можно отревьюить, а не удачной
+реальна, отказ говорит, что делать: написать её в отчёт и отключить правило в
+`.ai-dev/policy.json` — осознанно, в файле, который можно отревьюить, а не удачной
 формулировкой.
 
 ## 4. Проверка запускает собственные команды проекта
@@ -96,11 +104,11 @@ Fix the check and run verify_task again, or rewrite the report to say what actua
 ```text
 verify_task
 
-FAILED - quality_gate: failed, change_hygiene: warn, security_scan: pass
+FAILED - quality_gate: failed, change_hygiene: warn, security_scan: unchecked
 
 not ok 1 - a request with no token is rejected
   ---
-  duration_ms: 1.676832
+  duration_ms: 1.498086
   type: 'test'
   location: '/tmp/.../test/auth.test.mjs:5:1'
   failureType: 'testCodeFailure'
@@ -118,6 +126,11 @@ Quality gate запустил тестовую команду самого пр�
 из `.ai-dev/quality-gate.md`, а не угаданную. Заложенную ошибку ловит тест,
 который агент написал сам.
 
+`security_scan: unchecked` получает машина, на которой не установлен ни один сканер
+безопасности, — как та, где записан этот прогон: ни один сканер не запускался, поэтому
+ничто не названо чистым, а проверку это не останавливает. С установленным сканером —
+gitleaks работает без сети — в строке стоит его вердикт.
+
 ## 5. Агент чинит настоящую ошибку
 
 ```js
@@ -130,8 +143,8 @@ return { ok: false, reason: "missing or invalid token" };
 ```text
 verify_task
 
-PASSED - quality_gate: passed, change_hygiene: warn, security_scan: pass
-recorded as verification-1789383102869-d7001968
+PASSED - quality_gate: passed, change_hygiene: warn, security_scan: unchecked
+recorded as verification-1792370306204-0690efa3
 ```
 
 `change_hygiene` остаётся в `warn` — он заметил, что публичный интерфейс
@@ -144,7 +157,7 @@ recorded as verification-1789383102869-d7001968
 complete_task
 
 task complete
-pull request description written to .ai-dev/pr/task-20260914T105142-942dc4f2.md
+pull request description written to .ai-dev/pr/task-20261019T003825-989724d2.md
   title: feat(src): add authentication to the API
 ```
 
@@ -154,13 +167,13 @@ pull request description written to .ai-dev/pr/task-20260914T105142-942dc4f2.md
 ```markdown
 ## Verification
 
-Latest run `verification-1789383102869-d7001968` at 2026-09-14T10:51:42.869Z: **passed**.
+Latest run `verification-1792370306204-0690efa3` at 2026-10-19T00:38:26.204Z: **passed**.
 
 | Check | Result |
 | --- | --- |
 | `quality_gate` | passed |
 | `change_hygiene` | warn |
-| `security_scan` | pass |
+| `security_scan` | unchecked |
 
 Not run: `frontend_qa`.
 
@@ -192,10 +205,12 @@ The latest verification (verification-…) failed. Fix the problem and run verif
 
 ## Как это записать
 
-`npm run demo` и есть запись. Весь прогон — около двадцати секунд, MCP-клиент не
-нужен, за пределами временной папки ничего не создаётся.
+`npm run demo` и есть запись. Весь прогон занял 2,5–3,1 секунды на Xeon
+2,1 ГГц — около 4, когда сначала строился реестр skills, — MCP-клиент не нужен, и
+после него не остаётся ничего, кроме этого реестра.
 
 - `npm run demo -- --no-color` — чистый текст, например чтобы вставить в issue.
-- Терминал 80×40 вмещает каждую сцену без переносов.
+- Каждая сцена помещается в 40 строк, но не в 80 колонок: строки отказа на шаге 3
+  длиной почти 300 символов.
 - Шаги 3 и 4 стоит задержать: отказ и падающий тест — это то, чего люди от
   агента ещё не видели.

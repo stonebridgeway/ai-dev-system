@@ -105,10 +105,10 @@ async function rollbackTask(host, { task_id, snapshot_id }) {
   });
   // Every file a rollback deletes is named, because a rollback brings the tree
   // to the snapshot's state and anything written since goes — this task's own
-  // work as much as a file a person put there from another terminal (Д-15).
+  // work as much as a file a person put there from another terminal.
   // The warning says that about all of them equally: which of two files written
   // since the last snapshot is whose is not something the snapshots know, and
-  // the split used to claim it did (Д-28). The deletions are recoverable from
+  // the split used to claim it did. The deletions are recoverable from
   // the undo snapshot, so they are reported rather than refused.
   const warnings = [];
   if (result.removed_files.length) {

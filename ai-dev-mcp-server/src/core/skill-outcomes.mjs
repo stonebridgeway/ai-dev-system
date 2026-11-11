@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { atomicWriteJson } from "./atomic-files.mjs";
+import { atomicWriteJson, withExclusiveFile } from "./atomic-files.mjs";
 
 const STORE_SCHEMA_VERSION = 2;
 
@@ -292,17 +292,16 @@ export class SkillOutcomeStore {
     // Serialise writes, but never let one failed update poison the queue for
     // every later caller: the chain the next update builds on is always
     // recovered, while this caller still sees the real error.
-    const run = this.queue.then(async () => {
+    const run = this.queue.then(() => withExclusiveFile(this.filePath, async () => {
       const store = await this.read();
       const next = await mutator(store);
       next.schema_version = STORE_SCHEMA_VERSION;
       next.updated_at = new Date().toISOString();
       next.attempts = (next.attempts || []).slice(-10_000);
       next.outcomes = (next.outcomes || []).slice(-5_000);
-      await fs.mkdir(this.stateRoot, { recursive: true });
       await atomicWriteJson(this.filePath, next);
       return next;
-    });
+    }));
     this.queue = run.catch(() => undefined);
     return run;
   }

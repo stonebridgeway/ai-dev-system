@@ -283,7 +283,7 @@ export function createProjectDetector({
     if (/\brails\b/.test(gemfileText) || await exists("config/application.rb")) addStack("Rails");
     // Extensions of the root entries. A .NET, F#, Swift or Xcode project is
     // named after the product (`Atlas.csproj`), so checking paths cannot find
-    // it — the directory has to be listed (docs/DEFECTS.md, Д-19).
+    // it — the directory has to be listed.
     // `readDirectory` is injected so the detector still tests over a tree in
     // memory.
     const rootEntries = (await readDirectory(projectRoot).catch(() => [])) ?? [];

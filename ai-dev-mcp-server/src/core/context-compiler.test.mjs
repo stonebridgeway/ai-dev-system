@@ -37,6 +37,24 @@ test("context compiler selects task files, excludes secrets, and stays bounded",
   assert.ok(pack.budget.actual_chars <= 12_000);
   assert.equal(contextPackFreshness(pack, { fingerprint: "state-one" }).fresh, true);
   assert.equal(contextPackFreshness(pack, { fingerprint: "state-two" }).fresh, false);
+  assert.equal(pack.unknowns.some((item) => /quality-gate\.md/.test(item)), false, "the project has a gate");
+});
+
+test("a project with no quality gate is told what writes one", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "context-compiler-gate-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.writeFile(path.join(root, "report.mjs"), "export const rows = () => [];\n");
+  const pack = await compileContextPack({
+    projectRoot: root,
+    task: "add CSV export for the report",
+    project: { project_name: "Reports", commands: [{ label: "Test", command: "npm test", cwd: "." }] },
+    identity: { project_id: "project-reports" },
+    acceptanceCriteria: ["The report exports as CSV."],
+    projectState: { fingerprint: "state-one", dirty_files: [] }
+  });
+  const unknown = pack.unknowns.find((item) => /quality-gate\.md/.test(item));
+  assert.match(unknown, /verify_task has no project checks to run: prepare_project writes one/);
+  assert.ok(pack.markdown.includes(unknown), "and the agent reads it in the pack");
 });
 
 test("context compiler renders extra sections after routed skills and trims them under pressure", async (t) => {

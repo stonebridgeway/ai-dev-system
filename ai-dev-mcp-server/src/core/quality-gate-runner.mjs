@@ -223,7 +223,7 @@ export function qualityGateStatus({ dryRun, parsed, results, blocked, diagramSpe
  * directory then matches itself, and the runner executes the directory as if it
  * were a test file, so a suite that passes under `node --test` fails under
  * `node --test test/` with a module-resolution error and nothing that names the
- * cause (docs/DEFECTS.md, Д-54).
+ * cause.
  */
 export const NODE_TEST_DIRECTORY_HINT = "Node >= 21 treats positional arguments as glob patterns; a directory is run as a test file. Use `node --test` or `node --test \"test/**/*.test.js\"`.";
 
@@ -369,7 +369,7 @@ function comparatorInterval(comparator) {
  * `20`, `^20`, `~20.1`, `>=20`, `20.x`, `18 || 20`, `>=18 <21` — and answers
  * `null` for everything else, including hyphen ranges and `lts/*`. A range this
  * cannot read produces no claim in either direction: a warning invented out of
- * a misparse is worse than the silence it replaced (docs/DEFECTS.md, Д-67).
+ * a misparse is worse than the silence it replaced.
  *
  * @param {string} range
  * @returns {Array<Array<{ from: number[], to: number[]|null }>>|null}
@@ -415,7 +415,7 @@ export function engineMatches(range, version) {
  *
  * On the Docker path the commands run on the image's Node, not the user's, and
  * a project pinned to another major got the "passes here, fails in the gate"
- * pair with nothing on the record to explain it (docs/DEFECTS.md, Д-67). This
+ * pair with nothing on the record to explain it. This
  * warns; it never blocks, and a range it could not read says so rather than
  * guessing.
  *

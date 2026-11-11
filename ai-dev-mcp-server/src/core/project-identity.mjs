@@ -23,13 +23,16 @@ const BOUNDARY_MARKERS = [
 let configuredRuntimeStateRoot = "";
 
 /**
- * Pin the absolute runtime-state root (`<home>/.ai-dev`) so project-boundary
- * detection never treats it as a project. Call once during host startup.
+ * Pin the absolute runtime-state root (`AI_DEV_HOME`, else `<home>/.ai-dev`) so
+ * project-boundary detection never treats it as a project. Call once during
+ * host startup.
  *
  * @param {string} stateRoot
+ * @returns {string} the root it pinned
  */
 export function configureRuntimeStateRoot(stateRoot) {
   configuredRuntimeStateRoot = stateRoot ? String(stateRoot) : "";
+  return configuredRuntimeStateRoot;
 }
 
 function hash(value) {
@@ -82,13 +85,13 @@ export function userHomeDirectory(options = {}) {
  * marker, so a single `package.json` in `~` — and anyone who has once run npm
  * from their home directory has one — made every project below it collapse
  * onto one memory key: the session handoffs, instincts and context of one
- * project served to an agent working in another, silently
- * (docs/DEFECTS.md, Д-48). So a marker sitting in the home directory itself, or
+ * project served to an agent working in another, silently.
+ * So a marker sitting in the home directory itself, or
  * anywhere above it, is not a boundary. Below the home directory, and outside
  * it entirely (`/srv/app`, `C:\work\app`), nothing changes.
  *
  * Pass canonical (realpath) values, as the walk does, so a home reached through
- * a symlink still compares equal to the walked path (docs/DEFECTS.md, Д-51).
+ * a symlink still compares equal to the walked path.
  *
  * @param {string} directory - Absolute candidate directory.
  * @param {{ platform?: string, homeDir?: string, env?: Record<string, string | undefined> }} [options]
@@ -159,7 +162,7 @@ async function nearestProjectBoundary(start, homeDir) {
   while (true) {
     // Once the walk reaches the home directory every remaining ancestor is
     // above it too, so there is nothing left that may be a boundary: the start
-    // directory stands for itself (docs/DEFECTS.md, Д-48).
+    // directory stands for itself.
     if (!isProjectBoundaryCandidate(current, { homeDir })) return null;
     for (const marker of BOUNDARY_MARKERS) {
       const markerPath = path.join(current, marker);

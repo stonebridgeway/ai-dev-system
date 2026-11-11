@@ -3,10 +3,14 @@ import { EventEmitter } from "node:events";
 import path from "node:path";
 import test from "node:test";
 import {
+  MAX_EMBED_TEXT_LENGTH,
+  MAX_EMBED_TEXTS,
   MAX_ONNX_BATCH,
   batchTexts,
+  cleanEmbedTexts,
   createOnnxDenseRuntime,
   defaultOnnxModelDir,
+  holdsFiles,
   roundVector
 } from "./dense-onnx.mjs";
 
@@ -235,4 +239,44 @@ test("the onnx model directory is separate from the legacy one, and env override
     !fromHome.endsWith(path.join("models", "bge-m3")),
     "the legacy directory holds different files for the same model and must not be shared"
   );
+});
+
+test("in the image the model is the one the host mounts at /models, else the one installed in the volume", () => {
+  const docker = { AI_DEV_RUNTIME: "docker", AI_DEV_HOME: "/data/runtime-home/.ai-dev", HOME: "/data/runtime-home" };
+  assert.equal(defaultOnnxModelDir({ env: docker, mounted: (folder) => folder === "/models/bge-m3-onnx" }), "/models/bge-m3-onnx");
+  assert.equal(defaultOnnxModelDir({ env: docker, mounted: () => false }), path.resolve("/data/runtime-home/.ai-dev/models/bge-m3-onnx"));
+  // Outside the image a /models folder is nobody's business.
+  assert.equal(defaultOnnxModelDir({ env: { HOME: "/home/person" }, mounted: () => true }), path.resolve("/home/person/.ai-dev/models/bge-m3-onnx"));
+  assert.equal(defaultOnnxModelDir({ env: { ...docker, BGE_M3_ONNX_DIR: "/x" }, mounted: () => true }), path.resolve("/x"));
+});
+
+test("a mounted model folder the image's user may not list or reach is a model there, not an empty mount", () => {
+  const refused = (code) => () => {
+    throw Object.assign(new Error(`${code}: scandir '/models/bge-m3-onnx'`), { code });
+  };
+  assert.equal(holdsFiles("/models/bge-m3-onnx", () => ["config.json"]), true);
+  assert.equal(holdsFiles("/models/bge-m3-onnx", () => []), false, "the image's own empty /models");
+  assert.equal(holdsFiles("/models/bge-m3-onnx", refused("ENOENT")), false, "nothing mounted");
+  assert.equal(holdsFiles("/models/bge-m3-onnx", refused("ENOTDIR")), false);
+  assert.equal(holdsFiles("/models/bge-m3-onnx", refused("EACCES")), true, "folders 0700 of another owner");
+  assert.equal(holdsFiles("/models/bge-m3-onnx", refused("EPERM")), true);
+  // A share that dropped is a mount this user cannot reach, not nothing mounted.
+  for (const code of ["EIO", "ESTALE", "ENOTCONN", "EHOSTDOWN", "ETIMEDOUT", "ECONNABORTED", "ECONNRESET"]) assert.equal(holdsFiles("/models/bge-m3-onnx", refused(code)), true, code);
+  // A link that loops, or no descriptor left to list with, is no model mounted: the volume's stays in use.
+  for (const code of ["ELOOP", "EMFILE", "ENFILE", "EINVAL"]) assert.equal(holdsFiles("/models/bge-m3-onnx", refused(code)), false, code);
+  const docker = { AI_DEV_RUNTIME: "docker", AI_DEV_HOME: "/data/runtime-home/.ai-dev", HOME: "/data/runtime-home" };
+  assert.equal(defaultOnnxModelDir({ env: docker, mounted: (folder) => holdsFiles(folder, refused("EACCES")) }), "/models/bge-m3-onnx");
+});
+
+test("embed_texts input is cleaned, and an empty, oversized or overlong request is refused before the worker", () => {
+  assert.deepEqual(cleanEmbedTexts({ text: "  hello  " }), ["hello"]);
+  assert.deepEqual(cleanEmbedTexts({ texts: ["a", "  ", "", "b"] }), ["a", "b"]);
+  assert.deepEqual(cleanEmbedTexts({ texts: ["a"], text: "ignored" }), ["a"]);
+  for (const input of [undefined, {}, { texts: [] }, { texts: ["   "] }, { text: "" }, { text: 7 }]) {
+    assert.throws(() => cleanEmbedTexts(input), /texts or text is required/);
+  }
+  assert.throws(() => cleanEmbedTexts({ texts: Array.from({ length: MAX_EMBED_TEXTS + 1 }, (_, index) => `t${index}`) }), /at most 32 texts per call/);
+  assert.throws(() => cleanEmbedTexts({ text: "x".repeat(MAX_EMBED_TEXT_LENGTH + 1) }), /12000 characters or less/);
+  assert.equal(cleanEmbedTexts({ text: "x".repeat(MAX_EMBED_TEXT_LENGTH) }).length, 1);
+  assert.equal(cleanEmbedTexts({ texts: Array.from({ length: MAX_EMBED_TEXTS }, (_, index) => `t${index}`) }).length, 32);
 });

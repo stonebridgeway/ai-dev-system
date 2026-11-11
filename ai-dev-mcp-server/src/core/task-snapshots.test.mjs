@@ -393,7 +393,7 @@ test("a removed ref is reported as unavailable, and restoring an unknown commit 
 });
 
 
-// Д-15. A rollback brings the tree to the snapshot's state, so a file written
+// A rollback brings the tree to the snapshot's state, so a file written
 // after it goes — including one a person put there from another terminal. It
 // cannot be told apart from the task's own new file, so it is named instead of
 // quietly deleted, and separately when this task has never snapshotted it.

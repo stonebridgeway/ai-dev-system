@@ -1,15 +1,12 @@
 /**
- * The acceptance criterion this project works to, as something that can be run.
- *
- * The rule is older than any code here: a session ends with ten consecutive
- * `npm run check` runs and the line "N падений из 10", because one green run has
- * twice hidden a failure that appears in two runs out of ten (docs/DEFECTS.md,
- * Д-11). Kept as an agreement it was honoured about half the time
- * (Д-4); kept as a command it is honoured by running the command.
+ * The acceptance check a change is finished with, as something that can be run:
+ * ten consecutive `npm run check` runs and the line "N failures out of 10",
+ * because one green run has twice hidden a failure that appears in two runs out
+ * of ten.
  *
  * The two kinds of failure are not the same thing and the report must not blur
  * them: a run where a test failed is the suite telling you something, and a run
- * that exited non-zero with `# fail 0` is Д-11 — the coverage reporter falling
+ * that exited non-zero with `# fail 0` is the coverage reporter falling
  * over on a partially written file, which says nothing about the code.
  */
 
@@ -72,12 +69,12 @@ export function renderAcceptanceReport(runs) {
   const failed = runs.filter((run) => !run.ok);
   const realFailures = failed.filter((run) => run.kind === "tests failed");
   lines.push("");
-  lines.push(`${failed.length} падений из ${runs.length}`);
+  lines.push(`${failed.length} ${failed.length === 1 ? "failure" : "failures"} out of ${runs.length}`);
   if (failed.length && !realFailures.length) {
-    lines.push(`Ни одно падение не про тесты: ${failed.map((run) => run.kind).join(", ")}.`);
+    lines.push(`None of the failures is a failing test: ${failed.map((run) => run.kind).join(", ")}.`);
   }
   if (realFailures.length) {
-    lines.push(`Из них с упавшими тестами: ${realFailures.length}. Это то, что надо чинить.`);
+    lines.push(`With failing tests: ${realFailures.length}. That is what needs fixing.`);
   }
   return lines.join("\n");
 }

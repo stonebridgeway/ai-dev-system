@@ -12,7 +12,7 @@ import {
   taskNamesSkill
 } from "./task-vocabulary.mjs";
 
-// The two skills Д-1 names, verbatim from the imported registry.
+// Two imported skills, verbatim from the imported registry.
 const TDD_WORKFLOW = {
   name: "tdd-workflow",
   use_when: "Use this skill when writing new features, fixing bugs, or refactoring code. Enforces test-driven development with 80%+ coverage including unit, integration, and E2E tests.",
@@ -107,7 +107,7 @@ test("the score is carried by the text that says when to use a skill", () => {
 
 test("the half of use_when that says when not to use a skill counts against it", () => {
   // Verbatim from the imported registry: one sentence for the situation, one
-  // for the situations the author excluded (docs/DEFECTS.md, Д-20).
+  // for the situations the author excluded.
   const generalist = {
     name: "intent-driven-development",
     use_when: "a user asks to clarify a feature, define acceptance criteria, de-risk a security/data/migration/integration change, prepare implementation requirements for another agent, or make a complex request testable. Do not trigger for trivial edits, straightforward fixes, active debugging, code review, or implementation requests whose acceptance conditions are already clear unless the user explicitly invokes this skill",

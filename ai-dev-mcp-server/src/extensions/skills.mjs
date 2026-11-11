@@ -19,6 +19,7 @@ import { analyzeDuplicateSkills, enrichSkillQuality } from "../skill-quality.mjs
 import { isPathInside } from "../core/path-policy.mjs";
 import { applySkillOverlays } from "../core/skill-overlays.mjs";
 import { applySkillOutcome } from "../core/skill-outcomes.mjs";
+import { dateSkillRegistry, withSkillRegistryLock } from "../core/skill-registry-freshness.mjs";
 import { stripBom } from "../core/text-format.mjs";
 import {
   SKILL_REGISTRY_FILES,
@@ -51,6 +52,14 @@ const MAX_SEMANTIC_DUPLICATE_PATHS = 32;
  */
 async function rebuildIndex(host) {
   await fs.mkdir(host.skillRegistryDir, { recursive: true });
+  // One rebuild at a time across the volume's sessions, and none waiting for itself.
+  return withSkillRegistryLock(host.skillRegistryDir, () => rebuildIndexHeld(host, path.join(host.skillRegistryDir, path.basename(SKILL_REGISTRY_FILES.combined))));
+}
+
+async function rebuildIndexHeld(host, combinedPath) {
+  // Before the first SKILL.md is read: the registry is dated by it, so a skill
+  // changed while this runs is newer than the registry.
+  const sourcesReadAt = new Date();
 
   const [outcomeStatus, overlays] = await Promise.all([
     host.skillOutcomeStore.status(),
@@ -77,6 +86,7 @@ async function rebuildIndex(host) {
   await host.writeText(SKILL_REGISTRY_FILES.membraneMarkdown, renderMembraneSkillsMarkdown(membrane));
   await host.writeText(SKILL_REGISTRY_FILES.externalMarkdown, renderExternalSkillsMarkdown(external));
   const skillCards = await host.syncSkillCards({ include_membrane: false });
+  await dateSkillRegistry(combinedPath, sourcesReadAt);
   host.markSearchIndexDirty("skill registry rebuilt");
 
   return buildRebuildIndexReport({
@@ -108,7 +118,9 @@ function dotProduct(left, right) {
  * Confirm lexically suspicious duplicate pairs with dense embeddings.
  *
  * Only pairs that fit inside one bounded embedding batch are evaluated; the
- * rest keep their lexical verdict.
+ * rest keep their lexical verdict. Without the local model every pair keeps
+ * it, and the answer says why: the semantic pass is a refinement, and its
+ * absence used to take the whole report down.
  */
 async function refineDuplicatePairsWithBge(host, pairs, records) {
   if (!pairs.length) return { evaluated: 0, pairs: [] };
@@ -123,15 +135,20 @@ async function refineDuplicatePairsWithBge(host, pairs, records) {
   }
   const paths = [...selectedPaths];
   if (!paths.length) return { evaluated: 0, pairs: [] };
-  const embedded = await host.embedTexts({
-    texts: paths.map((skillPath) => {
-      const record = byPath.get(skillPath);
-      return `Skill: ${record?.item?.name || skillPath}\n${String(record?.markdown || "").slice(0, 10000)}`;
-    }),
-    prefix: "passage: ",
-    include_embeddings: true,
-    timeout_ms: 600000
-  });
+  let embedded;
+  try {
+    embedded = await host.embedTexts({
+      texts: paths.map((skillPath) => {
+        const record = byPath.get(skillPath);
+        return `Skill: ${record?.item?.name || skillPath}\n${String(record?.markdown || "").slice(0, 10000)}`;
+      }),
+      prefix: "passage: ",
+      include_embeddings: true,
+      timeout_ms: 600000
+    });
+  } catch (error) {
+    return { evaluated: 0, pairs, unavailable: String(error?.message ?? error) };
+  }
   const vectors = new Map(paths.map((skillPath, index) => [skillPath, embedded.embeddings?.[index] || []]));
   return {
     evaluated: selectedPairs.length,
@@ -204,6 +221,7 @@ async function validateSkillLibrary(host, {
       const semantic = await refineDuplicatePairsWithBge(host, duplicates.near, records);
       duplicates.semantic_evaluated = semantic.evaluated;
       duplicates.near = semantic.pairs;
+      if (semantic.unavailable) duplicates.semantic_unavailable = semantic.unavailable;
     } else {
       duplicates.semantic_evaluated = 0;
     }

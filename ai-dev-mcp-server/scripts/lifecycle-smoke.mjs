@@ -14,6 +14,7 @@ const serverRoot = path.resolve(scriptDir, "..");
 const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-lifecycle-"));
 const projectRoot = path.join(tempRoot, "project");
 const stateRoot = path.join(tempRoot, "state");
+const hostEnv = Object.fromEntries(Object.entries(process.env).filter(([name]) => !/^(AI_DEV_|BGE_M3_)/.test(name)));
 await fs.mkdir(path.join(projectRoot, ".ai-dev"), { recursive: true });
 await fs.writeFile(path.join(projectRoot, "package.json"), JSON.stringify({
   name: "ai-dev-lifecycle-fixture",
@@ -65,8 +66,11 @@ const transport = new StdioClientTransport({
   command: process.execPath,
   args: [path.join(serverRoot, "src", "server.mjs")],
   cwd: serverRoot,
+  // The host's server in a runtime tree of its own: AI_DEV_RUNTIME=docker in a developer's shell would move their real
+  // ~/.ai-dev/state into this folder, removed below, and their other AI_DEV_* or BGE_M3_* places would be written to.
   env: {
-    ...process.env,
+    ...hostEnv,
+    AI_DEV_HOME: path.join(tempRoot, "home"),
     AI_DEV_STATE_ROOT: stateRoot
   },
   stderr: "pipe"
@@ -98,7 +102,7 @@ try {
   // capability (Archify) or a specialist the task named. The reserved ones sit
   // beside the routed core, never instead of it, so counting them against the
   // limit is what this assertion used to do only because an English task could
-  // not reach a specialist at all (Д-29).
+  // not reach a specialist at all.
   // begin_task records the role as `routing_role`; `recommend_skills` answers
   // with `role`. Read both rather than pick one.
   const roleOf = (skill) => skill.routing_role ?? skill.role ?? "";

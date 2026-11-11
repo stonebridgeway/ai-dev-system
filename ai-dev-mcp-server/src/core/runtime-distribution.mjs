@@ -76,55 +76,61 @@ const COMMAND_LABELS = {
   start: "Start",
   doctor: "Doctor",
   acceptance: "Full acceptance",
-  backup: "Backup"
+  backup: "Backup",
+  restore: "Restore"
 };
+
+// Backup and restore are `ai-dev` commands on every system since 3.0; 2.x had
+// two PowerShell scripts that worked only inside a full vault.
+const BACKUP_FILE = Object.freeze({ root: "server", segments: ["src", "cli", "backup.mjs"] });
+const BACKUP_COMMANDS = Object.freeze({
+  backup: "node bin/ai-dev.mjs backup <label>",
+  restore: "node bin/ai-dev.mjs restore <archive.zip> --confirm"
+});
+const RECOVERY = Object.freeze({ backup_command: BACKUP_COMMANDS.backup, restore_command: BACKUP_COMMANDS.restore });
 
 const EXPECTATIONS = {
   windows: {
     files: {
       entrypoint: { root: "server", segments: ["src", "server.mjs"] },
       local_launcher: { root: "server", segments: ["scripts", "start-local.ps1"] },
-      cli: { root: "server", segments: ["scripts", "ai-dev.mjs"] },
+      cli: { root: "server", segments: ["bin", "ai-dev.mjs"] },
       config_example: { root: "server", segments: ["config", "runtime.example.json"] },
-      acceptance: { root: "vault", segments: ["09-mcp", "scripts", "run-acceptance.ps1"] },
-      backup: { root: "vault", segments: ["09-mcp", "scripts", "backup-ai-dev-system.ps1"] },
-      restore: { root: "vault", segments: ["09-mcp", "scripts", "restore-ai-dev-system.ps1"] }
+      acceptance: { root: "server", segments: ["scripts", "acceptance.mjs"] },
+      backup: BACKUP_FILE,
+      restore: BACKUP_FILE
     },
     commands: {
-      start: "powershell -File scripts/start-local.ps1",
-      doctor: "node scripts/ai-dev.mjs doctor",
-      acceptance: "node scripts/ai-dev.mjs acceptance",
-      backup: "node scripts/ai-dev.mjs backup <label>"
+      start: "node bin/ai-dev.mjs mcp",
+      doctor: "node bin/ai-dev.mjs doctor",
+      acceptance: "node bin/ai-dev.mjs acceptance",
+      ...BACKUP_COMMANDS
     },
-    recovery: {
-      backup_script: "09-mcp/scripts/backup-ai-dev-system.ps1",
-      restore_script: "09-mcp/scripts/restore-ai-dev-system.ps1"
-    }
+    recovery: RECOVERY
   },
   posix: {
     files: {
       entrypoint: { root: "server", segments: ["src", "server.mjs"] },
-      local_launcher: { reason: "`npm start` runs the entry point directly; no launcher script ships for this platform." },
-      cli: { root: "server", segments: ["scripts", "ai-dev.mjs"] },
+      local_launcher: { reason: "`ai-dev mcp` (bin/ai-dev.mjs) is the entry point; no launcher script ships for this platform." },
+      cli: { root: "server", segments: ["bin", "ai-dev.mjs"] },
       config_example: { root: "server", segments: ["config", "runtime.example.json"] },
       acceptance: { root: "server", segments: ["scripts", "acceptance.mjs"] },
-      backup: { reason: "No cross-platform backup script ships with this runtime; the PowerShell one is Windows-only." },
-      restore: { reason: "No cross-platform restore script ships with this runtime; the PowerShell one is Windows-only." }
+      backup: BACKUP_FILE,
+      restore: BACKUP_FILE
     },
     commands: {
-      start: "npm start",
-      doctor: "node scripts/ai-dev.mjs doctor",
-      acceptance: "node scripts/acceptance.mjs"
+      start: "node bin/ai-dev.mjs mcp",
+      doctor: "node bin/ai-dev.mjs doctor",
+      acceptance: "node scripts/acceptance.mjs",
+      ...BACKUP_COMMANDS
     },
-    recovery: {
-      reason: "No cross-platform backup or restore script ships with this runtime. Copy the vault and the AI Dev home (AI_DEV_HOME) instead."
-    }
+    recovery: RECOVERY
   },
   docker: {
     files: {
       entrypoint: { root: "server", segments: ["src", "server.mjs"] },
       local_launcher: { reason: "The launcher (docker/run-mcp.sh) runs on the host, outside the image." },
-      cli: { root: "server", segments: ["scripts", "ai-dev.mjs"] },
+      cli: { root: "server", segments: ["bin", "ai-dev.mjs"] },
       config_example: { root: "server", segments: ["config", "runtime.example.json"] },
       acceptance: { reason: "Acceptance runs in a source checkout; the image ships neither the tests nor the dev dependencies." },
       backup: { reason: "The /data volume is the backup unit; see docker/README.md." },
@@ -132,7 +138,7 @@ const EXPECTATIONS = {
     },
     commands: {
       start: "sh docker/run-mcp.sh",
-      doctor: `node ${DOCKER_APP_ROOT}/scripts/ai-dev.mjs doctor`
+      doctor: `node ${DOCKER_APP_ROOT}/bin/ai-dev.mjs doctor`
     },
     command_context: "`Start` runs on the host; the rest run inside the container.",
     recovery: {
@@ -146,23 +152,35 @@ const EXPECTATIONS = {
  * flavor cannot have carries a `reason` instead of a location, so the status
  * tool reports it as not applicable rather than missing.
  *
+ * An installed package (`npm run dist`, the npm package) ships neither the
+ * tests nor the acceptance runner, so acceptance does not apply to it: asking
+ * for it made every package report itself not ready.
+ *
  * @param {string} flavor - One of {@link RUNTIME_FLAVORS}; anything else falls back to `posix`.
+ * @param {{ packaged?: boolean }} [options]
  * @returns {{ files: object, commands: object, command_context?: string, recovery: object }}
  */
-export function distributionExpectations(flavor) {
-  return EXPECTATIONS[flavor] || EXPECTATIONS.posix;
+export function distributionExpectations(flavor, { packaged = false } = {}) {
+  const expected = EXPECTATIONS[flavor] || EXPECTATIONS.posix;
+  if (!packaged || flavor === "docker") return expected;
+  const { acceptance: _command, ...commands } = expected.commands;
+  return {
+    ...expected,
+    files: { ...expected.files, acceptance: { reason: "Acceptance runs in a source checkout; an installed package ships neither the tests nor their runner." } },
+    commands
+  };
 }
 
 /**
  * Resolve a flavor's expected files against the two roots that hold them.
  *
  * @param {string} flavor - Runtime flavor.
- * @param {{ serverRoot: string, vaultRoot: string }} roots - Absolute roots.
+ * @param {{ serverRoot: string, vaultRoot: string, packaged?: boolean }} roots - Absolute roots, and whether this is an installed package.
  * @returns {Record<string, { applicable: boolean, path?: string, reason?: string }>}
  */
-export function distributionFilePlan(flavor, { serverRoot, vaultRoot }) {
+export function distributionFilePlan(flavor, { serverRoot, vaultRoot, packaged = false }) {
   const roots = { server: serverRoot, vault: vaultRoot };
-  return Object.fromEntries(Object.entries(distributionExpectations(flavor).files).map(([key, spec]) => [
+  return Object.fromEntries(Object.entries(distributionExpectations(flavor, { packaged }).files).map(([key, spec]) => [
     key,
     spec.reason
       ? { applicable: false, reason: spec.reason }
@@ -293,8 +311,15 @@ export function renderRuntimeDistribution(manifest) {
     .join("\n");
   const commandContext = manifest.command_context ? `\n\n${manifest.command_context}` : "";
   // A flavor without scripts states why instead of printing a PowerShell path
-  // it does not have (docs/DEFECTS.md, Д-61).
-  const recoveryLines = manifest.recovery?.backup_script
+  // it does not have.
+  const recoveryLines = manifest.recovery?.backup_command
+    ? [
+      `- Backup: \`${manifest.recovery.backup_command}\``,
+      `- Restore: \`${manifest.recovery.restore_command}\``,
+      "- A backup holds the vault and AI Dev's state with the SHA-256 of every file, and leaves out indexes, caches, models and dependencies."
+    ].join("\n")
+    // What a 2.x install recorded, read back until it is rebuilt.
+    : manifest.recovery?.backup_script
     ? [
       `- Backup script: \`${manifest.recovery.backup_script}\``,
       `- Restore script: \`${manifest.recovery.restore_script}\``,

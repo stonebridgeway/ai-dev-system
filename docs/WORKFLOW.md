@@ -9,7 +9,8 @@ example from first command to closed task, see the [demo](DEMO.md).
 ## Working with the agent
 
 1. Open the target repository in your MCP client.
-2. Give the agent a concrete task and a path under `/workspace`.
+2. Give the agent a concrete task and the project's path (in Docker on Windows, under
+   `/workspace`).
 3. For substantive work the agent calls `begin_task`, reviews the compiled
    context, and loads no more than three routed skills.
 4. After changing code the agent records progress with `checkpoint_task`, runs
@@ -28,10 +29,20 @@ example from first command to closed task, see the [demo](DEMO.md).
    one. `prepare_pull_request` builds the same text at any point. Neither pushes
    the branch nor opens the pull request: both commands are returned as text.
 
+**What the four tools answer.** `begin_task` (and `begin_task_in_worktree`, which starts the task in
+a worktree of its own) returns the task, its acceptance criteria, the compiled context and the
+routed skills; `checkpoint_task`, `verify_task` and `complete_task`
+return what changed — the checkpoint and its snapshot, each check with its status and, for a
+check that did not pass, the part of the output that says why, the closed task and its pull
+request — and not the whole task record again. On the task in [the demo](DEMO.md) that is 33 KB of
+answers instead of 242 KB. `get_task` returns the whole record, `include_details: true` on any of
+the four returns it in place of the summary, and `AI_DEV_RESPONSE_MODE=full` in a client's
+environment makes every answer the whole record, for a client that reads it.
+
 Example request to the agent:
 
 ```text
-Use the ai-dev MCP server. Begin a task for /workspace/my-project:
+Use the ai-dev MCP server. Begin a task for ~/Dev/my-project:
 add CSV export for the report, cover the change with tests, and run verify_task.
 ```
 

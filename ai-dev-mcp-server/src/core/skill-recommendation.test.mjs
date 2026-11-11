@@ -375,7 +375,7 @@ test("quality tasks add review, and backend tasks add the backend pair", () => {
 });
 
 
-// Д-1. 101 imported skills were in the index and none of them could ever be
+// 101 imported skills were in the index and none of them could ever be
 // recommended: our own three fill every conventional slot, and an imported
 // skill's English `use_when` shares no substring with a Russian task. The fix
 // is a reserved slot plus the bilingual expansion, and the thing it must not do
@@ -495,7 +495,7 @@ test("a skill that says it is not for this situation does not get the slot", () 
   const base = [registryItem()];
   // The real shape of the generalist that used to take the slot: a use_when
   // that answers almost any task, with the situations it is not for listed in
-  // the same sentence (docs/DEFECTS.md, Д-20).
+  // the same sentence.
   const generalist = {
     ...IMPORTED_TDD,
     name: "intent-driven-development",

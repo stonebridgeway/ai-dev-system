@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { tools } from "../src/mcp-stdio.mjs";
 import { READ_ONLY_TOOL_NAMES } from "../src/server.mjs";
 import { TOOL_PROFILES, auditProfileCoverage, profileOfTool } from "../src/core/tool-profiles.mjs";
+import { renderControlApi } from "./render-control-api.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const target = path.join(root, "docs", "TOOLS.md");
@@ -51,7 +52,8 @@ const GROUPS = [
       "search_skill_registry",
       "rebuild_index",
       "write_knowledge_note",
-      "append_knowledge_note"
+      "append_knowledge_note",
+      "render_knowledge_galaxy"
     ]
   },
   {
@@ -141,7 +143,7 @@ const GROUPS = [
   {
     title: "Change hygiene and project rules",
     when: "Reviewing a diff before claiming it is done, and installing the engineering rules an agent should follow in this repository.",
-    tools: ["verify_change_hygiene", "run_security_scan", "list_rule_packs", "install_project_rules", "distill_project_rules"]
+    tools: ["verify_change_hygiene", "run_security_scan", "plan_security_fixes", "list_rule_packs", "install_project_rules", "distill_project_rules"]
   },
   {
     title: "Memory and learning",
@@ -223,6 +225,28 @@ const GROUPS = [
       "system_dashboard_status",
       "prepare_runtime_distribution",
       "runtime_distribution_status"
+    ]
+  },
+  {
+    title: "Control API",
+    when: "Driving the install from an app or a script: its state, setting it up, the local model, the clients, logs, settings and an overview. Listed only to a session that names the `control` profile; their answers follow docs/CONTROL-API.md.",
+    tools: [
+      "system_status",
+      "setup_run",
+      "model_install",
+      "model_import",
+      "model_verify",
+      "model_remove",
+      "clients_list",
+      "clients_install",
+      "clients_remove",
+      "logs_tail",
+      "settings_get",
+      "settings_set",
+      "custom_skills_list",
+      "custom_skills_add",
+      "custom_skills_remove",
+      "workspace_overview"
     ]
   }
 ];
@@ -336,22 +360,28 @@ if (problems.length) {
   process.exit(1);
 }
 
-const current = await fs.readFile(target, "utf8").catch(() => null);
-if (check) {
-  if (current === markdown) {
-    console.log(JSON.stringify({ status: "current", document: "docs/TOOLS.md", tools: tools.length }, null, 2));
+// The control tools' own document: their inputs and the answers they promise.
+const control = renderControlApi(tools.filter((tool) => profileOfTool(tool.name) === "control"), new Set(READ_ONLY_TOOL_NAMES));
+const documents = [
+  { file: target, name: "docs/TOOLS.md", markdown },
+  { file: path.join(root, "docs", "CONTROL-API.md"), name: "docs/CONTROL-API.md", markdown: control }
+];
+let stale = false;
+for (const document of documents) {
+  const current = await fs.readFile(document.file, "utf8").catch(() => null);
+  if (check) {
+    if (current === document.markdown) {
+      console.log(JSON.stringify({ status: "current", document: document.name, tools: tools.length }, null, 2));
+    } else {
+      console.error(`${document.name} is ${current === null ? "missing" : "stale"}. Run \`node ${generator}\` and commit the result.`);
+      stale = true;
+    }
+  } else if (current === document.markdown) {
+    console.log(JSON.stringify({ status: "unchanged", document: document.name, tools: tools.length }, null, 2));
   } else {
-    console.error(
-      `docs/TOOLS.md is ${current === null ? "missing" : "stale"}. Run \`node ${generator}\` and commit the result.`
-    );
-    process.exit(1);
-  }
-} else {
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  if (current === markdown) {
-    console.log(JSON.stringify({ status: "unchanged", document: "docs/TOOLS.md", tools: tools.length }, null, 2));
-  } else {
-    await fs.writeFile(target, markdown, "utf8");
-    console.log(JSON.stringify({ status: "written", document: "docs/TOOLS.md", tools: tools.length }, null, 2));
+    await fs.mkdir(path.dirname(document.file), { recursive: true });
+    await fs.writeFile(document.file, document.markdown, "utf8");
+    console.log(JSON.stringify({ status: "written", document: document.name, tools: tools.length }, null, 2));
   }
 }
+if (stale) process.exit(1);

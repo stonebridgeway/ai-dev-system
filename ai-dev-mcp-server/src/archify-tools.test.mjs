@@ -25,7 +25,7 @@ async function exampleSpec() {
   ), "utf8"));
 }
 
-test("all Phase 2 Archify tools are defined", () => {
+test("all Archify tools are defined", () => {
   const names = new Set(tools.map((tool) => tool.name));
   for (const name of [
     "archify_doctor", "archify_guide", "archify_validate", "archify_render", "archify_deliver",

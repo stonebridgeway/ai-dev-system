@@ -1,22 +1,42 @@
 #!/usr/bin/env node
+/**
+ * `npm run docker:audit` — check the build context `docker:prepare` made before
+ * an image is built from it: made from the tree as it is now, nothing private in
+ * it, nothing beside the distribution and the image's own files, the
+ * distribution whole by its `distribution.json`, every module it imports in it,
+ * and the files the server reads at start.
+ */
 import { existsSync } from "node:fs";
 import { readFile, readdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { verifyDistribution } from "../src/core/distribution-build.mjs";
 import {
   assertCleanDistribution,
   auditDistributionTree,
   buildContextStaleness,
-  distributionContentFingerprint,
   findDanglingImports,
   ownerUsername
 } from "../src/core/public-distribution.mjs";
+import { CONTEXT_DISTRIBUTION, CONTEXT_RECORD } from "./prepare-docker-context.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDir, "..", "..");
 const target = path.resolve(process.argv[2] || path.join(repositoryRoot, ".docker", "build-context"));
+const distribution = path.join(target, CONTEXT_DISTRIBUTION);
+
+/** What the context holds at its top: the distribution and the image's own files. */
+const CONTEXT_ENTRIES = new Set([".dockerignore", "Dockerfile", "container", CONTEXT_DISTRIBUTION, CONTEXT_RECORD]);
+
+/**
+ * Files the server reads at load time, which an import check cannot see: the
+ * dense manifest is read through `createRequire` from a computed URL, and an
+ * image without it died on its first start; the seed's
+ * history is read by the first sync of a 2.x volume.
+ */
+const REQUIRED_ASSETS = ["ai-dev-mcp-server/models/bge-m3.manifest.json", "ai-dev-mcp-server/data/seed-history.json", "seed/public-seed.manifest.json"];
 
 /**
  * The newest modification time below any of `roots`, or NaN when none is readable.
@@ -38,90 +58,70 @@ async function newestSourceMtime(roots) {
   return newest;
 }
 
-if (!existsSync(target)) {
-  process.stderr.write(
-    `Docker build context not found: ${target}\n` +
-    "Run `npm run docker:prepare` first to generate the allowlisted context.\n"
-  );
+function fail(lines) {
+  process.stderr.write(`${lines.join("\n")}\n`);
   process.exit(1);
 }
+
+if (!existsSync(target)) {
+  fail([`Docker build context not found: ${target}`, "Run `npm run docker:prepare` first to generate it."]);
+}
 // The context is local build output, so it can predate the tree being audited.
-// Saying so beats reporting its dangling imports as defects of the sources.
-const manifestPath = path.join(target, "distribution-manifest.json");
-const contextManifest = await readFile(manifestPath, "utf8").then(JSON.parse).catch(() => null);
+// Saying so beats reporting its findings as defects of the sources.
+const record = await readFile(path.join(target, CONTEXT_RECORD), "utf8").then(JSON.parse).catch(() => null);
 const staleness = buildContextStaleness({
-  generatedAt: contextManifest?.generated_at,
+  generatedAt: record?.generated_at,
   newestSourceMs: await newestSourceMtime([
     path.join(repositoryRoot, "ai-dev-mcp-server", "src"),
     path.join(repositoryRoot, "ai-dev-mcp-server", "scripts")
   ])
 });
 if (staleness.stale) {
-  process.stderr.write(
-    `Docker build context is stale: ${staleness.reason}.\n` +
-    "Run `npm run docker:prepare` and audit again; findings from a stale context describe a tree that no longer exists.\n"
-  );
-  process.exit(1);
+  fail([`Docker build context is stale: ${staleness.reason}.`,
+    "Run `npm run docker:prepare` and audit again; findings from a stale context describe a tree that no longer exists."]);
 }
 
+const strays = (await readdir(target)).filter((name) => !CONTEXT_ENTRIES.has(name));
+if (strays.length) fail([`Docker build context holds what it is not made of: ${strays.join(", ")}.`, "Run `npm run docker:prepare` again."]);
+
 const audit = assertCleanDistribution(
-  await auditDistributionTree(target, {
-    forbiddenTerms: [
-      os.homedir(),
-      ...(process.env.CI ? [] : [ownerUsername()])
-    ]
-  }),
+  await auditDistributionTree(target, { forbiddenTerms: [os.homedir(), ...(process.env.CI ? [] : [ownerUsername()])] }),
   "Docker build context"
 );
 
-// What the allowlist left out is only discovered when something imports it, and
-// by then the image is built and its server dies on startup.
-//
-// `runtime/` is walked as well as `app/`. It was not, and the Frontend QA
-// runner shipped for months importing two server modules by a relative path
-// that resolves nowhere inside the image — the audit was green because it never
-// looked there (docs/DEFECTS.md, Д-56). The Dockerfile copies `runtime/*` to
-// `/opt/ai-dev/*` and `app/` to `/opt/ai-dev/app`, with
-// `/opt/ai-dev/ai-dev-mcp-server` symlinked onto the latter, so from inside
-// `runtime/` the server is `../ai-dev-mcp-server`.
-// Non-JS assets the server reads at load time. `findDanglingImports` cannot see
-// these — the dense manifest is read through `createRequire` from a computed
-// URL, so it left the allowlist unnoticed and the image started, imported
-// `mcp-stdio.mjs` and died on a missing JSON file (docs/DEFECTS.md, Д-62).
-const requiredAssets = ["app/models/bge-m3.manifest.json"];
-const absentAssets = [];
-for (const relative of requiredAssets) {
-  const present = await stat(path.join(target, relative)).then(() => true).catch(() => false);
-  if (!present) absentAssets.push(relative);
-}
-if (absentAssets.length) {
-  process.stderr.write(
-    `Docker build context is missing ${absentAssets.length} file(s) the server reads at startup:\n` +
-    absentAssets.map((item) => `  ${item}\n`).join("") +
-    "Add them to the allowlist in scripts/prepare-docker-context.mjs.\n"
-  );
-  process.exit(1);
+const check = await verifyDistribution(distribution);
+if (!check.ok) {
+  fail([`The distribution in the context is not what its distribution.json lists: ${JSON.stringify({ missing: check.missing, changed: check.changed, extra: check.extra, dropped: check.dropped })}`]);
 }
 
+const absent = [];
+for (const relative of REQUIRED_ASSETS) {
+  if (!await stat(path.join(distribution, relative)).then(() => true, () => false)) absent.push(relative);
+}
+if (absent.length) {
+  fail([`Docker build context is missing ${absent.length} file(s) the server reads at startup:`, ...absent.map((item) => `  ${item}`),
+    "Add them to ai-dev-mcp-server/distribution.allowlist.json."]);
+}
+
+// What the allowlist left out is only discovered when something imports it, and
+// by then the image is built and its server dies on startup. The Frontend QA
+// runner imports the server as `../ai-dev-mcp-server`, which is where it sits in
+// the distribution.
 const dangling = [
-  ...await findDanglingImports(path.join(target, "app")),
-  ...await findDanglingImports(path.join(target, "runtime"), {
-    aliases: [[path.join(target, "runtime", "ai-dev-mcp-server"), path.join(target, "app")]]
-  })
+  ...await findDanglingImports(path.join(distribution, "ai-dev-mcp-server")),
+  ...await findDanglingImports(path.join(distribution, "frontend-qa"))
 ];
 if (dangling.length) {
-  process.stderr.write(
-    `Docker build context imports ${dangling.length} module(s) it does not carry:\n` +
-    dangling.map((item) => `  ${item.file} imports ${item.specifier} (${item.resolved})\n`).join("") +
-    "Either ship the file or stop importing it; the allowlist is in scripts/prepare-docker-context.mjs.\n"
-  );
-  process.exit(1);
+  fail([`Docker build context imports ${dangling.length} module(s) it does not carry:`,
+    ...dangling.map((item) => `  ${item.file} imports ${item.specifier} (${item.resolved})`),
+    "Either ship the file or stop importing it; the allowlist is ai-dev-mcp-server/distribution.allowlist.json."]);
 }
 
 process.stdout.write(`${JSON.stringify({
   status: "passed",
   target,
+  version: check.version,
   files: audit.total_files,
   bytes: audit.total_bytes,
-  fingerprint: distributionContentFingerprint(audit.files)
+  distribution: { files: check.files, bytes: check.bytes, fingerprint: record?.distribution?.content_fingerprint ?? "" }
 }, null, 2)}\n`);

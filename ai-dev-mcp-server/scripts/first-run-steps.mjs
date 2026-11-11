@@ -7,7 +7,7 @@
  * while the container ran the registry alone. A fresh container therefore
  * started with no index and no benchmark, and the first thing its user saw was
  * `Health: fail` on a correct install, with every search tool refusing until
- * somebody called `rebuild_search_index` by hand (docs/DEFECTS.md, Д-57).
+ * somebody called `rebuild_search_index` by hand.
  *
  * So the required steps of `FIRST_RUN_STEPS` live here — what decides
  * whether each is needed, what each one does, and how to run a plan — and both
@@ -21,6 +21,8 @@
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { checkSkillRegistry } from "../src/core/skill-registry-freshness.mjs";
+import { indexStatus as readIndexFileStatus } from "../src/core/search-store.mjs";
 
 /**
  * The steps of `FIRST_RUN_STEPS` that no install can do without.
@@ -89,7 +91,13 @@ export function summarizeToolResult(result, describe) {
  * @param {(name: string, args: object) => Promise<object>} input.callTool
  * @returns {Record<string, () => Promise<string>>} Keyed by step id.
  */
-export function createRequiredActions({ callTool }) {
+export function createRequiredActions({ callTool, onProgress, signal }) {
+  // A caller that shows progress and can stop (`setup_run`) passes both on to
+  // the one long step; the others take seconds.
+  const along = {
+    ...(onProgress ? { onProgress: (event = {}) => onProgress({ ...event, step: "search_index" }) } : {}),
+    ...(signal ? { signal } : {})
+  };
   return {
     async skill_registry() {
       const result = await callTool("rebuild_index", {});
@@ -98,7 +106,7 @@ export function createRequiredActions({ callTool }) {
     async skill_quality_report() {
       // `validate_skill_library` is the only writer of the report the health
       // check reads, and nothing called it: every fresh install answered its own
-      // diagnostic with `skill_quality: report missing` (docs/DEFECTS.md, Д-63).
+      // diagnostic with `skill_quality: report missing`.
       // The duplicate analysis is the expensive half and the report does not
       // need it here, so it is left to whoever asks for the tool by hand.
       const result = await callTool("validate_skill_library", {
@@ -119,12 +127,12 @@ export function createRequiredActions({ callTool }) {
         // vectors or to try to make new ones.
         dense_embeddings: false,
         preserve_dense: true
-      });
+      }, along);
       return summarizeToolResult(result, (doc) => (
         // `document_count` is what the rebuild path of search_cli.py returns, and
         // none of the other three names existed on a first run — so the very
         // first thing a new user saw was "? document(s) indexed" while the
-        // index was in fact built (docs/DEFECTS.md, Д-75; upstream #63).
+        // index was in fact built (issue #63).
         `${doc.indexed_document_count ?? doc.current_document_count ?? doc.document_count ?? doc.documents ?? "?"} document(s) indexed`
       ));
     },
@@ -165,32 +173,50 @@ async function modifiedAt(target) {
  * @returns {Promise<{ indexStatus: object|null, present: Record<string, boolean>, stale: Record<string, boolean> }>}
  */
 export async function readRequiredState({ paths, callTool, serverRoot, skillRoutingEvalCasesPath }) {
-  const indexStatus = existsSync(paths.searchIndexPath)
-    ? await callTool("search_index_status", { include_external_project_files: true })
-      .then(parseToolResult)
-      .catch(() => null)
-    : null;
+  // A registry whose skills changed on disk — a pull that removed or rewrote
+  // some — is out of date, and so is everything built from it. Asking
+  // the index first would rebuild the registry inside that call and leave the
+  // plan saying "already built".
+  const registry = await checkSkillRegistry({
+    registryPath: paths.skillRegistryPath,
+    catalogRoot: path.dirname(paths.registriesDir)
+  }).catch(() => null);
+  const registryStale = Boolean(registry?.stale);
+  // With the registry out of date the index file is asked directly: what it
+  // holds now, dense vectors included, is still what setup reports, and only
+  // the tool would rebuild the registry on the way.
+  const indexStatus = !existsSync(paths.searchIndexPath) ? null
+    : registryStale
+      ? await readIndexFileStatus({
+        vaultRoot: path.dirname(path.dirname(paths.registriesDir)),
+        indexPath: paths.searchIndexPath,
+        includeExternalProjectFiles: true
+      }).catch(() => null)
+      : await callTool("search_index_status", { include_external_project_files: true })
+        .then(parseToolResult)
+        .catch(() => null);
   const present = {
     skill_registry: existsSync(paths.skillRegistryPath),
     search_index: existsSync(paths.searchIndexPath),
     routing_benchmark: existsSync(paths.routingReportPath),
     skill_quality_report: existsSync(paths.skillQualityReportPath)
   };
-  const stale = { search_index: Boolean(indexStatus?.stale) };
+  const stale = { skill_registry: registryStale, search_index: registryStale || Boolean(indexStatus?.stale) };
   if (present.routing_benchmark) {
     const report = await modifiedAt(paths.routingReportPath);
     const inputs = await Promise.all([
       modifiedAt(skillRoutingEvalCasesPath),
-      modifiedAt(path.join(serverRoot, "src", "core", "skill-router.mjs"))
+      modifiedAt(path.join(serverRoot, "src", "core", "skill-router.mjs")),
+      modifiedAt(paths.skillRegistryPath)
     ]);
-    stale.routing_benchmark = report < Math.max(...inputs);
+    stale.routing_benchmark = registryStale || report < Math.max(...inputs);
   }
   if (present.skill_quality_report) {
     // The report describes the registry, so a registry rebuilt since is a
     // report that no longer describes anything. A report at least as new as the
     // registry is the second start rebuilding nothing.
     const report = await modifiedAt(paths.skillQualityReportPath);
-    stale.skill_quality_report = report < await modifiedAt(paths.skillRegistryPath);
+    stale.skill_quality_report = registryStale || report < await modifiedAt(paths.skillRegistryPath);
   }
   return { indexStatus, present, stale };
 }
@@ -200,18 +226,35 @@ export async function readRequiredState({ paths, callTool, serverRoot, skillRout
  *
  * A step with no action is reported as it was planned: `planFirstRun` knows
  * about optional steps this runner has no action for, and a caller that only
- * has the required actions still gets a full report.
+ * has the required actions still gets a full report. A step that `requires`
+ * one that failed in this run is skipped and says so: the vectors after a
+ * model download that failed only failed again.
+ *
+ * A stop (`signal`) is not a fault: the step it cuts short and the
+ * steps after it are skipped and say so, and none of the rest is announced.
+ * A step that fails of something else as the stop comes — a full
+ * disk — failed, and says so.
  *
  * @param {Array<{ id: string, run: boolean }>} plan - From `planFirstRun`.
  * @param {Record<string, () => Promise<string>>} actions
  * @param {(line: string) => void} [onStep] - Called before each step that runs.
+ * @param {{ signal?: AbortSignal }} [options]
  * @returns {Promise<Array<object>>} The plan entries with `status` and timing.
  */
-export async function runFirstRunPlan(plan, actions, onStep = () => {}) {
+export async function runFirstRunPlan(plan, actions, onStep = () => {}, { signal } = {}) {
   const results = [];
   for (const step of plan) {
     if (!step.run || !actions[step.id]) {
       results.push({ ...step, status: "skipped" });
+      continue;
+    }
+    if (signal?.aborted) {
+      results.push({ ...step, status: "skipped", reason: "not run: setup was stopped" });
+      continue;
+    }
+    const needed = step.requires ? results.find((item) => item.id === step.requires) : null;
+    if (needed?.status === "failed") {
+      results.push({ ...step, status: "skipped", reason: `not run: ${needed.title} failed above, and this step needs it` });
       continue;
     }
     onStep(step);
@@ -220,12 +263,11 @@ export async function runFirstRunPlan(plan, actions, onStep = () => {}) {
       const reason = await actions[step.id]();
       results.push({ ...step, status: "done", reason, duration_ms: Date.now() - started });
     } catch (error) {
-      results.push({
-        ...step,
-        status: "failed",
-        error: String(error?.message ?? error).split("\n")[0],
-        duration_ms: Date.now() - started
-      });
+      const message = String(error?.message ?? error).split("\n")[0];
+      const stopped = signal?.aborted && (error === signal.reason || error?.name === "AbortError" || error?.cancelled === true);
+      results.push(stopped
+        ? { ...step, status: "skipped", reason: `stopped: ${message}`, duration_ms: Date.now() - started }
+        : { ...step, status: "failed", error: message, duration_ms: Date.now() - started });
     }
   }
   return results;

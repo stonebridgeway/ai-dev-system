@@ -173,6 +173,22 @@ test("rebuild_index writes every registry file and reports what it built", async
   assert.deepEqual(calls.at(-1), ["markSearchIndexDirty", "skill registry rebuilt"]);
 });
 
+test("two rebuilds of one registry run one after the other: its folders are rewritten whole", async (t) => {
+  const { registry, host } = await createFixture(t);
+  const events = [];
+  const collect = host.collectCustomSkills;
+  host.collectCustomSkills = async () => {
+    events.push("start");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const items = await collect();
+    events.push("end");
+    return items;
+  };
+  const rebuild = registry.handlers.get("rebuild_index");
+  await Promise.all([rebuild({}), rebuild({})]);
+  assert.deepEqual(events, ["start", "end", "start", "end"]);
+});
+
 test("validate_skill_library scores the sources and writes the report and dashboard", async (t) => {
   const { registry, writes, calls } = await createFixture(t);
   const result = await registry.handlers.get("validate_skill_library")({});
@@ -253,6 +269,30 @@ test("semantic duplicate refinement is off by default and reaches the embedder w
   });
   // One skill cannot pair with itself, so there is still nothing to refine.
   assert.equal(semantic.duplicates.semantic_evaluated, 0);
+});
+
+test("near duplicates are confirmed by the model, and without it keep their lexical verdict and say why", async (t) => {
+  const copy = registryItem({ name: "feature-builder-copy", path: "custom/feature-builder-copy/SKILL.md" });
+  const { registry, calls, host, vaultRoot } = await createFixture(t, { skills: [registryItem(), copy] });
+  const folder = path.join(vaultRoot, "03-skills-catalog", "sources", "custom", "feature-builder-copy");
+  await fs.mkdir(folder, { recursive: true });
+  await fs.writeFile(path.join(folder, "SKILL.md"), SKILL_MARKDOWN.replace(/feature-builder/g, "feature-builder-copy"), "utf8");
+  const args = { include_semantic_duplicates: true, duplicate_threshold: 0.5, write_report: false };
+
+  const confirmed = await registry.handlers.get("validate_skill_library")(args);
+  assert.equal(confirmed.duplicates.semantic_evaluated, 1);
+  assert.equal(confirmed.duplicates.near[0].semantic_confirmed, true);
+  assert.deepEqual(calls.filter(([name]) => name === "embedTexts"), [["embedTexts", 2]]);
+
+  host.embedTexts = async () => {
+    throw new Error("Dense search is not installed: the model is not on this machine. Run `npm run setup -- --model` to download it.");
+  };
+  const lexical = await registry.handlers.get("validate_skill_library")(args);
+  assert.equal(lexical.duplicates.semantic_evaluated, 0);
+  assert.equal(lexical.duplicates.near.length, 1, "the lexical pair stands");
+  assert.equal(lexical.duplicates.near[0].semantic_confirmed, undefined);
+  assert.match(lexical.duplicates.semantic_unavailable, /^Dense search is not installed/);
+  assert.ok(lexical.summary ?? lexical.status, "and the report itself is there");
 });
 
 test("duplicate analysis can be turned off entirely", async (t) => {

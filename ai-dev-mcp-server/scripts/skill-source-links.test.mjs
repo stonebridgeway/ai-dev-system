@@ -4,7 +4,7 @@
  * They were written at different times by different hands, and they drifted:
  * the notices credit `Leonxlnx/taste-skill`, while both READMEs linked
  * `tt-a1i/taste-skill`, which does not exist — a broken link shipped to every
- * reader of the front page (docs/DEFECTS.md, Д-66).
+ * reader of the front page.
  *
  * So the notices file is the single list of sources, and a GitHub link in a
  * README has to be on it. A link to something that is not a skill source has
@@ -20,6 +20,8 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const READMES = ["README.md", "README.ru.md"];
 const NOTICES = "THIRD_PARTY_NOTICES.md";
+/** The project's own repository: its releases and issues, not an imported source. */
+const OWN = "stonebridgeway/ai-dev-system";
 
 /** Every `https://github.com/<owner>/<repo>` in this text, trailing punctuation dropped. */
 function githubRepositories(text) {
@@ -42,7 +44,7 @@ test("every repository the README links is one THIRD_PARTY_NOTICES.md records as
   assert.ok(sources.size >= 5, `THIRD_PARTY_NOTICES.md lists ${sources.size} GitHub source(s); the parser is reading the wrong lines.`);
 
   for (const readme of READMES) {
-    const linked = new Set(githubRepositories(await readRepositoryFile(readme)));
+    const linked = new Set(githubRepositories(await readRepositoryFile(readme)).filter((repository) => repository.toLowerCase() !== OWN));
     assert.ok(linked.size > 0, `${readme} links no repository at all; the parser is reading the wrong file.`);
     for (const repository of linked) {
       assert.ok(

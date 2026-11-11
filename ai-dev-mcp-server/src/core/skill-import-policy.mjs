@@ -38,22 +38,21 @@ export const SKILL_IMPORT_INSTRUCTION_POLICY = "data-until-review";
 export const SKILL_IMPORT_TRUST_LEVEL = "known-upstream";
 
 /**
- * Taxonomy groups that never enter the catalogue. Each group cites the row of
- * the ECC review it comes from; `rules` holds exact skill names plus `family-*`
+ * Taxonomy groups that never enter the catalogue. Each group cites the ECC
+ * skill category it comes from; `rules` holds exact skill names plus `family-*`
  * prefixes, matched against both the upstream directory name and the name in
  * the skill's frontmatter (ECC's `scientific-*` folders rename themselves).
  *
  * Deliberately *not* excluded: the language, framework and database reference
  * skills, and `coding-standards` / `git-workflow` / `error-handling` /
- * `api-connector-builder` / `hexagonal-architecture`. ECC-GAP-ANALYSIS.md §D
- * lists those as "подключаются через import_skill_repo" — they are in §D
- * because they need no hand-porting, which is exactly what this import does.
+ * `api-connector-builder` / `hexagonal-architecture`: they need no
+ * hand-porting, which is exactly what this import does.
  */
 export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "domain-business",
     reason: "Business, legal, and marketing operations rather than the development engine.",
-    source: "ECC-GAP-ANALYSIS.md §D (доменные/бизнес-скиллы); PLAN.md §4.2",
+    source: "ECC skill taxonomy: domain and business skills",
     rules: Object.freeze([
       "article-writing", "benchmark-methodology", "brand-discovery", "brand-voice",
       "carrier-relationship-management", "competitive-platform-analysis",
@@ -71,7 +70,7 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "regulated-and-niche-domains",
     reason: "Healthcare, crypto, science, networking, and homelab domains outside an engineering server.",
-    source: "ECC-GAP-ANALYSIS.md §D (healthcare/крипто/наука/сети/homelab); PLAN.md §4.2",
+    source: "ECC skill taxonomy: healthcare, crypto, science, networking, homelab",
     rules: Object.freeze([
       "agent-payment-x402", "cisco-ios-patterns", "defi-amm-security", "evm-token-decimals",
       "flox-environments", "healthcare-*", "hipaa-compliance", "homelab-*", "ito-*",
@@ -83,7 +82,7 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "media-creative",
     reason: "Video, animation, and creative production; several need external media APIs.",
-    source: "ECC-GAP-ANALYSIS.md §D (медиа/видео/креатив)",
+    source: "ECC skill taxonomy: media, video, creative",
     rules: Object.freeze([
       "blender-motion-state-inspection", "fal-ai-media", "frontend-slides", "ios-icon-gen",
       "manim-video", "openclaw-persona-forge", "remotion-video-creation", "taste",
@@ -94,7 +93,7 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "external-mcp-dependent",
     reason: "Require Context7, Exa, Firecrawl, or similar remote MCP servers; this server runs offline.",
-    source: "ECC-GAP-ANALYSIS.md §D (внешние MCP-зависимые скиллы)",
+    source: "ECC skill taxonomy: skills that depend on external MCP servers",
     rules: Object.freeze([
       "codehealth-mcp", "data-scraper-agent", "deep-research", "documentation-lookup",
       "exa-search", "laravel-plugin-discovery", "mailtrap-email-integration", "repo-scan",
@@ -104,7 +103,7 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "ecc-self-service",
     reason: "Navigation, configuration, and self-audit of ECC itself, or host shell and terminal control.",
-    source: "ECC-GAP-ANALYSIS.md §D (ECC-специфичные скиллы самообслуживания); PLAN.md §4.2",
+    source: "ECC skill taxonomy: ECC-specific self-service skills",
     rules: Object.freeze([
       "agent-sort", "agentic-os", "automation-audit-ops", "autonomous-agent-harness",
       "claude-devfleet", "configure-ecc", "dev-team", "dmux-workflows", "dynamic-workflow-mode",
@@ -117,7 +116,7 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "agent-orchestration",
     reason: "Delegate phases to Claude Code subagents; orchestration belongs to the runner, not the MCP server.",
-    source: "ECC-GAP-ANALYSIS.md §D (оркестрация субагентов); PLAN.md §4.2",
+    source: "ECC skill taxonomy: subagent orchestration",
     rules: Object.freeze([
       "council", "council-multi-model", "gan-*", "opensource-pipeline", "orch-*", "santa-method"
     ])
@@ -125,7 +124,7 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "agent-loops",
     reason: "Run-until-done loops and transcript observers; the server never runs background processes.",
-    source: "ECC-GAP-ANALYSIS.md §D (циклы и наблюдение за ними); PLAN.md §4.2",
+    source: "ECC skill taxonomy: loops and their observers",
     rules: Object.freeze([
       "autonomous-loops", "continuous-agent-loop", "continuous-learning-v2", "loop-design-check",
       "parallel-execution-optimizer", "ralphinho-rfc-pipeline"
@@ -134,13 +133,13 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   Object.freeze({
     id: "ecc-operator-surfaces",
     reason: "Local browser and desktop UIs; the Obsidian dashboard and Argentum own that role here.",
-    source: "ECC-GAP-ANALYSIS.md §D (Plan Canvas, дашборды ECC)",
+    source: "ECC skill taxonomy: Plan Canvas, ECC dashboards",
     rules: Object.freeze(["dashboard-builder", "plan-canvas"])
   }),
   Object.freeze({
     id: "superseded-by-ai-dev-system",
     reason: "Duplicate a module this server already owns (memory, instincts, guard, evals, skill validation).",
-    source: "ECC-GAP-ANALYSIS.md §D (прочее); PLAN.md §4.2",
+    source: "ECC skill taxonomy: other",
     rules: Object.freeze([
       "agent-architecture-audit", "agent-harness-construction", "agent-introspection-debugging",
       "agent-self-evaluation", "agentic-engineering", "ai-first-engineering",
@@ -154,8 +153,8 @@ export const SKILL_IMPORT_EXCLUSION_GROUPS = Object.freeze([
   }),
   Object.freeze({
     id: "oversized-for-seed",
-    reason: "Tens of framework reference files; ECC-GAP-ANALYSIS.md §D calls carrying them into the seed pointless.",
-    source: "ECC-GAP-ANALYSIS.md §D (реферативные скиллы, строка про Remotion/Angular)",
+    reason: "Tens of framework reference files; carrying them into the seed is pointless.",
+    source: "ECC skill taxonomy: reference skills (Remotion, Angular)",
     rules: Object.freeze(["angular-developer"])
   })
 ]);

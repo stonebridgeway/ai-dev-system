@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { atomicWriteJson } from "./atomic-files.mjs";
+import { atomicWriteJson, withExclusiveFile } from "./atomic-files.mjs";
 import { memoryScopeKeys } from "./project-identity.mjs";
 
 /**
@@ -180,7 +180,9 @@ export class InstinctStore {
   }
 
   async update(mutator) {
-    this.queue = this.queue.catch(() => undefined).then(async () => {
+    // The queue orders this process's writers; the file lock orders this
+    // process against the other clients' servers.
+    this.queue = this.queue.catch(() => undefined).then(() => withExclusiveFile(this.filePath, async () => {
       const store = await this.read();
       const next = (await mutator(store)) ?? store;
       next.schema_version = STORE_SCHEMA_VERSION;
@@ -188,7 +190,7 @@ export class InstinctStore {
       next.instincts = (next.instincts || []).slice(-5_000);
       await atomicWriteJson(this.filePath, next);
       return next;
-    });
+    }));
     return this.queue;
   }
 

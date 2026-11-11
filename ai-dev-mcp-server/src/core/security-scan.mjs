@@ -1,22 +1,28 @@
 /**
  * Running the security scanners a project already has installed.
  *
- * Six adapters (PLAN.md, stage 3.3): `npm audit`, `pip-audit`, `cargo audit`,
- * `gitleaks`, `semgrep` and `trivy fs`. Each one knows three things — how to
- * tell whether its binary is there, whether this project is the kind it has
- * anything to say about, and how to read its output — and nothing else. The
- * findings come back in one shape (`security-scan-parsers.mjs`) so
+ * Ten adapters: `npm audit`, `pnpm audit`, `yarn audit`, `bun audit`,
+ * `osv-scanner`, `pip-audit`, `cargo audit`, `gitleaks`, `semgrep` and
+ * `trivy fs`. Each one knows three things — how to tell whether its binary is
+ * there, whether this project is the kind it has anything to say about, and
+ * how to read its output — and nothing else.
+ * The findings come back in one shape (`security-scan-parsers.mjs`) so
  * `verify_task` can grade them without knowing which tool produced them.
+ *
+ * A package manager's audit runs in every directory, up to two levels down,
+ * that holds its lockfile: a repository with `frontend/` and `backend/` has two
+ * dependency trees and neither is at the root. Two scanners reporting the same
+ * advisory for the same package are one finding (`mergeDuplicateFindings`).
  *
  * Two rules shape the whole module:
  *
  * - **A missing scanner is a `skipped` result with a reason, never an error.**
- *   Nobody installs all six. A scan that fails because `trivy` is absent would
+ *   Nobody installs all ten. A scan that fails because `trivy` is absent would
  *   teach an agent to stop running scans. A run where *none* of them could run
  *   is still not a failure — it is `unchecked`, which passes without claiming
- *   anything was checked (docs/DEFECTS.md, Д-55).
- * - **A scanner that needs the network says so instead of hanging.** Five of
- *   the six fetch an advisory database. Offline they fail slowly and in their
+ *   anything was checked.
+ * - **A scanner that needs the network says so instead of hanging.** All but
+ *   two fetch an advisory database. Offline they fail slowly and in their
  *   own way, so they are skipped up front when the run is declared offline, and
  *   a run that came back with nothing and an errno is read as "offline", not as
  *   a scan failure. `verify_task` therefore cannot be held up by a missing
@@ -24,8 +30,8 @@
  *   about the network, because a scan that retracts itself over a word in its
  *   own report fails open while looking clean.
  *
- * The gate: critical and high `dependency` and `secret` findings block; every
- * other finding, and every severity a scanner did not state, warns. A blocked
+ * The gate: critical and high `dependency`, `malware` and `secret` findings
+ * block; every other finding, and every severity a scanner did not state, warns. A blocked
  * verification has to name a fixable thing, and "semgrep's auto rule pack has
  * an opinion about this line" is not that.
  */
@@ -33,6 +39,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { locateExecutable, runProcess } from "./process-runner.mjs";
+import { mergeDuplicateFindings } from "./security-scan-findings.mjs";
+import { RECOGNIZED_REPORTS, parseBunAudit, parseOsvScanner, parsePnpmAudit, parseYarnAudit } from "./security-scan-js-parsers.mjs";
+import { LOCKFILE_SEARCH_DEPTH, markerDirectories, yarnAuditArgs } from "./security-scan-lockfiles.mjs";
 import {
   SECURITY_FINDING_KINDS,
   SECURITY_SEVERITIES,
@@ -45,18 +54,22 @@ import {
 } from "./security-scan-parsers.mjs";
 
 export { SECURITY_FINDING_KINDS, SECURITY_SEVERITIES };
+export { LOCKFILE_SEARCH_DEPTH, markerDirectories, mergeDuplicateFindings, yarnAuditArgs };
 
 /** Severities that stop a verification, for a finding kind that is allowed to. */
 export const BLOCKING_SEVERITIES = Object.freeze(["critical", "high"]);
 
 /** Finding kinds a `block` may come from. */
-export const BLOCKING_KINDS = Object.freeze(["dependency", "secret"]);
+export const BLOCKING_KINDS = Object.freeze(["dependency", "malware", "secret"]);
 
 /** How long any one scanner gets. A scanner that overstays is reported, not awaited. */
 export const SCANNER_TIMEOUT_MS = 180_000;
 
 /** How long an availability probe gets. It only asks a tool for its version. */
 export const SCANNER_PROBE_TIMEOUT_MS = 10_000;
+
+/** Yarn 1 exits with a bitmask of the severities it found (1 info … 16 critical). */
+const YARN_CLASSIC_EXIT_CODES = Object.freeze(Array.from({ length: 32 }, (_, index) => index));
 
 /**
  * The scanner catalogue.
@@ -77,11 +90,63 @@ export const SECURITY_SCANNERS = Object.freeze([
     executable: "npm",
     args: ["audit", "--json"],
     markers: ["package-lock.json", "npm-shrinkwrap.json"],
+    nested: true,
     network: true,
     parse: parseNpmAudit,
     // npm audit exits 1 when it finds something, which is the normal case here.
     successExitCodes: [0, 1],
-    purpose: "known vulnerabilities in the npm dependency tree"
+    purpose: "known vulnerabilities and malware advisories in the npm dependency tree"
+  },
+  {
+    id: "pnpm_audit",
+    tool: "pnpm audit",
+    executable: "pnpm",
+    args: ["audit", "--json"],
+    markers: ["pnpm-lock.yaml"],
+    nested: true,
+    network: true,
+    parse: parsePnpmAudit,
+    successExitCodes: [0, 1],
+    purpose: "known vulnerabilities and malware advisories in the pnpm dependency tree"
+  },
+  {
+    id: "yarn_audit",
+    tool: "yarn audit",
+    executable: "yarn",
+    args: ["audit", "--json"],
+    argsFor: yarnAuditArgs,
+    markers: ["yarn.lock"],
+    nested: true,
+    network: true,
+    parse: parseYarnAudit,
+    successExitCodes: YARN_CLASSIC_EXIT_CODES,
+    purpose: "known vulnerabilities and malware advisories in the Yarn dependency tree"
+  },
+  {
+    id: "bun_audit",
+    tool: "bun audit",
+    executable: "bun",
+    args: ["audit", "--json"],
+    markers: ["bun.lock", "bun.lockb"],
+    nested: true,
+    network: true,
+    parse: parseBunAudit,
+    successExitCodes: [0, 1],
+    purpose: "known vulnerabilities and malware advisories in the Bun dependency tree"
+  },
+  {
+    id: "osv_scanner",
+    tool: "osv-scanner",
+    executable: "osv-scanner",
+    // `--recursive` finds every lockfile below the root, whatever its package
+    // manager; `--allow-no-lockfiles` makes a repository without one a clean
+    // run instead of exit 128.
+    args: ["scan", "source", "--recursive", "--allow-no-lockfiles", "--format", "json", "."],
+    markers: [],
+    network: true,
+    parse: parseOsvScanner,
+    successExitCodes: [0, 1],
+    purpose: "OSV advisories and OpenSSF malicious-package reports against every lockfile"
   },
   {
     id: "pip_audit",
@@ -106,7 +171,7 @@ export const SECURITY_SCANNERS = Object.freeze([
     // `cargo` is Rust's package manager; `cargo audit` is a plugin installed
     // separately with `cargo install cargo-audit`. Finding `cargo` on the PATH
     // therefore proves nothing about this scanner, and a machine with Rust and
-    // no plugin was told the scanner was installed (docs/DEFECTS.md, Д-64). A
+    // no plugin was told the scanner was installed. A
     // scanner that is a subcommand of something else declares the probe that
     // answers the question instead of being believed on its executable.
     probeArgs: ["audit", "--version"],
@@ -162,8 +227,13 @@ const SEMGREP_LOCAL_CONFIGS = Object.freeze([".semgrep.yml", ".semgrep.yaml", "s
  * bare word `proxy` and turn fourteen real findings of this repository, five of
  * them high, into "npm audit could not reach the network" — a scan that failed
  * open while reading as a clean bill of health.
+ *
+ * `osv-scanner` is Go, and says it differently: the resolver's `dial tcp …: no
+ * such host`, and its own `max retries exceeded: attempt 4: request failed`
+ * when the API answered nothing usable — measured behind a proxy that refuses
+ * api.osv.dev, where the report is an empty `results` list and the exit 127.
  */
-const OFFLINE_OUTPUT = /\b(?:ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENETUNREACH|ENETDOWN|EHOSTUNREACH|ERR_SOCKET_TIMEOUT|CERT_HAS_EXPIRED|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN)\b|\bgetaddrinfo\b|network is unreachable|temporary failure in name resolution|could not resolve host|npm error network\b/i;
+const OFFLINE_OUTPUT = /\b(?:ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|ENETUNREACH|ENETDOWN|EHOSTUNREACH|ERR_SOCKET_TIMEOUT|CERT_HAS_EXPIRED|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN)\b|\bgetaddrinfo\b|network is unreachable|temporary failure in name resolution|could not resolve host|npm error network\b|\bdial tcp\b[^\n]*(?:no such host|i\/o timeout|connection refused)|max retries exceeded: attempt \d+: request failed\b/i;
 
 async function pathExists(target) {
   return fs.stat(target).then(() => true).catch(() => false);
@@ -237,7 +307,8 @@ export function skipReasonFor(scanner, { binary, markerFound, offline, network }
     return `${scanner.executable} is not installed or not on the PATH, so ${scanner.tool} could not look for ${scanner.purpose}.`;
   }
   if (scanner.markers.length && !markerFound) {
-    return `This project has none of ${scanner.markers.join(", ")}, so ${scanner.tool} has nothing to read.`;
+    const where = scanner.nested ? ` at its root or up to ${LOCKFILE_SEARCH_DEPTH} levels below it` : "";
+    return `This project has none of ${scanner.markers.join(", ")}${where}, so ${scanner.tool} has nothing to read.`;
   }
   if (network && offline) {
     return `${scanner.tool} needs to fetch ${scanner.id === "semgrep" ? "its rule pack" : "an advisory database"} and this run is offline. Its findings are unknown, not absent — run it again with a network, or keep local rules in the repository.`;
@@ -285,13 +356,13 @@ function firstProblemLine(result, report, limit = 200) {
  * @param {object} input
  * @returns {Promise<object>}
  */
-async function runOneScanner(scanner, { projectRoot, offline, timeoutMs, runner, locate, reportDir, semgrepConfig }) {
+async function runOneScanner(scanner, { projectRoot, directory = projectRoot, offline, timeoutMs, runner, locate, reportDir, semgrepConfig }) {
   const started = Date.now();
   const base = { id: scanner.id, tool: scanner.tool, purpose: scanner.purpose };
   const binary = await locate(scanner.executable).catch(() => "");
   let markerFound = "";
   for (const marker of scanner.markers) {
-    if (await pathExists(path.join(projectRoot, marker))) {
+    if (await pathExists(path.join(directory, marker))) {
       markerFound = marker;
       break;
     }
@@ -300,13 +371,13 @@ async function runOneScanner(scanner, { projectRoot, offline, timeoutMs, runner,
   const skipped = skipReasonFor(scanner, { binary, markerFound, offline, network });
   if (skipped) return { ...base, status: "skipped", reason: skipped, findings: [], duration_ms: 0 };
 
-  const args = expandArgs(scanner.args, {
+  const args = expandArgs(scanner.argsFor ? await scanner.argsFor(directory) : scanner.args, {
     report: scanner.report === "file" ? path.join(reportDir, `${scanner.id}.json`) : "",
     config: semgrepConfig.config
   });
   let result;
   try {
-    result = await runner({ executable: binary || scanner.executable, args, cwd: projectRoot, timeoutMs });
+    result = await runner({ executable: binary || scanner.executable, args, cwd: directory, timeoutMs });
   } catch (error) {
     return {
       ...base,
@@ -331,7 +402,12 @@ async function runOneScanner(scanner, { projectRoot, offline, timeoutMs, runner,
     const reportPath = args[args.indexOf("--report-path") + 1];
     raw = await fs.readFile(reportPath, "utf8").catch(() => result.stdout ?? "");
   }
-  const findings = scanner.parse(raw);
+  const where = path.relative(projectRoot, directory).split(path.sep).join("/");
+  // A finding from a lockfile below the root names that lockfile, not the
+  // bare file name every directory shares.
+  const findings = scanner.parse(raw, { projectRoot: directory }).map((item) => (
+    where && item.file && !item.file.includes("/") ? { ...item, file: `${where}/${item.file}` } : item
+  ));
   const exitOk = scanner.successExitCodes.includes(result.exitCode ?? -1);
   // Offline is decided by the failure channel, never by what the scanner
   // found. A scanner that came back with findings reached whatever it needed
@@ -348,11 +424,13 @@ async function runOneScanner(scanner, { projectRoot, offline, timeoutMs, runner,
       duration_ms: Date.now() - started
     };
   }
-  if (!exitOk && !findings.length) {
+  const recognized = RECOGNIZED_REPORTS[scanner.id];
+  const unrecognized = recognized && result.exitCode !== 0 && !findings.length && !recognized(raw);
+  if ((!exitOk || unrecognized) && !findings.length) {
     return {
       ...base,
       status: "error",
-      reason: `${scanner.tool} exited ${result.exitCode} without a report: ${outputTail(result)}`,
+      reason: `${scanner.tool} exited ${result.exitCode} without a report: ${unrecognized ? firstProblemLine(result, raw) : outputTail(result)}`,
       findings: [],
       duration_ms: Date.now() - started
     };
@@ -364,6 +442,36 @@ async function runOneScanner(scanner, { projectRoot, offline, timeoutMs, runner,
     findings,
     truncated: Boolean(result.truncated),
     duration_ms: Date.now() - started
+  };
+}
+
+/**
+ * One scanner's runs over several directories, as the one result the report
+ * has a line for. An error in any directory is an error — findings from the
+ * others still count, and the reason names the directory that failed.
+ *
+ * @param {object[]} runs - Each with the `directory` it ran in.
+ * @returns {object}
+ */
+function combineRuns(runs) {
+  if (runs.length === 1) {
+    const [{ directory, ...only }] = runs;
+    return directory === "." ? only : { ...only, directories: [directory] };
+  }
+  const status = runs.some((run) => run.status === "error")
+    ? "error"
+    : runs.some((run) => run.status === "ok") ? "ok" : "skipped";
+  const problems = runs.filter((run) => run.status !== "ok").map((run) => `${run.directory}: ${run.reason}`);
+  return {
+    id: runs[0].id,
+    tool: runs[0].tool,
+    purpose: runs[0].purpose,
+    status,
+    reason: problems.join(" "),
+    findings: runs.flatMap((run) => run.findings),
+    truncated: runs.some((run) => run.truncated),
+    directories: runs.map((run) => run.directory),
+    duration_ms: runs.reduce((total, run) => total + (run.duration_ms ?? 0), 0)
   };
 }
 
@@ -384,7 +492,7 @@ export function findingBlocks(item) {
  * of the skip. But a run where not one of them could run proves nothing, and
  * calling that `pass` made "security: pass" mean "checked and clean" when it
  * meant "nobody looked": `checked: 0` was the only thing that said otherwise
- * and nothing read it (docs/DEFECTS.md, Д-55). Such a run is `unchecked`.
+ * and nothing read it. Such a run is `unchecked`.
  *
  * `unchecked` still does not block — the rule that a missing scanner cannot
  * stop a verification is unchanged — it only stops the run claiming a result it
@@ -429,22 +537,28 @@ export async function runSecurityScan(projectRoot, {
   try {
     results = [];
     for (const scanner of selected) {
-      results.push(await runOneScanner(scanner, {
-        projectRoot: root,
-        offline: isOffline,
-        timeoutMs,
-        runner,
-        locate,
-        reportDir,
-        semgrepConfig
-      }));
+      const found = scanner.nested && scanner.markers.length ? await markerDirectories(root, scanner.markers) : [];
+      const runs = [];
+      for (const directory of found.length ? found : [root]) {
+        const run = await runOneScanner(scanner, {
+          projectRoot: root,
+          directory,
+          offline: isOffline,
+          timeoutMs,
+          runner,
+          locate,
+          reportDir,
+          semgrepConfig
+        });
+        runs.push({ ...run, directory: path.relative(root, directory).split(path.sep).join("/") || "." });
+      }
+      results.push(combineRuns(runs));
     }
   } finally {
     await fs.rm(reportDir, { recursive: true, force: true }).catch(() => undefined);
   }
 
-  const findings = results
-    .flatMap((result) => result.findings)
+  const findings = mergeDuplicateFindings(results.flatMap((result) => result.findings))
     .sort((left, right) => (
       SECURITY_SEVERITIES.indexOf(left.severity) - SECURITY_SEVERITIES.indexOf(right.severity) ||
       left.tool.localeCompare(right.tool) ||
@@ -493,7 +607,8 @@ export function renderSecurityScanMarkdown(scan) {
     lines.push("", "## Findings", "");
     for (const item of scan.findings.slice(0, 50)) {
       const where = item.file ? ` ${item.file}${item.line ? `:${item.line}` : ""}` : "";
-      lines.push(`- \`${item.severity}\` **${item.kind}** [${item.tool}${item.rule ? ` ${item.rule}` : ""}]${where} — ${item.message}`);
+      const also = item.confirmed_by?.length ? `, also ${item.confirmed_by.join(", ")}` : "";
+      lines.push(`- \`${item.severity}\` **${item.kind}** [${item.tool}${item.rule ? ` ${item.rule}` : ""}${also}]${where} — ${item.message}`);
     }
     if (scan.findings.length > 50) lines.push(`- …and ${scan.findings.length - 50} more.`);
   }
@@ -503,7 +618,7 @@ export function renderSecurityScanMarkdown(scan) {
 /**
  * The scanners that have something to say with no network at all: gitleaks
  * reads the repository and its history, and semgrep does too when the project
- * keeps its own rules (`semgrepConfigFor`). The other four fetch an advisory
+ * keeps its own rules (`semgrepConfigFor`). The others fetch an advisory
  * database or a hosted rule pack.
  */
 export const OFFLINE_CAPABLE_SCANNERS = Object.freeze(["gitleaks", "semgrep"]);
@@ -517,7 +632,7 @@ export const OFFLINE_CAPABLE_SCANNERS = Object.freeze(["gitleaks", "semgrep"]);
  * `cargo` is on the PATH of every Rust machine and `cargo audit` is a plugin
  * most of them have never installed. Such a scanner carries `probeArgs`, and
  * the probe — the tool asked for its own version, argv array, `shell: false`,
- * seconds not minutes — decides (docs/DEFECTS.md, Д-64).
+ * seconds not minutes — decides.
  *
  * The probe runs in a temporary directory rather than in a project: it asks a
  * version, and it must not be able to read, or be confused by, whatever
@@ -564,7 +679,7 @@ export async function scannerAvailability(scanner, {
   };
 }
 
-/** Everything the six scanners answer about this machine. */
+/** Everything the scanners in the catalogue answer about this machine. */
 export async function securityScannerAvailability(options = {}) {
   return Promise.all(SECURITY_SCANNERS.map((scanner) => scannerAvailability(scanner, options)));
 }
@@ -584,9 +699,8 @@ function firstOutputLine(output) {
  * Not critical: a machine with no scanner installed is a machine where
  * `run_security_scan` comes back `unchecked`, which is a gap worth naming and
  * not a broken system. It is named here because the scan itself is only run on
- * demand, and the published image ships with one of the six at most — so
- * without this check the gap is invisible until a task asks for a scan
- * (docs/DEFECTS.md, Д-55).
+ * demand, and the published image ships with one of them at most — so
+ * without this check the gap is invisible until a task asks for a scan.
  *
  * @param {Array<{ id: string, tool: string, executable: string, installed: boolean }>} availability
  * @returns {{ status: string, summary: string, details: object }}
@@ -601,7 +715,7 @@ export function evaluateSecurityScanners(availability) {
     offline_capable: installed.filter((item) => OFFLINE_CAPABLE_SCANNERS.includes(item.id)).map((item) => item.id),
     // Why each absent scanner is absent, when the answer is more than "it is
     // not on the PATH" — "you have cargo but not cargo-audit" is a different
-    // gap, and a different fix, from "you have no Rust" (docs/DEFECTS.md, Д-64).
+    // gap, and a different fix, from "you have no Rust".
     missing_reasons: Object.fromEntries(
       missing.filter((item) => item.reason).map((item) => [item.id, item.reason])
     )
@@ -609,7 +723,7 @@ export function evaluateSecurityScanners(availability) {
   if (!installed.length) {
     return {
       status: "warn",
-      summary: `None of the ${all.length} security scanners is installed, so run_security_scan comes back unchecked. Install gitleaks: it is the cheapest of the six and the only one that needs no network.`,
+      summary: `None of the ${all.length} security scanners is installed, so run_security_scan comes back unchecked. Install gitleaks: it is the cheapest of them and needs no network.`,
       details
     };
   }

@@ -58,7 +58,7 @@ export const CLAIM_GATES = Object.freeze({
  *
  * Both halves of a pattern carry the same rules in English and in Russian —
  * agents report in both, and a rule that only exists in one language is a rule
- * that can be walked around by switching keyboard layout (Д-26).
+ * that can be walked around by switching keyboard layout.
  */
 export const RATIONALIZATION_PATTERNS = Object.freeze([
   {
@@ -69,7 +69,7 @@ export const RATIONALIZATION_PATTERNS = Object.freeze([
     pattern: /(?:pre[-\s]?existing|already\s+(?:broken|failing|red))[^.\n]{0,40}\b(?:issue|failure|failing|error|bug|test|problem|breakage)|\b(?:issue|failure|error|bug|test|problem)s?\b[^.\n]{0,20}\b(?:is|are|was|were)\s+(?:pre[-\s]?existing|already\s+(?:broken|failing|red))\b|\bnot\s+(?:caused|introduced)\s+by\s+(?:my|this|these|the)\s+chang|(?:сломано|падал[аои]?|падени[яей]|не\s+работал[аои]?)[^.\n]{0,30}(?:ещ[её]\s+)?(?:и\s+)?до\s+(?:меня|мо[иеё]|этих|этой)/i,
     // Where it failed, plus the fix carried over from where it was fixed. That
     // is a report with two facts in it, and it is what this rule asks a report
-    // to do — refusing it taught the opposite lesson (Д-26).
+    // to do — refusing it taught the opposite lesson.
     exempt: /\b(?:on|in)\s+(?:main|master|trunk|develop|the\s+base(?:\s+branch)?|origin\/[\w./-]+)\b[^.\n]{0,120}\b(?:ported|cherry[-\s]?picked|back[-\s]?ported|brought\s+(?:in|over)|pulled\s+in|applied)\b|\b(?:ported|cherry[-\s]?picked|back[-\s]?ported|brought\s+(?:in|over)|pulled\s+in|applied)\b[^.\n]{0,120}\b(?:from|on|in)\s+(?:main|master|trunk|develop|the\s+base(?:\s+branch)?|pr\s*#?\d+|#\d+|origin\/[\w./-]+)\b|(?:на|в)\s+(?:main|master|мастере)[^.\n]{0,120}(?:перен[её]с|портировал|применил)|(?:перен[её]с|портировал|применил)[^.\n]{0,120}(?:из|с)\s+(?:pr|мастера|main|master)/i
   },
   {
@@ -93,7 +93,7 @@ export const RATIONALIZATION_PATTERNS = Object.freeze([
     proof: "Re-run the checks through verify_task so the evidence is bound to the current Git state.",
     // "It works on my machine and in CI" is a person explaining that the two
     // environments agree, which is the opposite of the excuse. Both halves of
-    // the pattern carry the same exemption (docs/DEFECTS.md, Д-10).
+    // the pattern carry the same exemption.
     pattern: /\bworks?\s+(?:fine\s+|ok(?:ay)?\s+)?on\s+my\s+(?:machine|box|laptop|side|end)\b(?![^.\n]{0,40}\band\s+(?:in|on)\s+ci\b)|\bworks?\s+(?:fine\s+|ok(?:ay)?\s+)?locally\b(?![^.\n]{0,40}\band\s+(?:in|on)\s+ci\b)|у\s+меня\s+(?:вс[её]\s+)?работает|локально\s+(?:вс[её]\s+)?(?:работает|проходит|зелен)/i
   },
   {

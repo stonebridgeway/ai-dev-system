@@ -5,8 +5,8 @@
  * growing back and `src/core` modules from turning into second main modules.
  * Its five branches used to live inside the walk over the tree, which meant the
  * only way to test them was to break a real file on purpose and put it back —
- * a check that happened once, by hand, and could not run again
- * (docs/DEFECTS.md, Д-12). A rewrite of the gate that silently
+ * a check that happened once, by hand, and could not run again.
+ * A rewrite of the gate that silently
  * disabled a branch would have passed `npm run check`.
  *
  * So the rules are here, over a list of `{ path, lines }` the caller has
@@ -30,8 +30,8 @@ export const MODULE_LINE_CEILING = 800;
  * Modules that were already over the ceiling when the rule landed, each pinned
  * at its size on that day.
  *
- * Both are the frontend pair. Stage 1.3 moved the frontend tools out of
- * `mcp-stdio.mjs` on top of these two rather than into them, so neither
+ * Both are the frontend pair. Moving the frontend tools out of
+ * `mcp-stdio.mjs` put them on top of these two rather than into them, so neither
  * shrank: what left the main module was orchestration, and what these hold is
  * the product state machine and the reference manifest logic. Splitting them is
  * its own piece of work, not a side effect of an extraction.

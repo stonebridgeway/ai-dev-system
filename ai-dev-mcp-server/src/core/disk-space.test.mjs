@@ -90,7 +90,7 @@ test("the reserve is what keeps a download from taking the last of a disk", () =
 });
 
 test("a disk that fits the download but little else says so once", () => {
-  // Д-81 as the tester met it: about 3 GB free, the download fits, and the
+  // As a tester met it: about 3 GB free, the download fits, and the
   // write rate collapses without a word.
   const room = judgeDiskSpace({ free: 3 * GB, needed: 601 * MB, where: "/models" });
 

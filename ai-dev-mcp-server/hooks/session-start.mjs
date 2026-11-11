@@ -3,7 +3,7 @@
 // and the installed rules index into the first turn (bounded, historical-only).
 import fs from "node:fs";
 import path from "node:path";
-import { emitContext, git, hooksDisabled, loadPolicy, memoryKeysOf, normalizeInput, projectRootOf, readJson, readStdin, samePath, sessionsDirectory, stateRoot } from "./lib.mjs";
+import { emitContext, git, hooksDisabled, identityRootOf, loadPolicy, memoryKeysOf, normalizeInput, openTasksFor, projectRootOf, readJson, readStdin, sessionsDirectory, stateRoot } from "./lib.mjs";
 
 const MAX_CHARS = Number(process.env.AI_DEV_SESSION_START_MAX_CHARS || 8000);
 
@@ -22,24 +22,6 @@ function latestHandoff(keys) {
     }
   }
   return null;
-}
-
-function openTasks(projectRoot) {
-  const directory = path.join(stateRoot(), "tasks");
-  let names = [];
-  try {
-    names = fs.readdirSync(directory).filter((name) => name.endsWith(".json"));
-  } catch {
-    return [];
-  }
-  const tasks = [];
-  for (const name of names) {
-    const record = readJson(path.join(directory, name));
-    if (!record || !["active", "verified"].includes(record.status)) continue;
-    if (!samePath(record.project?.path, projectRoot)) continue;
-    tasks.push(record);
-  }
-  return tasks.sort((left, right) => String(right.updated_at).localeCompare(String(left.updated_at))).slice(0, 5);
 }
 
 function instincts(keys) {
@@ -71,9 +53,12 @@ async function main() {
   const input = normalizeInput(raw);
   if (input.source && !["startup", "resume", "clear", "compact"].includes(input.source)) process.exit(0);
   const projectRoot = projectRootOf(input.cwd);
+  // The memory is the project's the server names for this directory — in a
+  // monorepo, the package's; policy, rules and git are the workspace's.
+  const identityRoot = identityRootOf(input.cwd);
   // Repository key first, then the project key older records used: memory
   // written in a task worktree is read from the main checkout and back.
-  const keys = memoryKeysOf(projectRoot, Boolean(git(projectRoot, ["rev-parse", "--show-toplevel"])));
+  const keys = memoryKeysOf(identityRoot, Boolean(git(identityRoot, ["rev-parse", "--show-toplevel"])));
   const policy = loadPolicy(projectRoot);
   const parts = [];
   const handoff = latestHandoff(keys);
@@ -91,7 +76,7 @@ async function main() {
     ].filter(Boolean);
     parts.push(lines.join("\n"));
   }
-  const tasks = openTasks(projectRoot);
+  const tasks = openTasksFor(identityRoot).slice(0, 5);
   if (tasks.length) parts.push(["Open AI Dev tasks (use get_task / checkpoint_task / verify_task):", ...tasks.map((task) => `- ${task.id} [${task.status}] ${task.task}`)].join("\n"));
   const learned = instincts(keys);
   if (learned.length) parts.push(["Active instincts (learned; apply when the trigger matches):", ...learned.map((item) => `- [${item.scope} ${Math.round(item.confidence * 100)}%] ${item.action} (when ${String(item.trigger).replace(/^when\s+/i, "")})`)].join("\n"));

@@ -30,9 +30,12 @@ jobs:
           cache: npm
           cache-dependency-path: ai-dev-mcp-server/package-lock.json
 
+      # Plain `npm ci`, as the install guide says: the package's .npmrc keeps
+      # dependency install scripts off, and `npm run packaging:check` below
+      # fails if it stops doing so.
       - name: Install dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Static quality gate
         working-directory: ai-dev-mcp-server
@@ -48,7 +51,7 @@ jobs:
 
       # The PowerShell installer is edited on machines that cannot run it;
       # ubuntu runners carry pwsh, so the plan is rendered here before the
-      # Windows job ever starts (docs/DEFECTS.md, Д-70).
+      # Windows job ever starts.
       - name: PowerShell installer renders its plan
         shell: pwsh
         run: |
@@ -62,6 +65,12 @@ jobs:
         working-directory: ai-dev-mcp-server
         run: npm run docs:tools:check
 
+      # Every relative link and #anchor in the tracked documentation resolves
+      # on GitHub; external links are asked only by `-- --external`.
+      - name: Documentation links
+        working-directory: ai-dev-mcp-server
+        run: npm run docs:links
+
       - name: Public seed matches its manifest
         working-directory: ai-dev-mcp-server
         run: npm run docker:seed:verify
@@ -70,14 +79,38 @@ jobs:
         working-directory: ai-dev-mcp-server
         run: npm run test:core
 
-      # The SQLite search helper is Python and has its own suite. It shipped
-      # for months without anything running it.
-      - name: Search helper tests
-        working-directory: search-index
-        run: python3 -m unittest test_search_freshness
+  no-python:
+    # Every runner image carries Python, so nothing saw that search needed it:
+    # setup failed on a clean machine with "spawn python3 ENOENT" while CI was
+    # green. The script takes every interpreter off
+    # PATH, refuses to go on while one still starts, then installs, runs the
+    # first run, the health check and the protocol smoke.
+    name: No Python (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ai-dev-mcp-server/package-lock.json
+
+      - name: Install, set up, check health and speak MCP with no Python on PATH
+        working-directory: ai-dev-mcp-server
+        run: node scripts/no-python-check.mjs
 
   mcp-server-node-floor:
-    name: MCP server (Node 22.12 floor)
+    # The oldest Node the package supports: node:sqlite with FTS5 arrived in
+    # 22.16 (22.13-22.15 and 23.x bundle SQLite without it), and the search
+    # index runs on it. The core tests include the Node search engine's.
+    name: MCP server (Node 22.16 floor)
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -86,13 +119,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "22.12"
+          node-version: "22.16"
           cache: npm
           cache-dependency-path: ai-dev-mcp-server/package-lock.json
 
       - name: Install dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Static quality gate
         working-directory: ai-dev-mcp-server
@@ -101,6 +134,66 @@ jobs:
       - name: Core unit tests
         working-directory: ai-dev-mcp-server
         run: npm run test:core
+
+  desktop:
+    # The desktop app (desktop/): its unit tests, then the app itself driven by
+    # Playwright's Electron driver, on a real daemon, under a virtual display.
+    # The Electron binary is fetched on first use, not by an install script.
+    name: Desktop app (Electron, xvfb)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            ai-dev-mcp-server/package-lock.json
+            desktop/package-lock.json
+
+      - name: Install the server's dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --no-audit --no-fund
+
+      - name: Install the app's dependencies
+        working-directory: desktop
+        run: npm ci --no-audit --no-fund
+
+      # Ubuntu 24.04 forbids unprivileged user namespaces through AppArmor,
+      # which Chromium's own sandbox needs; allow them for this job, or — when
+      # that cannot be done — run Chromium without its sandbox (the page keeps
+      # its sandbox flag either way, desktop/test/e2e/harness.mjs).
+      - name: Let Chromium's sandbox run
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 \
+            || echo "AI_DEV_DESKTOP_NO_SANDBOX=1" >> "$GITHUB_ENV"
+
+      - name: Desktop tests (unit, then end to end under xvfb-run)
+        working-directory: desktop
+        run: npm test
+
+      # What the Windows installer and the Linux app ship, built and checked
+      # here without the packages themselves: each runtime, its cuts, the
+      # pinned Node (the packages are built by desktop-windows.yml and
+      # desktop-macos-linux.yml).
+      - name: Windows runtime composition
+        working-directory: desktop
+        run: node scripts/build-desktop.mjs --target win32-x64 --check
+
+      - name: Linux runtime composition
+        working-directory: desktop
+        run: node scripts/build-desktop.mjs --target linux-x64 --check
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-screenshots
+          path: desktop/test-results/
+          if-no-files-found: ignore
 
   vault-suite:
     name: MCP server (vault-coupled suite + smokes)
@@ -118,7 +211,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       # A standalone checkout has no full Obsidian vault, so the server resolves
       # its content root to the bundled docker/public-seed tree. That seed ships
@@ -156,7 +249,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       # macOS was supported by assumption until this job existed: POSIX like
       # Linux, but with a case-insensitive filesystem by default and a temp
@@ -170,6 +263,13 @@ jobs:
       - name: Hook tests
         working-directory: ai-dev-mcp-server
         run: node --test "src/core/project-identity.test.mjs" "src/core/agent-hooks.test.mjs"
+
+      # Every client config runs the daemon since 3.0. Its socket under a long
+      # home, the session's own environment in real child processes and the log
+      # rotation are exercised by real processes only here and on Windows.
+      - name: Daemon tests
+        working-directory: ai-dev-mcp-server
+        run: node --import ./test/setup.mjs --test src/cli/daemon.test.mjs
 
       - name: First run builds what a clone ships without
         working-directory: ai-dev-mcp-server
@@ -195,7 +295,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ai-dev-mcp-server
-        run: npm ci --ignore-scripts --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Parse every PowerShell script
         shell: pwsh
@@ -218,14 +318,15 @@ jobs:
         shell: pwsh
         run: ./bootstrap.ps1 -Plan
 
-      - name: Client installer dry run (win32 path handling)
+      # What bootstrap.ps1 runs to write the configs of the Docker path: the
+      # checkout's own CLI, on win32 paths (docker run entries, /workspace).
+      - name: Docker client entries dry run (win32 path handling)
         working-directory: ai-dev-mcp-server
         shell: pwsh
         run: >
-          node scripts/install-docker-mcp-clients.mjs
-          --launcher ..\docker\run-mcp.ps1
+          node bin/ai-dev.mjs clients install --docker --dry-run
           --image ghcr.io/stonebridgeway/ai-dev-system:latest
-          --project-path "$env:RUNNER_TEMP\projects"
+          --projects "$env:RUNNER_TEMP\projects"
           --clients codex,cursor,vscode,claude
 
       - name: Core unit tests
@@ -239,3 +340,11 @@ jobs:
       - name: Agent hook tests
         working-directory: ai-dev-mcp-server
         run: node --import ./test/setup.mjs --test src/core/agent-hooks.test.mjs src/extensions/hooks.test.mjs
+
+      # The daemon on a named pipe: a random name per start, `stop` by a control
+      # request, a retired daemon still answering on its pipe, the session's
+      # environment with names that ignore case, and a log copied and cut while
+      # the daemon holds it open.
+      - name: Daemon tests
+        working-directory: ai-dev-mcp-server
+        run: node --import ./test/setup.mjs --test src/cli/daemon.test.mjs

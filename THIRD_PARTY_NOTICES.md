@@ -38,8 +38,10 @@ repository ships none and states its licence in each file instead, as noted belo
 
 ## Membrane application skills
 
-- Source: https://github.com/membranedev/application-skills (complete import:
-  3,074 `skills/<app>` integration skills)
+- Source: https://github.com/membranedev/application-skills (curated import:
+  460 of the repository's 3,074 `skills/<app>` integration skills — the
+  developer tools and AI-model connectors; the rule and the full list are in
+  `03-skills-catalog/sources/external/membrane/CURATION.md`)
 - Included revision: `f484c8265e70ec910a57342389cca5c5de7d8167`
 - License: MIT, as declared by the upstream README and by the `license: MIT`
   field in every imported `SKILL.md`. The upstream repository ships no LICENSE
@@ -92,3 +94,33 @@ package or by any of the source packages.
 - License text: https://github.com/gitleaks/gitleaks/blob/master/LICENSE
 - Copied to `/usr/local/bin/gitleaks` by `docker/Dockerfile`. It is the one
   security scanner `run_security_scan` can use under `--network none`.
+
+## AI Dev System before 3.0
+
+AI Dev System up to 2.x was released under the MIT License, and the code 3.0 grew from — with the
+contributions made to it under that licence — keeps its notice here, as the MIT License asks. From
+3.0 the project as a whole is under the PolyForm Noncommercial License 1.0.0 ([LICENSE](LICENSE)).
+
+```text
+MIT License
+
+Copyright (c) 2026 AI Dev System contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

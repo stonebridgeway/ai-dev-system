@@ -17,7 +17,7 @@
  *
  * The findings stop at what a config file can prove. Grading the whole agent
  * harness (`CLAUDE.md` auto-run, `Bash(*)` permissions, hook interpolation) is
- * `scan_agent_config`, PLAN.md 3.22, which builds on this inventory.
+ * `scan_agent_config`, which builds on this inventory.
  */
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -108,7 +108,7 @@ const LARGE_CONFIG_BYTES = 2 * 1024 * 1024;
  *
  * `~/.claude.json` holds the user's own MCP servers *and* Claude Code's
  * conversation history for every project it has opened, which is tens of
- * megabytes on an active machine (docs/DEFECTS.md, Д-17). Two keys
+ * megabytes on an active machine. Two keys
  * are wanted; the rest is streamed through and dropped. The scanner does not
  * validate, so the first character is checked instead: a file that does not
  * start an object is reported unreadable the way a failed parse was.

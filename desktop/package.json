@@ -1,0 +1,32 @@
+{
+  "name": "ai-dev-desktop",
+  "productName": "AI Dev",
+  "version": "3.0.0",
+  "private": true,
+  "description": "The AI Dev desktop app for Windows and Linux: a tray, a first-run wizard and screens over the daemon every AI client shares.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": "stonebridgeway",
+  "homepage": "https://github.com/stonebridgeway/ai-dev-system",
+  "type": "module",
+  "main": "src/main/main.mjs",
+  "engines": {
+    "node": "^22.16.0 || >=24.0.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "node scripts/run-tests.mjs",
+    "test:unit": "node --test \"test/unit/*.test.mjs\"",
+    "electron:install": "node scripts/electron-binary.mjs",
+    "dist:win": "node scripts/build-desktop.mjs --target win32-x64",
+    "dist:mac": "node scripts/build-desktop.mjs --target darwin-arm64",
+    "dist:linux": "node scripts/build-desktop.mjs --target linux-x64"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.10"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.17.0",
+    "playwright-core": "1.63.0"
+  }
+}

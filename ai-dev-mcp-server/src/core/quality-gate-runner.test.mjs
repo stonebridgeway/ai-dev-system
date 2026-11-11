@@ -190,7 +190,7 @@ test("the report names every command, and an empty run says so", () => {
   assert.equal(/## Blocked Commands/.test(empty), false);
 });
 
-// Д-54: `node --test test/` fails on its own under Node >= 21, and the gate
+// `node --test test/` fails on its own under Node >= 21, and the gate
 // passed the failure through without anything that named the cause.
 test("a `node --test <directory>` run that never reached a test is diagnosed", () => {
   // What npm actually prints: it echoes the script, and the runner reports the
@@ -255,7 +255,7 @@ test("an ordinary failure is left to speak for itself", () => {
   assert.equal(diagnoseQualityCommandFailure(), "");
 });
 
-// Д-67: the report named the Node that ran the commands and the project named
+// The report named the Node that ran the commands and the project named
 // the Node it wants, and nothing put the two side by side.
 test("the engine ranges projects actually write are read", () => {
   const satisfied = [

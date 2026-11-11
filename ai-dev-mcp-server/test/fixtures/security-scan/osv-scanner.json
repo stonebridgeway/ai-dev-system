@@ -1,0 +1,494 @@
+{
+ "results": [
+  {
+   "source": {
+    "path": "/work/app/package-lock.json",
+    "type": "lockfile"
+   },
+   "packages": [
+    {
+     "package": {
+      "name": "axios",
+      "version": "1.14.1",
+      "ecosystem": "npm"
+     },
+     "groups": [
+      {
+       "ids": [
+        "MAL-2026-2307"
+       ],
+       "aliases": [
+        "GHSA-fw8c-xr5c-95f9",
+        "MAL-2026-2307"
+       ],
+       "max_severity": ""
+      },
+      {
+       "ids": [
+        "GHSA-35jp-ww65-95wh"
+       ],
+       "aliases": [
+        "CVE-2026-44494",
+        "GHSA-35jp-ww65-95wh"
+       ],
+       "max_severity": "8.7"
+      },
+      {
+       "ids": [
+        "GHSA-3g43-6gmg-66jw"
+       ],
+       "aliases": [
+        "CVE-2026-44495",
+        "GHSA-3g43-6gmg-66jw"
+       ],
+       "max_severity": "7.0"
+      },
+      {
+       "ids": [
+        "GHSA-3p68-rc4w-qgx5"
+       ],
+       "aliases": [
+        "CVE-2025-62718",
+        "GHSA-3p68-rc4w-qgx5"
+       ],
+       "max_severity": "6.3"
+      }
+     ],
+     "vulnerabilities": [
+      {
+       "id": "MAL-2026-2307",
+       "summary": "Malicious code in axios (npm)",
+       "aliases": [
+        "GHSA-fw8c-xr5c-95f9"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "axios",
+          "ecosystem": "npm"
+         },
+         "versions": [
+          "0.30.4",
+          "1.14.1"
+         ]
+        }
+       ]
+      },
+      {
+       "id": "GHSA-35jp-ww65-95wh",
+       "summary": "axios Vulnerable to Full Man-in-the-Middle via Prototype Pollution Gadget in `config.proxy`",
+       "aliases": [
+        "CVE-2026-44494"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "axios",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "1.0.0"
+            },
+            {
+             "fixed": "1.16.0"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "HIGH"
+       }
+      },
+      {
+       "id": "GHSA-3g43-6gmg-66jw",
+       "summary": "axios Vulnerable to Credential Theft and Response Hijacking via Prototype Pollution Gadget in Config Merge",
+       "aliases": [
+        "CVE-2026-44495"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "axios",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "1.0.0"
+            },
+            {
+             "fixed": "1.15.2"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        },
+        {
+         "package": {
+          "name": "axios",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "0.19.0"
+            },
+            {
+             "fixed": "0.31.1"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "HIGH"
+       }
+      },
+      {
+       "id": "GHSA-3p68-rc4w-qgx5",
+       "summary": "Axios has a NO_PROXY Hostname Normalization Bypass that Leads to SSRF",
+       "aliases": [
+        "CVE-2025-62718"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "axios",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "1.0.0"
+            },
+            {
+             "fixed": "1.15.0"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        },
+        {
+         "package": {
+          "name": "axios",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "0"
+            },
+            {
+             "fixed": "0.31.0"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "MODERATE"
+       }
+      }
+     ]
+    },
+    {
+     "package": {
+      "name": "lodash",
+      "version": "4.17.20",
+      "ecosystem": "npm"
+     },
+     "groups": [
+      {
+       "ids": [
+        "GHSA-29mw-wpgm-hmr9"
+       ],
+       "aliases": [
+        "CVE-2020-28500",
+        "GHSA-29mw-wpgm-hmr9"
+       ],
+       "max_severity": "5.3"
+      },
+      {
+       "ids": [
+        "GHSA-35jh-r3h4-6jhm",
+        "GHSA-r5fr-rjxr-66jc"
+       ],
+       "aliases": [
+        "CVE-2021-23337",
+        "CVE-2026-4800",
+        "GHSA-35jh-r3h4-6jhm",
+        "GHSA-r5fr-rjxr-66jc"
+       ],
+       "max_severity": "8.1"
+      },
+      {
+       "ids": [
+        "GHSA-f23m-r3pf-42rh",
+        "GHSA-xxjr-mmjv-4gpg"
+       ],
+       "aliases": [
+        "CVE-2025-13465",
+        "CVE-2026-2950",
+        "GHSA-f23m-r3pf-42rh",
+        "GHSA-xxjr-mmjv-4gpg"
+       ],
+       "max_severity": "6.9"
+      }
+     ],
+     "vulnerabilities": [
+      {
+       "id": "GHSA-29mw-wpgm-hmr9",
+       "summary": "Regular Expression Denial of Service (ReDoS) in lodash",
+       "aliases": [
+        "CVE-2020-28500"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "lodash",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "fixed": "4.17.21"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "MODERATE"
+       }
+      },
+      {
+       "id": "GHSA-35jh-r3h4-6jhm",
+       "summary": "Command Injection in lodash",
+       "aliases": [
+        "CVE-2021-23337",
+        "CVE-2026-4800",
+        "GHSA-r5fr-rjxr-66jc"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "lodash",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "0"
+            },
+            {
+             "fixed": "4.17.21"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "HIGH"
+       }
+      },
+      {
+       "id": "GHSA-f23m-r3pf-42rh",
+       "summary": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
+       "aliases": [
+        "CVE-2025-13465",
+        "CVE-2026-2950",
+        "GHSA-xxjr-mmjv-4gpg"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "lodash",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "0"
+            },
+            {
+             "fixed": "4.18.0"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "MODERATE"
+       }
+      },
+      {
+       "id": "GHSA-r5fr-rjxr-66jc",
+       "summary": "lodash vulnerable to Code Injection via `_.template` imports key names",
+       "aliases": [
+        "CVE-2021-23337",
+        "CVE-2026-4800",
+        "GHSA-35jh-r3h4-6jhm"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "lodash",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "fixed": "4.18.0"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "HIGH"
+       }
+      },
+      {
+       "id": "GHSA-xxjr-mmjv-4gpg",
+       "summary": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions",
+       "aliases": [
+        "CVE-2025-13465",
+        "CVE-2026-2950",
+        "GHSA-f23m-r3pf-42rh"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "lodash",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "4.0.0"
+            },
+            {
+             "fixed": "4.17.23"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "MODERATE"
+       }
+      }
+     ]
+    },
+    {
+     "package": {
+      "name": "minimist",
+      "version": "1.2.5",
+      "ecosystem": "npm"
+     },
+     "groups": [
+      {
+       "ids": [
+        "GHSA-xvch-5gv4-984h"
+       ],
+       "aliases": [
+        "CVE-2021-44906",
+        "GHSA-xvch-5gv4-984h"
+       ],
+       "max_severity": "9.8"
+      }
+     ],
+     "vulnerabilities": [
+      {
+       "id": "GHSA-xvch-5gv4-984h",
+       "summary": "Prototype Pollution in minimist",
+       "aliases": [
+        "CVE-2021-44906"
+       ],
+       "affected": [
+        {
+         "package": {
+          "name": "minimist",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "1.0.0"
+            },
+            {
+             "fixed": "1.2.6"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        },
+        {
+         "package": {
+          "name": "minimist",
+          "ecosystem": "npm"
+         },
+         "ranges": [
+          {
+           "events": [
+            {
+             "introduced": "0"
+            },
+            {
+             "fixed": "0.2.4"
+            }
+           ],
+           "type": "SEMVER"
+          }
+         ]
+        }
+       ],
+       "database_specific": {
+        "severity": "CRITICAL"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

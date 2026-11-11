@@ -40,7 +40,7 @@ test("an instinct is retired only when it is both weak and silent", () => {
   assert.deepEqual(instinctsToRetire(null), []);
 });
 
-// Д-14: complete_task deletes a finished task's refs. Nothing deletes the refs
+// complete_task deletes a finished task's refs. Nothing deletes the refs
 // of a task that was cancelled, abandoned, or reopened as another task, and a
 // live ref pins a whole tree.
 test("snapshot refs go for completed tasks and for tasks nobody has touched", () => {

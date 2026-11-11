@@ -1,0 +1,230 @@
+name: macOS and Linux apps
+
+# The desktop app for Linux (an AppImage and a .deb) and, in development, for
+# macOS (Apple silicon: a .dmg and a .zip), docs/DESKTOP.md, "The desktop
+# install": each built on its own system by the one command a person runs
+# there — `npm run dist:linux`, `npm run dist:mac` — then the runtime it ships
+# is run as an AI client runs it, and the packages are kept as the run's
+# artifacts. On a v* tag of the production repository the Linux packages are
+# also put on that tag's GitHub release, as a draft when the release does not
+# exist yet; the Windows installer comes from
+# desktop-windows.yml.
+#
+# macOS is in development and not part of a release: the Mac app is built and
+# run here so that its code keeps working, but the release neither waits for it nor
+# carries its .dmg.
+#
+# A Mac build is signed ad hoc unless a Developer ID certificate is given
+# (CSC_LINK with CSC_KEY_PASSWORD); with one it is signed with the hardened
+# runtime and sent for notarization when APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD
+# and APPLE_TEAM_ID are set (desktop/scripts/runtime-bundle.mjs) — a path not
+# finished yet: the runtime's native modules are not signed with the
+# Developer ID.
+
+on:
+  pull_request:
+    paths:
+      - "desktop/**"
+      - "ai-dev-mcp-server/**"
+      - "docker/public-seed/**"
+      - ".github/workflows/desktop-macos-linux.yml"
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-macos-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the app (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            os: macos-latest
+            script: dist:mac
+            runtime: dist/darwin-arm64/installer/mac-arm64/AI Dev.app/Contents/Resources/runtime
+            app: dist/darwin-arm64/installer/mac-arm64/AI Dev.app/Contents/MacOS/AI Dev
+            artifact: macos-app
+            files: |
+              dist/darwin-arm64/installer/*.dmg
+              dist/darwin-arm64/installer/*.zip
+              dist/darwin-arm64/installer/*.blockmap
+              dist/darwin-arm64/installer/latest-mac.yml
+              dist/darwin-arm64/build-report.json
+          - target: linux-x64
+            os: ubuntu-latest
+            script: dist:linux
+            runtime: dist/linux-x64/installer/linux-unpacked/resources/runtime
+            app: dist/linux-x64/installer/linux-unpacked/ai-dev-desktop
+            artifact: linux-app
+            files: |
+              dist/linux-x64/installer/*.AppImage
+              dist/linux-x64/installer/*.deb
+              dist/linux-x64/installer/*.blockmap
+              dist/linux-x64/installer/latest-linux.yml
+              dist/linux-x64/build-report.json
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            ai-dev-mcp-server/package-lock.json
+            desktop/package-lock.json
+
+      - name: Install the server's dependencies
+        working-directory: ai-dev-mcp-server
+        run: npm ci --no-audit --no-fund
+
+      - name: Install the app's dependencies
+        working-directory: desktop
+        run: npm ci --no-audit --no-fund
+
+      - name: Desktop unit tests
+        working-directory: desktop
+        run: npm run test:unit
+
+      # electron-builder signs nothing in a pull request's build (GITHUB_BASE_REF
+      # is set), and the Mac app would keep Electron's own signature over
+      # resources that are no longer Electron's. Without a certificate the
+      # build signs ad hoc, as a release's does, so the signature checked below
+      # is the one people get; a Developer ID is never used for a pull request.
+      - name: Build the app
+        working-directory: desktop
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          SCRIPT: ${{ matrix.script }}
+        run: |
+          if [ -z "$CSC_LINK" ]; then export CSC_FOR_PULL_REQUEST=true; fi
+          npm run "$SCRIPT"
+
+      # What an AI client runs: the command beside the shipped runtime, on the
+      # runtime's own Node, in a home of its own — the version, a setup without
+      # clients, and the state it leaves.
+      - name: Run the shipped runtime
+        shell: bash
+        env:
+          RUNTIME: ${{ matrix.runtime }}
+        run: |
+          home="$RUNNER_TEMP/ai-dev-home"
+          mkdir -p "$home"
+          export HOME="$home" AI_DEV_HOME="$home/.ai-dev" AI_DEV_DAEMON=0
+          "$RUNTIME/ai-dev" version
+          "$RUNTIME/ai-dev" setup --yes --no-clients --no-health
+          "$RUNTIME/ai-dev" status --quick
+          "$RUNTIME/ai-dev" skills new ci-probe "Probe the shipped runtime in CI."
+          "$RUNTIME/ai-dev" skills mine | grep ci-probe
+
+      # The AppImage as a person on Ubuntu 24.04 starts it: unprivileged user
+      # namespaces are refused there by default, so Chromium's sandbox cannot
+      # start, and the AppImage's AppRun starts the app without it.
+      # The same test as below, on the AppImage.
+      - name: Run the AppImage where Chromium's sandbox cannot start
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        run: |
+          sudo apt-get install -y --no-install-recommends xvfb >/dev/null
+          echo "kernel.apparmor_restrict_unprivileged_userns = $(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null || echo absent)"
+          unshare -Ur true 2>/dev/null && echo "User namespaces are allowed here: the sandbox starts, and the fallback is not measured."
+          image=$(ls "$GITHUB_WORKSPACE"/dist/linux-x64/installer/*.AppImage)
+          AI_DEV_DESKTOP_PACKAGED="$image" APPIMAGE_EXTRACT_AND_RUN=1 \
+            xvfb-run -a -s "-screen 0 1280x900x24" node --test test/e2e/packaged.test.mjs
+
+      # The app itself, as installed: it copies the runtime it ships into the
+      # AI Dev home, links it, starts the daemon on its own Node and opens
+      # (desktop/test/e2e/packaged.test.mjs). Here with Chromium's sandbox,
+      # which needs the user namespaces Ubuntu 24.04 refuses by default.
+      - name: Let Chromium's sandbox run
+        if: runner.os == 'Linux'
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 \
+            || echo "AI_DEV_DESKTOP_NO_SANDBOX=1" >> "$GITHUB_ENV"
+
+      # What a download carries: the copy the app makes must leave it behind.
+      - name: Put a download's quarantine on the Mac app's runtime
+        if: runner.os == 'macOS'
+        env:
+          RUNTIME: ${{ matrix.runtime }}
+        run: |
+          xattr -r -w com.apple.quarantine "0081;00000000;Safari;" "$RUNTIME"
+          xattr -l "$RUNTIME/node/bin/node" | grep com.apple.quarantine
+
+      - name: Run the installed app
+        working-directory: desktop
+        shell: bash
+        env:
+          AI_DEV_DESKTOP_PACKAGED: ${{ github.workspace }}/${{ matrix.app }}
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a -s "-screen 0 1280x900x24" node --test test/e2e/packaged.test.mjs
+          else
+            node --test test/e2e/packaged.test.mjs
+          fi
+
+      - name: Keep the screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}-screenshot
+          path: desktop/test-results/
+          if-no-files-found: ignore
+
+      - name: The Mac app's signature holds
+        if: runner.os == 'macOS'
+        run: codesign --verify --deep --strict --verbose=2 "dist/darwin-arm64/installer/mac-arm64/AI Dev.app"
+
+      - name: Keep the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  release:
+    # The production repository only, on a version tag: a fork that works in
+    # its own main publishes nothing. It waits for both builds but needs only
+    # Linux's packages: macOS is in development, and a red Mac build does not
+    # hold the release.
+    if: ${{ !cancelled() && github.repository == 'stonebridgeway/ai-dev-system' && startsWith(github.ref, 'refs/tags/v') }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Take the Linux packages
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-app
+          path: artifact/linux-app
+
+      - name: Put them on the tag's release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # The Windows workflow may make the draft at the same moment: whichever is first, the other uploads to it.
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --title "$TAG" --notes "Draft: publish it to send the update to installed apps." \
+            || gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+          shopt -s nullglob
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            artifact/linux-app/installer/*.AppImage artifact/linux-app/installer/*.deb artifact/linux-app/installer/*.blockmap artifact/linux-app/installer/latest-linux.yml
