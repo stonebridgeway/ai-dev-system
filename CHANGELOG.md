@@ -150,7 +150,7 @@ has it with what each one says.
   comments and formatting stay byte for byte, a backup is kept, and `remove` takes out only the
   `ai-dev` entry. `ai-dev clients doctor` starts each entry and checks that it answers with
   instructions, and names an entry whose mounted folder is gone.
-- **The desktop app** on Electron 44.5.1, in English and Russian: the install's health in the
+- **The desktop app** on Electron 44.11.3, in English and Russian: the install's health in the
   tray; a first-run wizard for the projects folder, the AI clients and the local model; Status,
   with every check and what to do about it; Projects (tasks, epics, decisions, handoffs), Costs
   (by model, tool and task), Skills (browse, add, import, remove your own), Rules (guard rules,
@@ -305,6 +305,11 @@ has it with what each one says.
 
 - **The server passes its own security gate again**: `fast-uri` 3.1.8, `hono` 4.13.8, `qs` 6.16.0
   and `sharp` 0.35.4 close 16 findings, 7 of them high. After: `pass`, 0 findings.
+- **The dependencies' advisories published since are closed**: the MCP SDK 1.32.2 and `zod` 4.6.7,
+  with `proxy-addr` 2.0.8, `body-parser` 2.4.0, `sharp` 0.35.5, `hono` 4.13.19, `qs` 6.17.1,
+  `ip-address` 10.7.6 and `fast-uri` 3.1.9 under them — `npm audit` went from 10 findings (1
+  critical, 4 high) to 0; the desktop app's Electron 44.11.3 and `undici` 7.30.2 close its 2 high
+  ones; and the `fast-uri` the Archify skill carries in the seed is 3.1.9.
 - **The daemon's channel is this user's**: a random socket or pipe name and a 256-bit secret,
   published only in a 0600 file, proven with an HMAC and never sent.
 - **The desktop app's page is a local page and nothing more**, isolated and sandboxed; every change

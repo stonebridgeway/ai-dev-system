@@ -7,7 +7,7 @@ evidence-bound task completion.
 
 ## Runtime
 
-- `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.30.0`.
+- `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.32.2`.
 - `src/mcp-stdio.mjs`: tool dispatch (`callTool`), the `tools` contract list, and the
   hand-rolled JSON-RPC fallback server (`startLegacyServer`, `npm run start:legacy`);
   `server.mjs`, the scripts and the tests import it.

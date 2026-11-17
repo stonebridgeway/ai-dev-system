@@ -93,11 +93,19 @@ test("the supply-chain hook and the fix registry go through HTTP_PROXY: registry
   const before = proxy.seen.length;
   const metadata = await serverFetch("http://registry.example.test/left-pad", { env }).then((response) => response.json());
   assert.equal(metadata.name, "left-pad");
-  const previous = process.env.HTTP_PROXY;
+  // The fix registry reads the process's own environment. A machine that is
+  // itself behind a proxy has `http_proxy` set, and the lower-case name wins:
+  // the test then asked that proxy for a host only this one knows. So every
+  // spelling is set aside for the call, and put back after it.
+  const names = ["HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy"];
+  const previous = new Map(names.map((name) => [name, process.env[name]]));
+  for (const name of names) delete process.env[name];
   process.env.HTTP_PROXY = proxy.url;
   t.after(() => {
-    if (previous === undefined) delete process.env.HTTP_PROXY;
-    else process.env.HTTP_PROXY = previous;
+    for (const [name, value] of previous) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
   });
   const fixes = await fetchPackageMetadata("left-pad", { registry: "http://registry.example.test" });
   assert.deepEqual(fixes.versions, ["1.2.0", "1.3.0"]);
