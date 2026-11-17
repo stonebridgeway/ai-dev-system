@@ -287,7 +287,13 @@ test("the reader stays linear where its questions used to search: one minified l
     return performance.now() - started;
   };
   // Before, 448 kB of `x={}/1;` on one line took 10 s and 166 kB of re-bindings in reverse order 8.6 s.
-  assert.ok(timed("x={}/1;".repeat(64000)) < 4000, "one line");
+  // The one line is the slowest text here — 2.2 s of the 4 under the gate's coverage, alone — and in one
+  // acceptance run of ten, on a machine doing other work, it took longer than the 4. So it is told by how
+  // its time grows, which the machine's speed does not change: four times the text took 2.2 to 5.1 times
+  // as long in 42 measurements, six at once among them; a reader that searches takes sixteen.
+  const quarter = timed("x={}/1;".repeat(16000));
+  const whole = timed("x={}/1;".repeat(64000));
+  assert.ok(whole / Math.max(quarter, 1) < 10, `one line: ${Math.round(quarter)} ms for a quarter of it, ${Math.round(whole)} ms for the whole`);
   const reverse = [];
   for (let index = 8000; index >= 1; index -= 1) reverse.push(`const c${index + 1} = c${index};`);
   const chain = `${reverse.join("\n")}\nconst c1 = require("child_process");\nc8001.exec("ls");`;
