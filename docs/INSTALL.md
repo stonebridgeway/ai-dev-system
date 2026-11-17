@@ -729,9 +729,12 @@ stderr, until 4.0.
 ## Configuring a server from the terminal
 
 A server that agents run on has no desktop app: everything the app's screens change is a command,
-and `ai-dev` alone, at a terminal — over SSH too — opens a menu over them. Type a number and Enter;
-`b` goes back, `q` leaves. Each choice runs one of the commands below with what you answered and
-prints it (`$ ai-dev settings set daemon_idle_minutes 0`), so the same step can go into a script.
+and `ai-dev` alone, at a terminal — over SSH too — opens a menu over them, under the install's
+state: the verdict, the model, the index, the clients connected. The arrows move through a list and
+Enter chooses, or type a number and Enter; `b` or Esc goes back, `q` leaves. Each choice runs one of
+the commands below with what you answered and prints it (`$ ai-dev settings set daemon_idle_minutes
+0`), so the same step can go into a script. `AI_DEV_MENU=plain` keeps the menu to numbered questions
+(a terminal that draws nothing over itself gets them anyway), and `NO_COLOR` leaves the colour out.
 
 ```bash
 ai-dev                                   # the menu
