@@ -47,10 +47,12 @@ test("SDK runtime exposes tools, resources, prompts, and structured results", as
     "archify_doctor", "archify_guide", "archify_validate", "archify_render", "archify_deliver",
     "archify_visual_check", "archify_compare", "archify_migrate", "archify_brands"
   ]) assert.ok(tools.tools.some((item) => item.name === name));
-  for (const name of ["archify_doctor", "archify_guide", "archify_validate", "archify_brands"]) {
+  for (const name of ["archify_doctor", "archify_guide", "archify_validate"]) {
     assert.equal(tools.tools.find((item) => item.name === name)?.annotations?.readOnlyHint, true);
   }
-  for (const name of ["archify_render", "archify_deliver", "archify_visual_check", "archify_compare", "archify_migrate"]) {
+  // `archify_brands` fetches the address `capture_url` names: a client that
+  // runs read-only tools unasked must ask before it.
+  for (const name of ["archify_render", "archify_deliver", "archify_visual_check", "archify_compare", "archify_migrate", "archify_brands"]) {
     assert.equal(tools.tools.find((item) => item.name === name)?.annotations?.readOnlyHint, false);
   }
 

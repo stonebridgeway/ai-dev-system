@@ -166,6 +166,10 @@ Code, Claude Desktop, Cursor, VS Code, Codex и Gemini CLI — и скачать
 добавь экспорт отчёта в CSV, покрой изменение тестами и выполни verify_task.
 ```
 
+Тот же запрос — один из MCP-промптов сервера, `start_engineering_task`: он спрашивает путь проекта
+и задачу. Клиент, который показывает промпты, предложит его без фразы выше — Claude Code в виде
+слэш-команды `/mcp__ai-dev__start_engineering_task`.
+
 С Docker сервер видит только папку проектов, которую смонтировал bootstrap, — `AI-Dev-Projects` в
 домашней папке, если `--project-path` (`-ProjectPath` на Windows) или записи, которые bootstrap
 заменил, не назвали другую, — поэтому

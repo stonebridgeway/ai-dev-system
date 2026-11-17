@@ -94,7 +94,7 @@ Measured as what a client actually receives: the `tools` array of the
 | `core` | 25 | 23,574 bytes (~24 KB) |
 | `core,git` | 34 | 33,600 bytes (~34 KB) |
 | `core,coding,git,memory` | 69 | 70,428 bytes (~70 KB) |
-| unset / `all` | 135 | 140,645 bytes (~141 KB) |
+| unset / `all` | 135 | 140,647 bytes (~141 KB) |
 
 To measure it yourself (macOS / Linux shell; change `AI_DEV_PROFILES` per row,
 empty for all):

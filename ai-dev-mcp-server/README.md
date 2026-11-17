@@ -446,7 +446,7 @@ Passwords, project contexts, task history, models, caches, logs, backups, `.code
 are visible only when the user mounts a chosen projects folder: at its own path on macOS and Linux,
 under `/workspace` on Windows.
 
-See [the complete Windows, macOS, Linux, client configuration, Compose, BGE-M3, and GHCR guide](../docker/README.md).
+See [Install: Docker](../docs/INSTALL.md#docker) for Linux and Windows, the client entries, Compose and the image tags; [docker/README.md](../docker/README.md) (in Russian) has the full matrix.
 
 ## Acceptance
 
