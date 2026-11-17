@@ -356,6 +356,42 @@ test("plans are pure: what install and remove would do to a text", () => {
   assert.deepEqual(planRemove(cursor, "{}"), { next: "{}", changed: false, removed: [] });
 });
 
+test("what a person added to the entry stays through an install: a variable, a client's field, a timeout", () => {
+  const cursor = MCP_CLIENTS.find((client) => client.id === "cursor");
+  const codex = MCP_CLIENTS.find((client) => client.id === "codex");
+  const written = clientEntry(cursor, { ...LAUNCH, env: { AI_DEV_HOME: "/home/u/.ai-dev" } });
+
+  // Capabilities says to set AI_DEV_PROFILES in the entry's env block.
+  const edited = { ...written, env: { ...written.env, AI_DEV_PROFILES: "core,git" }, disabled: false };
+  const text = JSON.stringify({ mcpServers: { [SERVER_NAME]: edited } }, null, 2);
+  assert.equal(describeEntry(edited, written).kind, "current", "an edited entry of this install is this install's");
+  assert.equal(planInstall(cursor, text, written).changed, false, "and is not written over");
+
+  // The same additions under another install's path: the launch is replaced, the additions stay.
+  const elsewhere = { ...edited, args: ["/old/ai-dev/bin/ai-dev.mjs", "mcp"], env: { AI_DEV_HOME: "/old/home", AI_DEV_PROFILES: "core,git" } };
+  assert.equal(describeEntry(elsewhere, written).kind, "local");
+  const moved = planInstall(cursor, JSON.stringify({ mcpServers: { [SERVER_NAME]: elsewhere } }), written);
+  assert.deepEqual(readJsonc(moved.next).mcpServers[SERVER_NAME], {
+    ...written,
+    env: { AI_DEV_PROFILES: "core,git", AI_DEV_HOME: "/home/u/.ai-dev" },
+    disabled: false
+  }, "the install's own variables are the new install's");
+
+  // An entry that ran something else, or Docker, is replaced whole.
+  for (const other of [{ command: "uvx", args: ["something"], env: { TOKEN_NAME: "x" }, disabled: true }, { command: "docker", args: ["run", "--rm", "-i", "image"], disabled: true }]) {
+    const replaced = planInstall(cursor, JSON.stringify({ mcpServers: { [SERVER_NAME]: other } }), written);
+    assert.deepEqual(readJsonc(replaced.next).mcpServers[SERVER_NAME], written);
+  }
+
+  // Codex: a timeout the person changed is theirs.
+  const table = clientEntry(codex, LAUNCH);
+  const first = planInstall(codex, "", table).next;
+  const slower = first.replace("tool_timeout_sec = 3600", "tool_timeout_sec = 7200");
+  assert.notEqual(slower, first);
+  assert.equal(planInstall(codex, slower, table).changed, false);
+  assert.equal(parseTomlLite(slower).data.mcp_servers[SERVER_NAME].tool_timeout_sec, 7200);
+});
+
 test("entries read back for the list, a broken file as an error of its own", async (t) => {
   const home = await tempHome(t);
   await sixClients(home);

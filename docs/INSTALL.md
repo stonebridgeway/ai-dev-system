@@ -440,6 +440,10 @@ What the installer does with the files:
 - **One name.** An `ai-dev-system` entry — what the 2.x local installer wrote — is removed, and an
   `ai-dev` entry of another install (Docker or local) is replaced; the output says which. Each
   client has one `ai-dev`: the last install to connect it wins.
+- **What you added stays.** A variable you put into the entry's `env` (`AI_DEV_PROFILES`), a
+  client's own field (`disabled`) or a Codex timeout you changed is kept when a local entry is
+  written again, through a move of the install too. A Docker entry, or one that ran something
+  else, is replaced whole.
 - **A broken file is one failure.** It is left as it was and named with the line where it breaks;
   the other clients are still written, and the command exits 1.
 - **Again is a no-op.** A second run says `No changes`.

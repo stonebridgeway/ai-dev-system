@@ -84,6 +84,7 @@ test("create, list, and remove task worktrees with handoff files and dirty guard
   const again = await createTaskWorktree({ projectRoot: repo, name: "login-form" });
   assert.equal(again.created, false);
   await assert.rejects(createTaskWorktree({ projectRoot: repo, name: "../escape" }), /Invalid worktree name/);
+  await assert.rejects(createTaskWorktree({ projectRoot: repo, name: "an-option", baseRef: "--detach" }), /base_ref is not a git ref/);
 
   // A worktree can be created from inside another worktree; it still lands under the main root.
   const nested = await createTaskWorktree({ projectRoot: created.path, name: "second", baseRef: "main" });

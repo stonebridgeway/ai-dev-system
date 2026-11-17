@@ -118,6 +118,13 @@ test("--data deletes the runtime home, and only a folder that holds nothing but 
     await fs.mkdir(path.dirname(path.join(staged.runtime, name)), { recursive: true });
     await fs.writeFile(path.join(staged.runtime, name), "");
   }
+  // A daemon that did not stop still writes there: the data is kept, and the status says in use.
+  const running = await uninstallBundle({ env: staged.env, home: staged.home, data: true, apply: true, stop: async () => ({ daemons: [{ pid: 4242, stopped: false }] }) });
+  assert.deepEqual([running.data.removed, running.data.busy], [false, true], JSON.stringify(running.data));
+  assert.match(running.data.reason, /daemon is still running/);
+  await fs.access(path.join(staged.runtime, ".ai-dev", "state"));
+  assert.equal(exitStatus(running), 3);
+
   const result = await uninstallBundle({ env: staged.env, home: staged.home, data: true, apply: true, stop: noDaemons });
   assert.equal(result.data.removed, true, JSON.stringify(result.data));
   await assert.rejects(fs.access(staged.runtime), { code: "ENOENT" });
