@@ -63,10 +63,27 @@ const { appendJsonLines } = await import(${JSON.stringify(atomicFilesUrl)});
 for (let i = 0; i < Number(count); i += 1) await appendJsonLines(target, JSON.stringify({ writer, i }) + "\\n");
 `;
 
+// A hook waits five seconds for the lock and no longer — an agent's Stop must
+// not hang (HOOK_LOCK_TIMEOUT_MS; file-lock.test.mjs holds it to that) — and
+// the lock has no queue: two servers appending back to back can keep a hook
+// out for longer than that on a slow disk. Measured: its longest wait here
+// was 3.0 s of the 5, and on a Windows runner it ran out. What these tests
+// are about is the lines, so a line the lock refused is offered again; a lock
+// nobody gives back still fails them, after two minutes.
 const hookWriter = `
 const [writer, count] = process.argv.slice(1);
 const { appendUsageEvents, usageLedgerPath } = await import(${JSON.stringify(hookLibUrl)});
-for (let i = 0; i < Number(count); i += 1) appendUsageEvents([{ writer, i }]);
+const giveUp = Date.now() + 120_000;
+for (let i = 0; i < Number(count); i += 1) {
+  for (;;) {
+    try {
+      appendUsageEvents([{ writer, i }]);
+      break;
+    } catch (error) {
+      if (!/Timed out after \\d+ ms waiting for the lock/.test(error.message) || Date.now() > giveUp) throw error;
+    }
+  }
+}
 `;
 
 async function readRecords(file) {
@@ -114,6 +131,8 @@ test("a hook and two servers appending to one ledger keep every line", async (t)
   const { byWriter, broken } = await readRecords(file);
   assert.equal(broken, 0);
   assert.deepEqual(Object.fromEntries(Object.entries(byWriter).map(([name, values]) => [name, values.length])), { hook: 150, "server-1": 150, "server-2": 150 });
+  // Each writer's own lines once and in its order: a line offered again was not written twice.
+  for (const name of ["hook", "server-1", "server-2"]) assert.ok(inOrder(byWriter[name]), `writer ${name} kept its own order`);
 });
 
 // What this shows is the dead-pid rule under load: a writer killed at any point,
