@@ -5,6 +5,11 @@
  * (`ai-dev settings set …`, `ai-dev skills new …`) with the answers given, so
  * the menu does nothing the commands do not, and says the command it ran.
  *
+ * At a terminal a list is walked with the arrows (`menu-select.mjs`) and the
+ * main one is headed by the install's state; a number and Enter chooses
+ * everywhere, and is all there is where the keys cannot be read one by one
+ * (`TERM=dumb`, `AI_DEV_MENU=plain`, piped input).
+ *
  * Exit codes: 0 left with q (or the input ended: Ctrl-D), 2 not at a terminal, 130 Ctrl-C.
  *
  * Answers reach the commands as option values (`--pattern=<text>`) or after a
@@ -19,6 +24,7 @@ import { EXIT, parseCommandLine } from "../core/cli-args.mjs";
 import { SETTINGS, readSettings } from "../core/settings.mjs";
 import { ALWAYS_ON_PROFILE } from "../core/tool-profiles.mjs";
 import { packageVersion, tildify } from "./context.mjs";
+import { canSelect, selectFromList, stylesFor } from "./menu-select.mjs";
 import { LISTED_PROFILES, shown } from "./settings.mjs";
 
 export function usage() {
@@ -26,9 +32,10 @@ export function usage() {
     "Usage: ai-dev menu      (or `ai-dev` alone, at a terminal)",
     "",
     "A menu over everything you set up and change: the settings, the AI clients, your skills,",
-    "a repository's rules, the MCP servers, the local model, the daemon, a backup. Type a",
-    "number and Enter; b goes back, q leaves. Each choice runs an `ai-dev` command and says",
-    "which, so the same thing can go into a script."
+    "a repository's rules, the MCP servers, the local model, the daemon, a backup, under the",
+    "install's state. Up and Down and Enter choose, or a number and Enter; b goes back, q",
+    "leaves. Each choice runs an `ai-dev` command and says which, so the same thing can go",
+    "into a script. AI_DEV_MENU=plain keeps to numbers; NO_COLOR leaves the colour out."
   ].join("\n");
 }
 
@@ -44,6 +51,8 @@ export function createPrompter(io) {
   const input = io.stdin ?? process.stdin;
   const output = io.stdout;
   const terminal = Boolean(input.isTTY && output.isTTY);
+  const selecting = canSelect(input, output, io.env);
+  const styles = stylesFor(output, io.env);
   let piped = null;
   if (!terminal) {
     const lines = [];
@@ -62,6 +71,10 @@ export function createPrompter(io) {
   }
 
   let closedByCtrlD = false;
+  const left = new Map();
+
+  /** Whether a list of `count` items is walked with the arrows: one taller than the window cannot be drawn over itself. */
+  const walks = (count) => selecting && !closedByCtrlD && (Number(output.rows) || 24) > count + 6;
 
   /** One line typed, or null when the input ended. */
   async function line(prompt) {
@@ -115,6 +128,19 @@ export function createPrompter(io) {
      * main menu) b and Enter are not choices: only q and the end of the input leave it.
      */
     async choose(title, items, { back = "Back" } = {}) {
+      if (walks(items.length)) {
+        // A list that is come back to — after its command ran — is marked where it was left.
+        const picked = await selectFromList({ input, output, title, items, back, styles, start: left.get(title) });
+        if (picked.kind === "choice") {
+          left.set(title, items.findIndex((item) => item.id === picked.id));
+          return picked.id;
+        }
+        if (picked.kind === "quit") throw new Leave();
+        if (picked.kind === "interrupt") throw new Interrupted("Stopped with Ctrl-C.");
+        // Ctrl-D: the input ended, and every question after it is unanswered.
+        if (picked.kind === "end") closedByCtrlD = true;
+        return null;
+      }
       output.write(`\n${title}\n`);
       const width = Math.max(0, ...items.filter((item) => item.hint).map((item) => item.label.length)) + 3;
       items.forEach((item, index) => output.write(`  ${String(item.key ?? index + 1).padStart(2)}  ${item.hint ? `${item.label.padEnd(width)}${item.hint}` : item.label}\n`));
@@ -133,7 +159,9 @@ export function createPrompter(io) {
         output.write(`There is no ${JSON.stringify(answer.trim())} here: a number from the list${back ? ", b" : ""} or q.\n`);
       }
     },
-    close: () => piped?.close()
+    close: () => piped?.close(),
+    walks,
+    styles
   };
   return prompter;
 }
@@ -171,18 +199,33 @@ const shellWord = (word) => (/^[\w@%+=:,./~-]+$/.test(word) ? word : `'${word.re
  * The menu.
  *
  * @param {import("./context.mjs").CliIo} io
- * @param {{ main: (argv: string[], io: object) => Promise<number | null> }} cli - What runs a command line.
+ * @param {{ main: (argv: string[], io: object) => Promise<number | null>, status?: () => Promise<object> }} cli -
+ *   What runs a command line, and what reads the install's state for the heading.
  */
-export async function runMenu(io, { main }) {
+export async function runMenu(io, { main, status: readStatus = quickStatus }) {
   const ask = createPrompter(io);
   const sub = commandIo(io, ask);
   const session = { project: process.cwd() };
   const say = (text = "") => io.out(text);
+  const { styles } = ask;
   const command = async (...words) => {
-    say(`\n$ ai-dev ${words.map(shellWord).join(" ")}`);
+    say(`\n${styles.dim(`$ ai-dev ${words.map(shellWord).join(" ")}`)}`);
     const code = await main(words, sub);
-    if (code) say(`(exit ${code})`);
+    if (code) say(styles.warn(`(exit ${code})`));
     return code;
+  };
+
+  /**
+   * The install's state above the main list, as `ai-dev status --quick` has
+   * it: what is on disk, no health checks. Nothing when it cannot be read —
+   * the menu is how a person gets to what repairs it.
+   */
+  const heading = async () => {
+    try {
+      return headingLines(await readStatus(), styles, Number(io.stdout?.columns) || 100);
+    } catch {
+      return [styles.bold(`AI Dev ${packageVersion()}`)];
+    }
   };
 
   const project = async () => {
@@ -413,10 +456,15 @@ export async function runMenu(io, { main }) {
     { id: "backup", label: "Back up", hint: "the vault and AI Dev's state, as a ZIP" },
     { id: "help", key: "h", label: "Every command" }
   ];
-  say(`AI Dev ${packageVersion()} · type a number and Enter; b goes back, q leaves.`);
+  if (!ask.walks(items.length)) say(`AI Dev ${packageVersion()} · type a number and Enter; b goes back, q leaves.`);
   try {
     for (;;) {
-      const choice = await ask.choose("AI Dev", items, { back: null });
+      const walked = ask.walks(items.length);
+      if (walked) {
+        say("");
+        for (const line of await heading()) say(line);
+      }
+      const choice = await ask.choose(walked ? "Menu" : "AI Dev", items, { back: null });
       if (choice === null) return EXIT.ok;
       if (menus[choice]) await menus[choice]();
       else await command(choice === "help" ? "help" : choice);
@@ -428,6 +476,38 @@ export async function runMenu(io, { main }) {
   } finally {
     ask.close();
   }
+}
+
+/** What is on disk, without the health checks: `ai-dev status --quick`. */
+async function quickStatus() {
+  const { withTools } = await import("./tools.mjs");
+  return withTools(({ call }) => call("system_status", { checks: false }));
+}
+
+/**
+ * The install's state in two lines: the verdict and why, then the model, the
+ * index and the clients.
+ *
+ * @param {object} status - `system_status`, without its checks.
+ * @param {ReturnType<typeof stylesFor>} styles
+ * @param {number} [columns]
+ * @returns {string[]}
+ */
+export function headingLines(status, styles, columns = 100) {
+  const width = Math.max(20, columns - 1);
+  const cut = (text) => (text.length > width ? `${text.slice(0, width - 1)}…` : text);
+  const colour = status.status === "ok" ? styles.ok : status.status === "failed" ? styles.fail : styles.warn;
+  const title = `AI Dev ${status.version}`;
+  const verdict = cut(`${title} · ${status.status}${status.summary ? `: ${status.summary}` : ""}`).slice(title.length);
+  const index = status.index?.exists
+    ? `${status.index.documents} documents${status.index.fresh === false ? ", out of date" : ""}`
+    : "not built";
+  const parts = [
+    `model ${status.model?.installed ? "installed" : "not installed"}`,
+    `index ${index}`,
+    `clients ${status.clients?.connected ?? 0} of ${status.clients?.found ?? 0} connected`
+  ];
+  return [`${styles.bold(title)}${colour(verdict)}`, styles.dim(cut(`  ${parts.join(" · ")}`))];
 }
 
 /**
