@@ -148,6 +148,10 @@ is offered again for as long as it runs — the app's own, or another, such as a
 finishing a client's session), **Quit**. Closing the window keeps the app in the tray; **Quit** ends
 it.
 
+On a Linux desktop that shows no tray icons — GNOME without an extension for them — the app is
+still running after its window is closed: start it again to get the window back, and **Ctrl+Q** in
+the window quits it (the same **Quit**, in the menu Alt shows).
+
 The daemon is not the app's: it goes on serving the clients after the app quits. While the app
 runs, its session keeps the daemon from leaving on idle; after **Quit** the daemon leaves on its
 own when nobody uses it. When the code is updated in place and a daemon of the new code takes over,
@@ -367,7 +371,7 @@ must not hold, at its `bundle.json` read back by the app's own parser, and at th
 which must be the runtime's — the updater compares the app's version with a release's. The CI job
 `desktop` runs the check for Windows and Linux; `.github/workflows/desktop-windows.yml` builds the
 installer on `windows-latest`, and `.github/workflows/desktop-macos-linux.yml` the Mac and Linux
-packages on `macos-latest` and `ubuntu-latest`, then runs each shipped runtime as an AI client
+packages on `macos-latest` and `ubuntu-24.04`, then runs each shipped runtime as an AI client
 does and starts the built app (`test/e2e/packaged.test.mjs`).
 
 The runtime is the npm package's distribution (`npm run dist`) with its dependencies for
