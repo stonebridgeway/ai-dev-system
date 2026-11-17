@@ -293,6 +293,21 @@ async function countLines(projectRoot, relativePath) {
 }
 
 /**
+ * The commit a ref names, or "" when it names none. A ref never starts with a
+ * dash, so what does is not handed to git at all.
+ *
+ * @param {string} root
+ * @param {unknown} ref
+ * @returns {Promise<string>}
+ */
+async function resolveCommit(root, ref) {
+  if (typeof ref !== "string" || !ref || ref.startsWith("-")) return "";
+  const result = await git(root, ["rev-parse", "--verify", "--quiet", `${ref}^{commit}`]);
+  const commit = result.ok ? result.stdout.trim() : "";
+  return /^[0-9a-f]{40,64}$/.test(commit) ? commit : "";
+}
+
+/**
  * Collect the change set of a repository: modified/added tracked files diffed
  * against `baseRef` (default `HEAD`, i.e. uncommitted work) plus untracked files
  * read in full. Only added lines are returned so pre-existing problems are not
@@ -315,7 +330,10 @@ export async function collectChangeSet(projectRoot, { baseRef = "HEAD", maxFiles
     if (code === "??") untracked.push(filePath);
     if (code.includes("D")) deleted.add(filePath);
   }
-  const diff = await git(root, ["diff", "--unified=0", "--no-color", "--no-ext-diff", baseRef, "--"]);
+  // The commit, never the words: `base_ref` comes from a tool call, and
+  // `--output=<file>` in its place made `git diff` write that file.
+  const commit = await resolveCommit(root, baseRef);
+  const diff = commit ? await git(root, ["diff", "--unified=0", "--no-color", "--no-ext-diff", commit, "--"]) : { ok: false };
   const added = diff.ok ? parseAddedLines(diff.stdout) : new Map();
   const files = [];
   for (const [filePath, lines] of added) {

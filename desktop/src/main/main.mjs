@@ -56,8 +56,17 @@ const updates = updatesEnabled({ packaged: app.isPackaged, platform: process.pla
  * the system's copy and paste go through. Neither has Reload or the developer
  * tools.
  */
-function applicationMenu() {
-  return process.platform === "darwin" ? Menu.buildFromTemplate([{ role: "appMenu" }, { role: "editMenu" }]) : null;
+/**
+ * macOS's own menu; no menu on Windows; on Linux one item, Quit. A Linux
+ * desktop with no tray host — GNOME without an extension — shows no tray
+ * icon, closing the window only hides it, and Quit was in the tray alone: the
+ * app could be left only by killing it, and a downloaded update, installed at
+ * Quit, never was. The bar stays hidden until Alt; Ctrl+Q needs no bar.
+ */
+function applicationMenu({ t, quit }) {
+  if (process.platform === "darwin") return Menu.buildFromTemplate([{ role: "appMenu" }, { role: "editMenu" }]);
+  if (process.platform !== "linux") return null;
+  return Menu.buildFromTemplate([{ label: t("app.title"), submenu: [{ label: t("tray.quit"), accelerator: "Ctrl+Q", click: () => quit() }] }]);
 }
 
 // Chromium resolves no host name in this app: the page has no network, and a
@@ -139,6 +148,8 @@ if (!app.requestSingleInstanceLock()) {
     if (devTools) window.webContents.openDevTools({ mode: "detach" });
   };
 
+  // Drawn again with the tray when the language changes.
+  const setMenu = () => Menu.setApplicationMenu(applicationMenu({ t, quit }));
   const quit = async () => {
     quitting = true;
     // A language that waits is written once more; the file's lock is waited
@@ -216,6 +227,7 @@ if (!app.requestSingleInstanceLock()) {
     if (now === language) return;
     language = now;
     tray?.refresh();
+    if (app.isReady()) setMenu();
     window?.setTitle(t("app.title"));
     if (["broken", "no-node"].includes(link.state.phase)) explain?.();
     window?.webContents.send(EVENT_CHANNELS.state, publicState());
@@ -248,6 +260,7 @@ if (!app.requestSingleInstanceLock()) {
         language = languages.atStart(read.stored) ?? pickLanguage(settings.language, app.getLocale());
         window?.setTitle(t("app.title"));
         tray?.refresh();
+        if (app.isReady()) setMenu();
         const clientNodes = await server.clientNodePaths({ env, cliPath: path.join(root, "bin", "ai-dev.mjs") }).catch(() => []);
         // The Windows install's own Node first: the clients it connects run it, through the same link.
         node = findNode({ env, clientNodes, bundled: runtime ? [runtime.node] : [] });
@@ -295,7 +308,7 @@ if (!app.requestSingleInstanceLock()) {
     pageSession.protocol.handle(APP_SCHEME, appFileHandler(rendererRoot));
     await lockSession(pageSession);
     await lockSession(session.defaultSession);
-    Menu.setApplicationMenu(applicationMenu());
+    setMenu();
     link.on("state", () => window?.webContents.send(EVENT_CHANNELS.state, publicState()));
 
     // The page's channels first: whatever happens next, the window can ask.
@@ -306,7 +319,9 @@ if (!app.requestSingleInstanceLock()) {
     });
     handle(INVOKE_CHANNELS.retry, async () => {
       if (link.state.phase === "broken" && link.state.restart) {
-        app.relaunch();
+        // An AppImage runs from a mount that goes when this process does:
+        // the file itself is what starts again.
+        app.relaunch(process.env.APPIMAGE ? { execPath: process.env.APPIMAGE } : undefined);
         app.exit(0);
         return publicState();
       }
@@ -365,6 +380,7 @@ if (!app.requestSingleInstanceLock()) {
     handle(INVOKE_CHANNELS.setLanguage, async (_event, chosen) => {
       language = pickLanguage(chosen, app.getLocale());
       tray?.refresh();
+      if (app.isReady()) setMenu();
       window?.setTitle(t("app.title"));
       // A failure screen is the main process's words: say them again in this language.
       if (["broken", "no-node"].includes(link.state.phase)) explain?.();

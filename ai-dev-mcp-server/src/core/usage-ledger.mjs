@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { appendJsonLines, atomicWriteFile, withExclusiveFile } from "./atomic-files.mjs";
@@ -534,14 +535,18 @@ export class UsageLedger {
    * only, so that a change of prices re-prices history instead of freezing a
    * stale number into the ledger.
    *
-   * @param {{ projectPath?: string, taskId?: string, since?: string, limitTools?: number, rates?: Record<string, object>, now?: Date }} [filter]
+   * @param {{ projectPath?: string, projectTaskIds?: string[], taskId?: string, since?: string, limitTools?: number, rates?: Record<string, object>, now?: Date }} [filter]
+   *   `projectTaskIds`: the project's tasks, for the calls that named a task and no path.
    * @returns {Promise<object>} Report.
    */
-  async report({ projectPath = "", taskId = "", since = "", limitTools = 15, rates = RATE_TABLE, includeHistoricalModels = false, now = new Date() } = {}) {
+  async report({ projectPath = "", projectTaskIds = [], taskId = "", since = "", limitTools = 15, rates = RATE_TABLE, includeHistoricalModels = false, now = new Date() } = {}) {
+    const inProject = projectPath ? projectScope(projectPath) : null;
+    const ownTasks = new Set(projectTaskIds);
     const events = (await this.readEvents()).filter((event) => {
       if (taskId && event.task_id !== taskId) return false;
-      if (projectPath && event.project_path && path.resolve(event.project_path) !== path.resolve(projectPath)) return false;
-      if (projectPath && !event.project_path && !taskId) return false;
+      if (inProject && event.project_path && !inProject(event.project_path)) return false;
+      // A call that named only its task: the project's when the task is.
+      if (inProject && !event.project_path && !taskId && !ownTasks.has(event.task_id)) return false;
       if (since && String(event.at || "") < since) return false;
       return true;
     });
@@ -614,6 +619,36 @@ export class UsageLedger {
         .slice(0, 50)
     };
   }
+}
+
+/**
+ * Whether a recorded path is the project or a folder of it. Events keep the
+ * path a caller gave — a package of the project, the project through a link,
+ * another case of the drive letter — and compared as strings each of those
+ * was another project: the report lost them.
+ *
+ * @param {string} projectPath
+ * @returns {(recorded: string) => boolean}
+ */
+function projectScope(projectPath) {
+  const known = new Map();
+  const canonical = (target) => {
+    if (!known.has(target)) {
+      let real = path.resolve(target);
+      try {
+        real = realpathSync.native(real);
+      } catch {
+        // A folder that is gone is compared by its name.
+      }
+      known.set(target, process.platform === "win32" ? real.toLowerCase() : real);
+    }
+    return known.get(target);
+  };
+  const root = canonical(projectPath);
+  return (recorded) => {
+    const relative = path.relative(root, canonical(String(recorded)));
+    return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+  };
 }
 
 /**

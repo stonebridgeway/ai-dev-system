@@ -7,7 +7,7 @@ evidence-bound task completion.
 
 ## Runtime
 
-- `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.30.0`.
+- `src/server.mjs`: authoritative stdio runtime built on `@modelcontextprotocol/sdk@1.32.2`.
 - `src/mcp-stdio.mjs`: tool dispatch (`callTool`), the `tools` contract list, and the
   hand-rolled JSON-RPC fallback server (`startLegacyServer`, `npm run start:legacy`);
   `server.mjs`, the scripts and the tests import it.
@@ -446,7 +446,7 @@ Passwords, project contexts, task history, models, caches, logs, backups, `.code
 are visible only when the user mounts a chosen projects folder: at its own path on macOS and Linux,
 under `/workspace` on Windows.
 
-See [the complete Windows, macOS, Linux, client configuration, Compose, BGE-M3, and GHCR guide](../docker/README.md).
+See [Install: Docker](../docs/INSTALL.md#docker) for Linux and Windows, the client entries, Compose and the image tags; [docker/README.md](../docker/README.md) (in Russian) has the full matrix.
 
 ## Acceptance
 

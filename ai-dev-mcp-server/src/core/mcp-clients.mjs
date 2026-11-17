@@ -214,7 +214,7 @@ export function clientEntry(target, { command, args, env = {} }) {
  */
 export function describeEntry(entry, expected) {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) return { kind: "invalid" };
-  if (expected !== undefined && isDeepStrictEqual(entry, expected)) return { kind: "current" };
+  if (expected !== undefined && (isDeepStrictEqual(entry, expected) || isDeepStrictEqual(entry, keepAdditions(entry, expected)))) return { kind: "current" };
   const command = String(entry.command ?? "");
   const args = Array.isArray(entry.args) ? entry.args.map(String) : [];
   const env = entry.env && typeof entry.env === "object" ? entry.env : {};
@@ -225,6 +225,42 @@ export function describeEntry(entry, expected) {
   const script = args.find((arg) => /(?:^|[\\/])(?:ai-dev|server|mcp-stdio)\.mjs$/i.test(arg));
   if (script) return { kind: "local", command, script };
   return { kind: "other", command };
+}
+
+/** The variables an entry carries for its install; any other is the person's. */
+const INSTALL_VARIABLES = new Set(["AI_DEV_VAULT_ROOT", "AI_DEV_HOME"]);
+
+const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+const isPlainValue = (value) => ["string", "number", "boolean"].includes(typeof value) || (Array.isArray(value) && value.every((item) => typeof item === "string"));
+
+/**
+ * `value` with what a person added to the entry it replaces: a variable in
+ * `env` — `AI_DEV_PROFILES`, as Capabilities says to set it — a client's own
+ * field such as `disabled`, a timeout they changed. Only for a local entry
+ * replaced by a local one: a Docker entry, or one that ran something else, is
+ * replaced whole, and so are the two variables that belong to an install.
+ * Without this an edited entry read as another install's and the next setup
+ * wrote over the edit.
+ *
+ * @param {unknown} previous - The entry in the file.
+ * @param {Record<string, unknown>} value - The entry this install writes.
+ * @returns {Record<string, unknown>}
+ */
+export function keepAdditions(previous, value) {
+  if (!isRecord(previous) || describeEntry(previous).kind !== "local" || describeEntry(value).kind !== "local") return value;
+  const merged = { ...value };
+  const variables = Object.entries(isRecord(previous.env) ? previous.env : {})
+    .filter(([name, text]) => !INSTALL_VARIABLES.has(name) && typeof text === "string");
+  if (variables.length) merged.env = { ...Object.fromEntries(variables), ...(isRecord(value.env) ? value.env : {}) };
+  for (const [name, item] of Object.entries(previous)) {
+    if (name === "env") continue;
+    if (!Object.hasOwn(value, name)) {
+      if (isPlainValue(item)) merged[name] = item;
+    } else if (/_timeout_sec$/.test(name) && typeof item === "number" && Number.isFinite(item) && item > 0) {
+      merged[name] = item;
+    }
+  }
+  return merged;
 }
 
 /** The entries of `names` in a config's text: value, or undefined when absent. */
@@ -245,8 +281,9 @@ function readEntries(target, text, names) {
  * @param {Record<string, unknown>} value
  * @returns {{ next: string, changed: boolean, previous: unknown, migrated: string[] }}
  */
-export function planInstall(target, text, value) {
+export function planInstall(target, text, written) {
   const previous = readEntries(target, text, [SERVER_NAME])[SERVER_NAME];
+  const value = keepAdditions(previous, written);
   const migrated = [];
   let next = text;
   if (target.format === "toml") {

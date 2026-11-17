@@ -7,7 +7,7 @@ import { RATE_TABLE, mergeRateTable } from "../core/usage-ledger.mjs";
  * transcript, and `usage_report` aggregates both together with the
  * automatically recorded MCP tool-call telemetry.
  *
- * @param {{ usageLedger: import("../core/usage-ledger.mjs").UsageLedger, resolveProjectIdentity: Function, taskStore: { read: Function }, readProjectTextIfExists: Function }} host
+ * @param {{ usageLedger: import("../core/usage-ledger.mjs").UsageLedger, resolveProjectIdentity: Function, taskStore: { read: Function, list: Function }, readProjectTextIfExists: Function }} host
  */
 export function createUsageTools(host) {
   async function scope({ project_path = "", task_id = "" }) {
@@ -105,8 +105,13 @@ export function createUsageTools(host) {
       async usage_report(args) {
         const scoped = await scope(args);
         const { table, ...rateInfo } = await rateTableFor(scoped.projectPath);
+        // The lifecycle calls after begin_task name the task, not the path.
+        const projectTasks = scoped.projectPath && !scoped.taskId
+          ? await host.taskStore.list({ projectPath: scoped.projectPath, limit: 5000 }).catch(() => [])
+          : [];
         const report = await host.usageLedger.report({
           projectPath: scoped.projectPath,
+          projectTaskIds: projectTasks.map((task) => task.id),
           taskId: scoped.taskId,
           since: args.since,
           limitTools: args.limit_tools,

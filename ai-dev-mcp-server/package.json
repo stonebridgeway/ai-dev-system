@@ -2,6 +2,7 @@
   "name": "ai-dev-mcp-server",
   "version": "3.0.0",
   "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "bin": {
     "ai-dev": "bin/ai-dev.mjs"
@@ -58,8 +59,8 @@
     "verify:cursor": "node scripts/verify-cursor-hooks.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
-    "zod": "4.5.4"
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
   },
   "optionalDependencies": {
     "@huggingface/transformers": "4.3.0",

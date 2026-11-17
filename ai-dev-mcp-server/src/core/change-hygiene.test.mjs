@@ -189,6 +189,25 @@ test("a file with a NUL byte is skipped as binary rather than scanned line by li
   assert.deepEqual(blob.added, []);
 });
 
+test("a base_ref that is an option is not handed to git: the file it names is left as it was", async (t) => {
+  const root = await gitFixture(t);
+  const victim = path.join(root, "victim.txt");
+  await fs.writeFile(victim, "precious\n");
+  await fs.writeFile(path.join(root, "src", "app.js"), "export const app = 1;\nexport const two = 2;\nexport const three = 3;\n");
+
+  // `git diff --output=<file>` writes the diff there.
+  const changeSet = await collectChangeSet(root, { baseRef: `--output=${victim}` });
+  assert.equal(await fs.readFile(victim, "utf8"), "precious\n");
+  assert.equal(changeSet.files.some((file) => file.kind === "modified"), false, "no ref, so no diff");
+  const scan = await verifyChangeHygiene(root, { baseRef: `--output=${victim}` });
+  assert.equal(await fs.readFile(victim, "utf8"), "precious\n");
+  assert.ok(scan.status);
+
+  // A ref that names a commit is diffed as before, whatever its spelling.
+  const head = await collectChangeSet(root, { baseRef: "HEAD" });
+  assert.ok(head.files.some((file) => file.path === "src/app.js" && file.kind === "modified"));
+});
+
 test("collectChangeSet and verifyChangeHygiene use git added lines and untracked files", async (t) => {
   const root = await gitFixture(t);
   await fs.writeFile(path.join(root, "src", "app.js"), "export const app = 1;\nconsole.log(\"x\");\nexport const two = 2;\n");

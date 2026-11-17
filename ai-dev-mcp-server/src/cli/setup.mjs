@@ -286,5 +286,28 @@ async function setup({ options, io, runtime, steps }) {
       say("That health check describes the vault, not this run — a step above failed. Fix it and run setup again.");
     }
   }
-  return firstRunSucceeded(results) && !clientsFailed ? EXIT.ok : EXIT.failed;
+  const succeeded = firstRunSucceeded(results) && !clientsFailed;
+  if (succeeded) {
+    say("");
+    for (const line of nextSteps({ connected: Boolean(clientSpec) })) say(line);
+  }
+  return succeeded ? EXIT.ok : EXIT.failed;
+}
+
+/**
+ * What to do once setup is through. It ended on the health line, which says
+ * the install is sound and not what a person does with it.
+ *
+ * @param {{ connected: boolean }} state - Whether this run wrote client entries.
+ * @returns {string[]}
+ */
+export function nextSteps({ connected }) {
+  return [
+    "Next:",
+    // Unconnected, the line above this block has already named the command.
+    ...(connected ? ["  Restart the AI clients that were connected: each starts the `ai-dev` server when it opens."] : []),
+    "  Open a repository in a client and say:",
+    "    Use the ai-dev MCP server. Begin a task for <the repository's path>: <what to do>.",
+    `  Every tool is listed to the model; \`${hint("npm run ai-dev -- settings set profiles core,git")}\` lists only the profiles named.`
+  ];
 }

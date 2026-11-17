@@ -240,7 +240,11 @@ export async function uninstallBundle({ env = process.env, home = os.homedir(), 
     if (where.link) result.data.target = where.real;
     if (apply) await removeLeftovers(path.dirname(where.real), path.basename(where.real));
     if (where.reason) Object.assign(result.data, { refused: true, reason: where.reason });
-    else if (result.copies.left.some((left) => left.busy)) {
+    else if (result.daemons.some((daemon) => !daemon.stopped)) {
+      // A daemon that did not stop still writes there: deleted under it, the
+      // folder came back in part and the answer said "Deleted".
+      Object.assign(result.data, { busy: true, reason: "AI Dev's daemon is still running" });
+    } else if (result.copies.left.some((left) => left.busy)) {
       // A copy a client still runs: its files are in the runtime home, which
       // goes only whole — after the clients are closed and it is run again.
       Object.assign(result.data, { busy: true, reason: "AI Dev's runtime in it is still in use" });

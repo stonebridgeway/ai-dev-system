@@ -440,6 +440,10 @@ What the installer does with the files:
 - **One name.** An `ai-dev-system` entry — what the 2.x local installer wrote — is removed, and an
   `ai-dev` entry of another install (Docker or local) is replaced; the output says which. Each
   client has one `ai-dev`: the last install to connect it wins.
+- **What you added stays.** A variable you put into the entry's `env` (`AI_DEV_PROFILES`), a
+  client's own field (`disabled`) or a Codex timeout you changed is kept when a local entry is
+  written again, through a move of the install too. A Docker entry, or one that ran something
+  else, is replaced whole.
 - **A broken file is one failure.** It is left as it was and named with the line where it breaks;
   the other clients are still written, and the command exits 1.
 - **Again is a no-op.** A second run says `No changes`.
@@ -725,9 +729,12 @@ stderr, until 4.0.
 ## Configuring a server from the terminal
 
 A server that agents run on has no desktop app: everything the app's screens change is a command,
-and `ai-dev` alone, at a terminal — over SSH too — opens a menu over them. Type a number and Enter;
-`b` goes back, `q` leaves. Each choice runs one of the commands below with what you answered and
-prints it (`$ ai-dev settings set daemon_idle_minutes 0`), so the same step can go into a script.
+and `ai-dev` alone, at a terminal — over SSH too — opens a menu over them, under the install's
+state: the verdict, the model, the index, the clients connected. The arrows move through a list and
+Enter chooses, or type a number and Enter; `b` or Esc goes back, `q` leaves. Each choice runs one of
+the commands below with what you answered and prints it (`$ ai-dev settings set daemon_idle_minutes
+0`), so the same step can go into a script. `AI_DEV_MENU=plain` keeps the menu to numbered questions
+(a terminal that draws nothing over itself gets them anyway), and `NO_COLOR` leaves the colour out.
 
 ```bash
 ai-dev                                   # the menu

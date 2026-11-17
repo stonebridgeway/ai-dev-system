@@ -166,6 +166,10 @@ Use the ai-dev MCP server. Begin a task for ~/Dev/my-project:
 add CSV export for the report, cover the change with tests, and run verify_task.
 ```
 
+The same request is one of the server's MCP prompts, `start_engineering_task`, which asks for the
+project's path and the task: a client that lists prompts offers it without the sentence above —
+Claude Code as the slash command `/mcp__ai-dev__start_engineering_task`.
+
 With Docker the server sees only the projects folder bootstrap mounted — `AI-Dev-Projects` in your
 home, unless `--project-path` (`-ProjectPath` on Windows) or the entries bootstrap replaced named another —
 so keep the project there.

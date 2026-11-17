@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - Unreleased
+## [3.0.0] - 2026-11-18
 
 A major version because what changed is how AI Dev is installed and how a client reaches it, not
 what an agent can do with it. The server is the same — 2.0.0's 133 tools and two new ones,
@@ -150,7 +150,7 @@ has it with what each one says.
   comments and formatting stay byte for byte, a backup is kept, and `remove` takes out only the
   `ai-dev` entry. `ai-dev clients doctor` starts each entry and checks that it answers with
   instructions, and names an entry whose mounted folder is gone.
-- **The desktop app** on Electron 44.5.1, in English and Russian: the install's health in the
+- **The desktop app** on Electron 44.11.3, in English and Russian: the install's health in the
   tray; a first-run wizard for the projects folder, the AI clients and the local model; Status,
   with every check and what to do about it; Projects (tasks, epics, decisions, handoffs), Costs
   (by model, tool and task), Skills (browse, add, import, remove your own), Rules (guard rules,
@@ -246,6 +246,21 @@ has it with what each one says.
   `verify_task` and `complete_task` no longer return the whole task record, the skill tools return
   short rows, and JSON answers carry no indentation. What to recheck, and how to get the 2.x answers
   back (`AI_DEV_RESPONSE_MODE=full`), is in `docs/MIGRATION.md`.
+- **The terminal menu is walked with the arrows**, under the install's state — the verdict, the
+  model, the index, the clients connected: Up and Down mark a line, Enter takes it, Esc goes back,
+  and a list that is come back to is marked where it was left. A number and Enter chooses as
+  before, and is all there is with piped input, `TERM=dumb`, `AI_DEV_MENU=plain` or a window
+  shorter than the list; `NO_COLOR` leaves the colour out.
+- **The app's menu is a line of tabs.** The nine screens were boxed buttons that took two lines
+  in Russian at the window's own width, and in English at its narrowest. They are tabs — the open
+  one filled and underlined, the one under the pointer tinted — with Settings and Setup at the far
+  end, on one line in both languages; the header stays in place while a screen scrolls, and a
+  window too narrow gives the tabs a line of their own. In Russian the wizard's tab is «Мастер».
+- **Setup ends on what to do next**, not on the health line: restart the clients it connected, the
+  sentence that begins a first task, and the command that narrows the tools listed to the model.
+- **The server's MCP prompts are in English**, titles and text: six of the eight were in Russian,
+  and so were the slash commands a client makes of them. The server's instructions name the areas
+  its tools cover, for a client that loads tools on demand.
 
 ### Deprecated
 
@@ -300,11 +315,39 @@ has it with what each one says.
   within the terminal and wraps a finding at words. A status that is not `ok` always says why —
   a stale index included — instead of "Everything this install needs is in place". A decision
   whose alternatives or consequences arrive as one sentence is recorded instead of refused.
+- **An `ai-dev` entry a person edited stays theirs.** A variable added to its `env` —
+  `AI_DEV_PROFILES`, as Capabilities says to set it — a client's own field such as `disabled`, or a
+  Codex timeout they changed made the entry read as "another install", and the next `setup` or
+  `ai-dev clients install` wrote over it. The additions are kept, through a move of the install too;
+  a Docker entry or one that ran something else is still replaced whole.
+- **`usage_report` for a project counts the project's calls.** It compared paths as strings, so a
+  call from a package of the project, through a link, or one that named only its task — every
+  lifecycle call after `begin_task` — was left out: 1 of 4 before, 4 of 4 after.
+- **`ai-dev uninstall --data` keeps the data when a daemon did not stop**, and exits 3: deleted under
+  a running daemon, the folder came back in part while the answer said "Deleted".
+- **The Linux app can be quit without a tray.** On a desktop that shows no tray icons — GNOME
+  without an extension — closing the window hid it and Quit was in the tray alone. Ctrl+Q in the
+  window quits, from a one-item menu Alt shows.
+- **Release mechanics.** The Linux app's restart after a failed start names the AppImage file, not
+  the mount that goes with the process. The published image's licence label is PolyForm
+  Noncommercial, not what GitHub reads off the repository.
 
 ### Security
 
 - **The server passes its own security gate again**: `fast-uri` 3.1.8, `hono` 4.13.8, `qs` 6.16.0
   and `sharp` 0.35.4 close 16 findings, 7 of them high. After: `pass`, 0 findings.
+- **The dependencies' advisories published since are closed**: the MCP SDK 1.32.2 and `zod` 4.6.7,
+  with `proxy-addr` 2.0.8, `body-parser` 2.4.0, `sharp` 0.35.5, `hono` 4.13.19, `qs` 6.17.1,
+  `ip-address` 10.7.6 and `fast-uri` 3.1.9 under them — `npm audit` went from 10 findings (1
+  critical, 4 high) to 0; the desktop app's Electron 44.11.3 and `undici` 7.30.2 close its 2 high
+  ones; and the `fast-uri` the Archify skill carries in the seed is 3.1.9.
+- **A `base_ref` that is an option is not handed to git.** `verify_change_hygiene`, `verify_task`'s
+  `hygiene_base_ref` and `coverage_gaps` passed it to `git diff` as it came, and
+  `--output=<file>` made git write the diff over that file. The ref is resolved to a commit first;
+  `begin_task_in_worktree` refuses one that starts with a dash.
+- **`archify_brands` is not advertised as read-only**: with `capture_url` it fetches an address the
+  caller names, and a client — or the desktop app's console — runs a read-only tool without asking.
+  68 of the 151 tools are read-only now, not 69.
 - **The daemon's channel is this user's**: a random socket or pipe name and a 256-bit secret,
   published only in a 0600 file, proven with an HMAC and never sent.
 - **The desktop app's page is a local page and nothing more**, isolated and sandboxed; every change
@@ -1810,6 +1853,6 @@ First tagged release.
   and `compact_context_interval`, each falling back to its default when the
   value is missing or not a positive number.
 
-[3.0.0]: https://github.com/stonebridgeway/ai-dev-system/compare/v2.0.0...HEAD
+[3.0.0]: https://github.com/stonebridgeway/ai-dev-system/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/stonebridgeway/ai-dev-system/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/stonebridgeway/ai-dev-system/releases/tag/v1.0.0

@@ -209,12 +209,17 @@ test("nothing leaves the window: WebRTC, a request made for it, another page wit
   }, path.join(desktopRoot, "src", "preload", "preload.cjs"));
   assert.deepEqual(stranger, [null, null], "a page that is not the app's gets no answer");
 
-  // No developer tools and no default menu.
+  // No developer tools and no default menu: none at all on Windows, and on
+  // Linux the one of the app's own, whose single item is Quit.
   const shipped = await app.evaluate(async ({ BrowserWindow, Menu }) => {
     const contents = BrowserWindow.getAllWindows().find((window) => window.isVisible())?.webContents ?? BrowserWindow.getAllWindows()[0].webContents;
     contents.openDevTools();
     await new Promise((resolve) => setTimeout(resolve, 500));
     return { opened: contents.isDevToolsOpened(), menu: Menu.getApplicationMenu() === null ? null : Menu.getApplicationMenu().items.map((item) => item.label) };
   });
-  assert.deepEqual(shipped, { opened: false, menu: process.platform === "darwin" ? shipped.menu : null });
+  assert.deepEqual(shipped, { opened: false, menu: process.platform === "darwin" ? shipped.menu : process.platform === "linux" ? ["AI Dev"] : null });
+  if (process.platform === "linux") {
+    const items = await app.evaluate(({ Menu }) => Menu.getApplicationMenu().items[0].submenu.items.map((item) => item.accelerator));
+    assert.deepEqual(items, ["Ctrl+Q"], "a desktop with no tray host has a way out");
+  }
 });

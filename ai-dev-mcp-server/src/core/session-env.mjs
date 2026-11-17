@@ -122,7 +122,9 @@ export const NOT_DAEMON_WIDE = Object.freeze({
     "AI_DEV_SYSTEM_ROOT",
     "AI_DEV_TEST_LAUNCHER",
     "AI_DEV_TEST_SH"
-  ])
+  ]),
+  // A terminal's own: how `ai-dev` alone draws its menu (`cli/menu-select.mjs`). No session reads it.
+  terminal: Object.freeze(["AI_DEV_MENU"])
 });
 
 const NOT_DAEMON_WIDE_NAMES = new Set(Object.values(NOT_DAEMON_WIDE).flat());

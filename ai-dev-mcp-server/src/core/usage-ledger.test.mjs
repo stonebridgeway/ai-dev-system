@@ -373,3 +373,27 @@ test("the historical list is exactly the models the price page dropped", () => {
   assert.equal(isHistoricalModel(""), false);
   assert.equal(isHistoricalModel(undefined), false);
 });
+
+test("a project's report takes its folders, the project through a link, and the calls that named only its task", async (t) => {
+  const tmp = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "usage-scope-")));
+  t.after(() => fs.rm(tmp, { recursive: true, force: true }));
+  const project = path.join(tmp, "project");
+  await fs.mkdir(path.join(project, "packages", "web"), { recursive: true });
+  // Windows makes a link only for an administrator or in developer mode: there the path itself stands in.
+  const link = await fs.symlink(project, path.join(tmp, "link"), "dir").then(() => path.join(tmp, "link"), () => project);
+  const ledger = new UsageLedger({ stateRoot: path.join(tmp, "state") });
+  await ledger.recordToolCall({ tool: "begin_task", ok: true, durationMs: 1, projectPath: project });
+  await ledger.recordToolCall({ tool: "analyze_project", ok: true, durationMs: 1, projectPath: path.join(project, "packages", "web") });
+  await ledger.recordToolCall({ tool: "prepare_project", ok: true, durationMs: 1, projectPath: link });
+  await ledger.recordToolCall({ tool: "verify_task", ok: true, durationMs: 1, taskId: "task-mine" });
+  // Not the project's: another project's task, a neighbour whose name begins the same, a folder that is gone.
+  await ledger.recordToolCall({ tool: "complete_task", ok: true, durationMs: 1, taskId: "task-theirs" });
+  await ledger.recordToolCall({ tool: "list_tasks", ok: true, durationMs: 1, projectPath: `${project}-sibling` });
+  await ledger.recordToolCall({ tool: "read_project", ok: true, durationMs: 1, projectPath: path.join(tmp, "gone") });
+
+  const report = await ledger.report({ projectPath: project, projectTaskIds: ["task-mine"] });
+  assert.deepEqual(report.tools.map((row) => row.tool).sort(), ["analyze_project", "begin_task", "prepare_project", "verify_task"]);
+  const unnamed = await ledger.report({ projectPath: project });
+  assert.equal(unnamed.tools.some((row) => row.tool === "verify_task"), false, "a task nobody named as the project's is not counted");
+  assert.equal((await ledger.report({ projectPath: link, projectTaskIds: ["task-mine"] })).events, 4, "asked through the link, the same");
+});
