@@ -2,6 +2,7 @@
   "name": "ai-dev-mcp-server",
   "version": "3.0.0",
   "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "bin": {
     "ai-dev": "bin/ai-dev.mjs"

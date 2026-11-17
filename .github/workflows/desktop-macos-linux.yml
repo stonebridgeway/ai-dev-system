@@ -60,7 +60,7 @@ jobs:
               dist/darwin-arm64/installer/latest-mac.yml
               dist/darwin-arm64/build-report.json
           - target: linux-x64
-            os: ubuntu-latest
+            os: ubuntu-24.04
             script: dist:linux
             runtime: dist/linux-x64/installer/linux-unpacked/resources/runtime
             app: dist/linux-x64/installer/linux-unpacked/ai-dev-desktop
@@ -206,7 +206,7 @@ jobs:
     # hold the release.
     if: ${{ !cancelled() && github.repository == 'stonebridgeway/ai-dev-system' && startsWith(github.ref, 'refs/tags/v') }}
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:

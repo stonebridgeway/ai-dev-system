@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -96,7 +96,7 @@ jobs:
 
   # The -browser variant: Chromium for Frontend QA, its own stage of the same Dockerfile.
   validate-browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -135,9 +135,12 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
+          - ubuntu-24.04
           - macos-latest
     runs-on: ${{ matrix.os }}
+    # macOS is in development in 3.0: a red Mac is shown and holds no image
+    # back, as it holds no app back in desktop-macos-linux.yml.
+    continue-on-error: ${{ matrix.os == 'macos-latest' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -184,7 +187,7 @@ jobs:
             suffix: ""
           - target: browser
             suffix: "-browser"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -234,6 +237,11 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') && !startsWith(github.ref_name, 'v1.') && !startsWith(github.ref_name, 'v2.') }}
             type=sha,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || startsWith(github.ref, 'refs/tags/v') }}
+          # These labels replace the Dockerfile's, and the action takes the
+          # licence from GitHub's reading of the repository, which knows no
+          # PolyForm: the image would say NOASSERTION, or 2.x's MIT.
+          labels: |
+            org.opencontainers.image.licenses=PolyForm-Noncommercial-1.0.0
 
       - name: Build and publish image
         uses: docker/build-push-action@v7
@@ -258,7 +266,7 @@ jobs:
   # published from main with no release tags, so no `:2` exists until then.
   freeze-2x:
     if: github.event_name == 'workflow_dispatch' && inputs.freeze_2x && github.repository == 'stonebridgeway/ai-dev-system'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write

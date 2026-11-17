@@ -92,7 +92,7 @@ jobs:
     # its own main publishes nothing.
     if: github.repository == 'stonebridgeway/ai-dev-system' && startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
