@@ -525,5 +525,28 @@ export async function run(argv, io) {
     return EXIT.usage;
   }
   const { main } = await import("./main.mjs");
-  return runMenu(io, { main });
+  try {
+    return await runMenu(io, { main });
+  } finally {
+    releaseTerminal(io.stdin ?? process.stdin);
+  }
+}
+
+/**
+ * Give the terminal back so the process can end. Each list reads keys in raw
+ * mode and pauses after; on Windows a console read that was started can stay
+ * pending after the pause, and the process did not exit after q or Ctrl-C
+ * once a list had been left with Esc (Д-607). Unreferenced, the input no
+ * longer holds the process: it ends when the menu does.
+ *
+ * @param {NodeJS.ReadStream} input
+ */
+export function releaseTerminal(input) {
+  try {
+    if (input?.isTTY && input.isRaw) input.setRawMode(false);
+  } catch {
+    // A terminal that went away needs nothing given back.
+  }
+  input?.pause?.();
+  input?.unref?.();
 }

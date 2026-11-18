@@ -181,6 +181,14 @@ npm run dist:pack                       # the npm tarball, checked file by file
 cd ../desktop && npm test && npm run dist:win   # the app's tests, the Windows installer (dist:mac, dist:linux: the others)
 ```
 
+On Windows, the full suite makes symbolic links, which Windows allows only to an administrator or
+with **Developer Mode** on (Settings → System → For developers). Without it, `npm run check` fails
+those tests with `EPERM` — measured: 27 of 2088 on a Windows 11 account without it — while the
+product itself makes no links there. CI's Windows runners can make them. The app's end-to-end tests
+(`desktop`, `npm test`) are run by CI on Linux only; on Windows they are not yet expected to pass.
+`npm run upgrade:test -- --base v2.0.0` needs the production tags: a fork's clone gets them with
+`git fetch --tags https://github.com/stonebridgeway/ai-dev-system.git`.
+
 ## Coding standards
 
 - ES modules, `async`/`await`, `const` over `let`.

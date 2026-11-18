@@ -337,6 +337,9 @@ has it with what each one says.
 - **The Linux app can be quit without a tray.** On a desktop that shows no tray icons — GNOME
   without an extension — closing the window hid it and Quit was in the tray alone. Ctrl+Q in the
   window quits, from a one-item menu Alt shows.
+- **The terminal menu ends on Windows when it is left.** After a list was left with Esc, q or
+  Ctrl-C ended the menu but not the process: a console read started in raw mode stayed pending.
+  The menu gives the terminal back as it ends. Found by the manual acceptance on Windows 11.
 - **Release mechanics.** The Linux app's restart after a failed start names the AppImage file, not
   the mount that goes with the process. The published image's licence label is PolyForm
   Noncommercial, not what GitHub reads off the repository.

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { PassThrough } from "node:stream";
 import test from "node:test";
-import { headingLines, runMenu } from "./menu.mjs";
+import { headingLines, releaseTerminal, runMenu } from "./menu.mjs";
 import { canSelect, renderList, resolveTyped, selectFromList, stylesFor } from "./menu-select.mjs";
 
 const ITEMS = [
@@ -166,4 +166,17 @@ test("the status lines in colour at a terminal, and as rendered anywhere else", 
   assert.match(coloured[1], /\x1b\[36mai-dev setup\x1b\[39m/);
   assert.match(coloured[2], /^ {4}\x1b\[31mfail\x1b\[39m search_index_file/);
   assert.deepEqual(coloured.map((line) => line.replace(/\x1b\[\d+m/g, "")), lines.map((line) => line.replaceAll("`", "")));
+});
+
+test("the terminal is given back when the menu ends: raw mode off, paused, not holding the process (Д-607)", () => {
+  const calls = [];
+  const input = { isTTY: true, isRaw: true, setRawMode: (on) => calls.push(`raw ${on}`), pause: () => calls.push("pause"), unref: () => calls.push("unref") };
+  releaseTerminal(input);
+  assert.deepEqual(calls, ["raw false", "pause", "unref"]);
+  // A pipe, or a terminal already out of raw mode: nothing to switch, and no throw.
+  const piped = [];
+  releaseTerminal({ isTTY: false, pause: () => piped.push("pause"), unref: () => piped.push("unref") });
+  assert.deepEqual(piped, ["pause", "unref"]);
+  releaseTerminal(undefined);
+  releaseTerminal({ isTTY: true, isRaw: true, setRawMode: () => { throw new Error("gone"); } });
 });

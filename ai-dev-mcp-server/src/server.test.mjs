@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { resolvePythonCommand } from "./core/python-command.mjs";
@@ -282,7 +283,7 @@ test("a session's capability profiles come from its own client, not from the pro
 });
 
 test("stdin closed right after a call: the call is answered, then the server exits", async () => {
-  const server = path.join(path.dirname(new URL(import.meta.url).pathname), "server.mjs");
+  const server = fileURLToPath(new URL("./server.mjs", import.meta.url));
   const child = spawn(process.execPath, [server], { stdio: ["pipe", "pipe", "ignore"], env: process.env });
   let out = "";
   child.stdout.on("data", (chunk) => { out += chunk; });

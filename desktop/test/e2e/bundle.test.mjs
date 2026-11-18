@@ -17,9 +17,16 @@ const { bundleFingerprint } = await serverModule("src/core/app-bundle.mjs");
 const { Client } = await serverModule("node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js");
 const { StdioClientTransport } = await serverModule("node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js");
 
-/** The production dependencies a daemon loads: the tree without the optional model runtime. */
-function productionPackages() {
-  const listed = spawnSync("npm", ["ls", "--omit=optional", "--omit=dev", "--all", "--parseable"], { cwd: serverRoot, encoding: "utf8", shell: false, windowsHide: true });
+const { resolveSpawnInvocation } = await serverModule("src/core/process-runner.mjs");
+
+/**
+ * The production dependencies a daemon loads: the tree without the optional model runtime.
+ * npm is npm.cmd on Windows, which Node does not spawn without a shell: the
+ * resolver turns it into `node <npm-cli.js>`.
+ */
+async function productionPackages() {
+  const npm = await resolveSpawnInvocation("npm", ["ls", "--omit=optional", "--omit=dev", "--all", "--parseable"]);
+  const listed = spawnSync(npm.executable, npm.args, { cwd: serverRoot, encoding: "utf8", shell: false, windowsHide: true });
   const modules = path.join(serverRoot, "node_modules");
   return listed.stdout.split("\n").map((line) => line.trim()).filter((line) => line.startsWith(`${modules}${path.sep}`));
 }
@@ -34,7 +41,7 @@ async function makeBundle(dir, { version, note }) {
     }
   });
   await fs.writeFile(path.join(dir, "ai-dev-mcp-server", "README.md"), `# AI Dev ${version}\n\n${note}\n`);
-  for (const folder of productionPackages()) {
+  for (const folder of await productionPackages()) {
     await fs.cp(folder, path.join(dir, "node_modules", path.relative(path.join(serverRoot, "node_modules"), folder)), { recursive: true, dereference: false });
   }
   // The seed, as the distribution ships it: the server fills the user's vault from it on its first start.
