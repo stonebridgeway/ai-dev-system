@@ -289,7 +289,7 @@ export function createControlTools(host) {
         const status = failed ? "failed" : degraded ? "degraded" : "ok";
         const problems = [
           ...(index.unreadable ? [`the search index could not be read: ${index.unreadable}`] : []),
-          ...(!built && !index.unreadable ? ["the search index is not built (setup_run builds it)"] : []),
+          ...(!built && !index.unreadable ? ["the search index is not built: setup builds it"] : []),
           ...checks.filter((check) => check.status === "fail" || check.status === "warn").map((check) => `${check.name}: ${check.summary}`),
           ...settings
         ];

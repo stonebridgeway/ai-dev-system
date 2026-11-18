@@ -256,6 +256,15 @@ has it with what each one says.
   one filled and underlined, the one under the pointer tinted — with Settings and Setup at the far
   end, on one line in both languages; the header stays in place while a screen scrolls, and a
   window too narrow gives the tabs a line of their own. In Russian the wizard's tab is «Мастер».
+- **The app's screens say what they are for and lead with what to do.** Each screen opens with one
+  sentence on what it is for. Status leads with a verdict card — the verdict, the checks that make
+  it in the page's words, the daemon's own sentence folded under them — then the model, the index
+  and the clients as tiles, each with its state as a colour and a word ("out of date", "none
+  found"), then only the checks that need attention, each with what to do first; the passing ones
+  fold under one line. Content sits on cards: tables, a project's epics, decisions and handoffs,
+  each setting. The tool console keeps a tool's name on one line, cut with … when long, its whole
+  name the tooltip. `ai-dev status` colours its verdict, a failing check and the commands to run.
+  A status that is not built says "setup builds it" instead of naming the `setup_run` tool.
 - **Setup ends on what to do next**, not on the health line: restart the clients it connected, the
   sentence that begins a first task, and the command that narrows the tools listed to the model.
 - **The server's MCP prompts are in English**, titles and text: six of the eight were in Russian,

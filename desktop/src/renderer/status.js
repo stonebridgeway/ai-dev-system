@@ -37,18 +37,41 @@ function detailRows(view, details) {
     rest > 0 ? [h("dt", {}, "…"), h("dd", {}, view.t("status.moreDetails", { count: rest }))] : null);
 }
 
+/**
+ * One check: its name in the page's words and what to do — the two a person
+ * acts on — then the daemon's own sentence, smaller, and the details folded.
+ */
 function checkItem(view, check) {
   const advice = recommendation(view, check);
   const details = detailRows(view, check.details);
   const critical = check.critical === true && check.status === "fail";
   return h("li", { className: `check check-${check.status}`, dataset: { check: check.name, status: check.status, critical: String(check.critical === true) } },
     h("div", { className: "check-head" },
-      h("span", { className: "badge" }, view.t(`status.check.${check.status}`)),
+      h("span", { className: "status-dot", "aria-hidden": "true" }),
+      h("strong", {}, checkTitle(check.name, view.t)),
       critical ? h("span", { className: "badge badge-critical" }, view.t("status.critical")) : null,
-      h("strong", {}, checkTitle(check.name, view.t))),
-    h("p", {}, check.summary),
+      h("span", { className: "badge" }, view.t(`status.check.${check.status}`))),
     advice ? h("p", { className: "advice" }, h("span", { className: "label" }, `${view.t("status.recommendation")}: `), advice) : null,
+    h("p", { className: "check-summary" }, check.summary),
     details ? h("details", {}, h("summary", {}, view.t("status.details")), details) : null);
+}
+
+/** The checks: what needs attention first, open; what works folded under one line. */
+function checkLists(view, checks) {
+  const ordered = orderedChecks(checks);
+  const attention = ordered.filter((check) => check.status !== "ok");
+  const working = ordered.filter((check) => check.status === "ok");
+  return [
+    h("h2", {}, view.t("status.attention"), attention.length ? h("span", { className: "count" }, String(attention.length)) : null),
+    attention.length
+      ? h("ul", { className: "checks" }, attention.map((check) => checkItem(view, check)))
+      : h("p", { className: "all-pass" }, view.t("status.allPass")),
+    working.length
+      ? h("details", { className: "passing" },
+        h("summary", {}, view.t("status.passing", { count: working.length })),
+        h("ul", { className: "checks" }, working.map((check) => checkItem(view, check))))
+      : null
+  ];
 }
 
 /** The model's line: installed, cannot be read and why, or not installed. */
@@ -57,15 +80,29 @@ function modelRow(view, model) {
   return model.unreadable ? modelUnreadable(view, model).status : view.t("status.model.missing");
 }
 
+/** A part of the install as a tile: its name, its state as a colour and a word, and the line about it. */
+function tile(label, [state, word], field, value) {
+  return h("div", { className: `part part-${state}` },
+    h("div", { className: "part-head" }, h("span", { className: "status-dot", "aria-hidden": "true" }), h("span", { className: "part-label" }, label), h("span", { className: "part-state" }, word)),
+    h("div", { className: "part-value", dataset: { field } }, value));
+}
+
 function overview(view, status) {
   const index = status.index.exists
     ? view.t("status.index.documents", { documents: status.index.documents, dense: status.index.dense_documents })
     : view.t("status.index.missing");
-  return h("dl", { className: "overview" },
-    h("dt", {}, view.t("status.model")), h("dd", { dataset: { field: "model" } }, modelRow(view, status.model)),
-    h("dt", {}, view.t("status.index")), h("dd", { dataset: { field: "index" } }, index),
-    h("dt", {}, view.t("status.clients")), h("dd", { dataset: { field: "clients" } }, view.t("status.clients.count", status.clients)));
+  const ready = ["ok", view.t("status.tile.ok")];
+  const model = status.model.installed ? ready : ["warn", view.t(status.model.unreadable ? "status.tile.unreadable" : "status.tile.optional")];
+  const indexState = !status.index.exists ? ["fail", view.t("status.tile.needed")] : status.index.fresh === false ? ["warn", view.t("status.tile.stale")] : ready;
+  const clients = Number(status.clients.connected) > 0 ? ready
+    : ["warn", view.t(Number(status.clients.found) > 0 ? "status.tile.notConnected" : "status.tile.noneFound")];
+  return h("div", { className: "parts" },
+    tile(view.t("status.model"), model, "model", modelRow(view, status.model)),
+    tile(view.t("status.index"), indexState, "index", index),
+    tile(view.t("status.clients"), clients, "clients", view.t("status.clients.count", status.clients)));
 }
+
+const VERDICT_MARK = Object.freeze({ ok: "✓", degraded: "!", failed: "✕" });
 
 /**
  * Why the install is not ok, in the daemon's words, and the settings file's
@@ -75,8 +112,13 @@ function overview(view, status) {
 function why(view, status) {
   if (status.status === "ok") return null;
   const problems = unsaidProblems(status);
+  // The checks that make the verdict, by their names in the page's words; the daemon's sentence under them.
+  const worst = (status.checks ?? []).filter((check) => check.status === "fail");
+  const named = (worst.length ? worst : (status.checks ?? []).filter((check) => check.status === "warn"))
+    .map((check) => `${checkTitle(check.name, view.t)} — ${view.t(`status.check.${check.status}`).toLowerCase()}`);
   return h("div", { className: "why", dataset: { field: "why" } },
-    h("p", {}, h("span", { className: "label" }, `${view.t("status.why")}: `), status.summary),
+    h("p", { className: "why-line" }, h("span", { className: "label" }, `${view.t("status.why")}: `), named.length ? named.join("; ") : status.summary),
+    named.length ? h("details", { className: "why-raw" }, h("summary", {}, view.t("status.technical")), h("p", {}, status.summary)) : null,
     problems.length
       ? [h("p", { className: "label" }, view.t("status.settingsProblems")), h("ul", { dataset: { field: "settings-problems" } }, problems.map((problem) => h("li", {}, problem)))]
       : null);
@@ -108,12 +150,14 @@ export function statusScreen(view, navigate) {
 
   const load = () => api.call("system_status", { checks: true }).then((status) => {
     show(body,
-      h("p", { className: `overall overall-${status.status}`, dataset: { field: "overall", status: status.status } }, view.t(`status.overall.${status.status}`)),
-      why(view, status),
-      h("p", { className: "muted" }, view.t("status.version", { version: status.version, pid: status.served_by.pid, sessions: status.served_by.sessions ?? 0 })),
+      h("div", { className: `verdict verdict-${status.status}` },
+        h("span", { className: "verdict-mark", "aria-hidden": "true" }, VERDICT_MARK[status.status] ?? "?"),
+        h("div", { className: "verdict-text" },
+          h("p", { className: `overall overall-${status.status}`, dataset: { field: "overall", status: status.status } }, view.t(`status.overall.${status.status}`)),
+          why(view, status),
+          h("p", { className: "muted small" }, view.t("status.version", { version: status.version, pid: status.served_by.pid, sessions: status.served_by.sessions ?? 0 })))),
       overview(view, status),
-      h("h2", {}, view.t("status.checks")),
-      h("ul", { className: "checks" }, orderedChecks(status.checks).map((check) => checkItem(view, check))));
+      checkLists(view, status.checks));
   }, (error) => show(body, h("p", { className: "error", role: "alert" }, view.t("common.error", { message: api.failureText(error, view.t) }))));
 
   // A rebuild running — started now, or before the screen was drawn again:
@@ -146,9 +190,10 @@ export function statusScreen(view, navigate) {
   if (rebuilding) showRebuild(rebuilding);
   load();
   return h("section", { dataset: { screen: "status" } },
-    h("h1", { tabindex: "-1" }, view.t("status.title")),
+    h("div", { className: "page-head" },
+      h("h1", { tabindex: "-1" }, view.t("status.title")),
+      h("div", { className: "actions" }, refresh, rebuild, setup)),
     runtimeNotes(view),
-    h("div", { className: "actions" }, refresh, rebuild, setup),
     work,
     body);
 }

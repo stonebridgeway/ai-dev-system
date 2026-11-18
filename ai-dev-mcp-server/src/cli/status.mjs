@@ -9,6 +9,7 @@
  */
 import { EXIT, parseCommandLine } from "../core/cli-args.mjs";
 import { tildify } from "./context.mjs";
+import { stylesFor } from "./menu-select.mjs";
 import { cut, lineWidth, withTools } from "./tools.mjs";
 
 export function usage() {
@@ -49,6 +50,27 @@ export function renderStatus(status, width = 100) {
 }
 
 /**
+ * The same lines with colour where the terminal has it: the verdict, the
+ * failing and warning checks, and the commands that fix things. Piped, or with
+ * NO_COLOR, they are the lines as rendered.
+ */
+export function colourStatus(lines, verdict, styles) {
+  if (styles.plain) return lines;
+  const tone = verdict === "ok" ? styles.ok : verdict === "failed" ? styles.fail : styles.warn;
+  return lines.map((line, index) => {
+    if (index === 0) {
+      const cut = line.indexOf(" · ");
+      return cut < 0 ? styles.bold(line) : `${styles.bold(line.slice(0, cut))}${tone(line.slice(cut))}`;
+    }
+    const check = /^( {4})(fail|warn)( +)(.*)$/.exec(line);
+    if (check) return `${check[1]}${(check[2] === "fail" ? styles.fail : styles.warn)(check[2])}${check[3]}${check[4]}`;
+    const part = /^( {2})(\w+)( +)(.*)$/.exec(line);
+    const text = part ? `${part[1]}${styles.dim(part[2])}${part[3]}${part[4]}` : line;
+    return text.replace(/`([^`]+)`/g, (_, command) => styles.accent(command));
+  });
+}
+
+/**
  * @param {string[]} argv
  * @param {import("./context.mjs").CliIo} io
  */
@@ -61,7 +83,7 @@ export async function run(argv, io) {
   return withTools(async ({ call }) => {
     const status = await call("system_status", { checks: !values.quick });
     if (values.json) io.out(JSON.stringify(status, null, 2));
-    else for (const line of renderStatus(status, lineWidth(io))) io.out(line);
+    else for (const line of colourStatus(renderStatus(status, lineWidth(io)), status.status, stylesFor(io.stdout, io.env))) io.out(line);
     return status.status === "failed" ? EXIT.failed : EXIT.ok;
   });
 }

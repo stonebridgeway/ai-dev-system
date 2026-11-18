@@ -64,6 +64,24 @@ function translateStatic() {
   }
 }
 
+/** One sentence under a screen's heading: what the screen is for. */
+const LEADS = Object.freeze({
+  status: "lead.status",
+  projects: "lead.projects",
+  costs: "lead.costs",
+  skills: "lead.skills",
+  console: "lead.console",
+  log: "lead.log",
+  settings: "lead.settings"
+});
+
+function addLead() {
+  const key = LEADS[view.route];
+  const head = screen.querySelector(":scope > section > .page-head, :scope > section > h1");
+  if (!key || !head || head.parentElement.querySelector(":scope > .lead")) return;
+  head.after(h("p", { className: "lead" }, view.t(key)));
+}
+
 function focusHeading() {
   screen.querySelector("h1")?.focus();
 }
@@ -157,6 +175,7 @@ async function render() {
     render();
   };
   show(screen, (SCREENS[view.route] ?? statusScreen)(view, navigate));
+  addLead();
   focusHeading();
   return undefined;
 }

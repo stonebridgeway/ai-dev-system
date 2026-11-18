@@ -12,6 +12,11 @@
   --focus: #0969da;
   --hover: #e6eaef;
   --accent-soft: #ddf4ff;
+  --ok-soft: #dafbe1;
+  --warn-soft: #fff8c5;
+  --fail-soft: #ffebe9;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(31, 35, 40, 0.06), 0 1px 3px rgba(31, 35, 40, 0.04);
   color-scheme: light dark;
 }
 
@@ -30,6 +35,10 @@
     --focus: #4493f8;
     --hover: #262c36;
     --accent-soft: #121d2f;
+    --ok-soft: #12261e;
+    --warn-soft: #272115;
+    --fail-soft: #2d1517;
+    --shadow: none;
   }
 }
 
@@ -364,3 +373,110 @@ html { scroll-padding-top: 64px; }
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/*
+ * The screens' look: a heading with what the screen is for under it, content
+ * on cards rather than loose on the page, and every state a colour and a word
+ * together — never a colour alone.
+ */
+main { padding-top: 28px; }
+h1 { font-size: 24px; letter-spacing: -0.01em; margin-bottom: 4px; }
+h2 { font-size: 16px; margin: 28px 0 10px; display: flex; align-items: center; gap: 8px; }
+.lead, section > h1 + p.help { color: var(--muted); font-size: 15px; margin: 0 0 20px; max-width: 680px; }
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.page-head h1 { margin: 0; }
+.page-head .actions { margin: 0; }
+.count { font-size: 12px; font-weight: 600; min-width: 20px; padding: 1px 7px; border-radius: 10px; background: var(--warn-soft); color: var(--warn); text-align: center; }
+
+button { transition: background-color 0.12s, border-color 0.12s; }
+button:not(:disabled):hover { border-color: var(--muted); }
+button.primary:not(:disabled):hover { filter: brightness(1.08); border-color: var(--accent); }
+.bar nav button:not(:disabled):hover, .language select:hover { border-color: transparent; }
+
+/* Cards: the same surface for every block of content. */
+.empty, .notice-box, .check, .tile, .card, .table-wrap, .part, .verdict, .log-lines, .settings .setting {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.empty { background: var(--surface); border-style: dashed; padding: 18px 20px; }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); padding: 2px 6px; margin: 4px 0 12px; }
+table { margin: 0; }
+tbody tr:last-child td { border-bottom: none; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+tbody tr:hover td { background: var(--bg); }
+.tile { padding: 14px 16px; gap: 2px; }
+.tile-value { font-size: 22px; font-weight: 600; }
+
+/* Status: the verdict, the install's three parts, then the checks. */
+.verdict { display: flex; gap: 16px; align-items: flex-start; padding: 18px 20px; margin: 8px 0 14px; background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--muted); }
+.verdict-ok { border-left-color: var(--ok); }
+.verdict-degraded { border-left-color: var(--warn); }
+.verdict-failed { border-left-color: var(--fail); }
+.verdict-mark { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 700; }
+.verdict-ok .verdict-mark { background: var(--ok-soft); color: var(--ok); }
+.verdict-degraded .verdict-mark { background: var(--warn-soft); color: var(--warn); }
+.verdict-failed .verdict-mark { background: var(--fail-soft); color: var(--fail); }
+.verdict-text { min-width: 0; }
+.verdict .overall { font-size: 20px; margin: 4px 0 6px; }
+.verdict p { margin: 4px 0; }
+.why-raw { font-size: 13px; color: var(--muted); margin: 4px 0; }
+.why-raw summary { cursor: pointer; }
+.why-raw p { overflow-wrap: anywhere; }
+
+.parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.part { background: var(--surface); border: 1px solid var(--border); padding: 12px 14px; }
+.part-head { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.part-label { font-weight: 600; color: var(--text); min-width: 0; }
+.part-state { margin-left: auto; font-size: 12px; white-space: nowrap; }
+.part-value { margin-top: 6px; font-size: 15px; }
+.part-ok .part-state { color: var(--ok); }
+.part-warn .part-state { color: var(--warn); }
+.part-fail .part-state { color: var(--fail); }
+
+.status-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.part-ok .status-dot, .check-ok .status-dot { background: var(--ok); }
+.part-warn .status-dot, .check-warn .status-dot { background: var(--warn); }
+.part-fail .status-dot, .check-fail .status-dot { background: var(--fail); }
+
+.check { padding: 12px 16px; margin: 10px 0; border-left-width: 1px; }
+.check-head { gap: 10px; }
+.check-head strong { font-size: 15px; }
+.check-head .badge { margin-left: auto; white-space: nowrap; }
+.check-head .badge-critical { margin-left: 0; color: var(--fail); border-color: var(--fail); }
+.check .advice { margin: 8px 0 4px; }
+.check-summary { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.check details { margin-top: 6px; font-size: 13px; }
+.check details summary { color: var(--muted); cursor: pointer; }
+.all-pass { padding: 12px 16px; border-radius: var(--radius); background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.passing { margin-top: 16px; }
+.passing > summary { cursor: pointer; font-weight: 600; padding: 10px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); list-style-position: inside; }
+.passing > summary:hover { background: var(--hover); }
+.passing .check { box-shadow: none; }
+
+/* Settings: each setting its own card. */
+.settings .setting { background: var(--surface); border: 1px solid var(--border); padding: 14px 16px; margin: 10px 0; }
+
+/* Console: names on one line, cut with … when long (the whole name is the tooltip); the kind as a small tag. */
+.console-grid { grid-template-columns: minmax(280px, 360px) 1fr; }
+.tools { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; }
+.tool-button { padding: 6px 8px; }
+.tool-button:hover { background: var(--hover); }
+.tool-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.tools .badge { flex: none; white-space: nowrap; font-size: 11px; padding: 0 7px; }
+.badge-write { color: var(--warn); }
+.badge-destructive { color: var(--fail); border-color: var(--fail); }
+
+/* Projects: the project's name and folder as a header, epics, decisions and handoffs each a card. */
+.project-name { font-size: 20px; margin: 12px 0 2px; }
+.project > .project-name + p.muted { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; margin-top: 0; overflow-wrap: anywhere; }
+.card-section > h2 { margin-top: 24px; }
+.epics, .decisions, .handoffs { display: grid; gap: 8px; margin: 0; }
+.epics > li, .decisions > li, .handoffs > li { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; }
+.epics > li p { margin: 4px 0; }
+progress { accent-color: var(--accent); height: 8px; }
+.epics progress { max-width: none; }
+.children { padding-left: 18px; }
+.children li[data-state="ready"] { color: var(--accent); }
+.decisions summary { cursor: pointer; }
+.card { background: var(--surface); border: 1px solid var(--border); padding: 14px 16px; }
+.card:hover { border-color: var(--accent); }

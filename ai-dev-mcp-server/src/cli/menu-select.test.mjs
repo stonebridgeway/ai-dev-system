@@ -156,3 +156,14 @@ test("the menu at a terminal: the install's state, then what the marked line nam
   assert.equal(await running, 0);
   assert.equal(t.input.raw.at(-1), false);
 });
+
+test("the status lines in colour at a terminal, and as rendered anywhere else", async () => {
+  const { colourStatus } = await import("./status.mjs");
+  const lines = ["AI Dev 3.0.0 · failed: the search index is not built", "  index     not built: `ai-dev setup` builds it", "    fail search_index_file: missing"];
+  assert.deepEqual(colourStatus(lines, "failed", PLAIN), lines);
+  const coloured = colourStatus(lines, "failed", stylesFor({ isTTY: true }, {}));
+  assert.match(coloured[0], /\x1b\[31m · failed/);
+  assert.match(coloured[1], /\x1b\[36mai-dev setup\x1b\[39m/);
+  assert.match(coloured[2], /^ {4}\x1b\[31mfail\x1b\[39m search_index_file/);
+  assert.deepEqual(coloured.map((line) => line.replace(/\x1b\[\d+m/g, "")), lines.map((line) => line.replaceAll("`", "")));
+});

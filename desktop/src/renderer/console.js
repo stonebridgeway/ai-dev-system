@@ -142,7 +142,7 @@ export function consoleScreen(view) {
       h("p", { className: "muted small", dataset: { field: "tool-count" } }, view.t("console.count", { count: matching.length })),
       h("ul", { className: "tools" }, matching.map((tool) => h("li", {},
         h("button", { type: "button", className: "tool-button", dataset: { tool: tool.name }, "aria-current": String(tool.name === state.selected), on: { click: () => select(tool) } },
-          h("span", { className: "tool-name" }, tool.name), badge(view, tool))))));
+          h("span", { className: "tool-name", title: tool.name }, tool.name), badge(view, tool))))));
   };
 
   const load = () => {
