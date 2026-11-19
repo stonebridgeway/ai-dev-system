@@ -56,6 +56,8 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { resolvePythonCommand } from "../src/core/python-command.mjs";
+import { indexOriginDetail } from "../src/core/search-index-owner.mjs";
+import { canonicalFolder } from "../src/core/session-env.mjs";
 import { openDatabase, sqliteSupport } from "../src/core/search-sqlite.mjs";
 import { writeSyntheticModel } from "../src/core/synthetic-model.mjs";
 import { startModelHost } from "../test/fixtures/model-host.mjs";
@@ -341,7 +343,10 @@ async function verifyUpgradedScenario({ label, base, baseRoot, env, project, exp
   const local = cursor.mcpServers?.["ai-dev-system"];
   check(`${label}: the 2.x local client entry is still there`, local?.command && Array.isArray(local.args), JSON.stringify(local?.args ?? null));
   const docker = cursor.mcpServers?.["ai-dev"];
-  check(`${label}: the 2.x Docker client entry still points at an existing launcher`, docker && existsSync(docker.args?.[0] ?? ""), docker?.args?.[0] ?? "missing");
+  // On Linux the launcher is the first argument; on Windows the entry runs
+  // `powershell -NoProfile … -File run-mcp.ps1`, so it is the argument that names it.
+  const launcher = docker?.args?.find((arg) => /run-mcp\.(?:sh|ps1)$/i.test(String(arg))) ?? docker?.args?.[0] ?? "";
+  check(`${label}: the 2.x Docker client entry still points at an existing launcher`, docker && existsSync(launcher), launcher || "missing");
 
   // Start the server exactly as the 2.x client configuration does.
   const serverEnv = { ...env, ...(local?.env || {}) };
@@ -380,9 +385,18 @@ async function verifyUpgradedScenario({ label, base, baseRoot, env, project, exp
     const pulledAway = removedSkills(base);
     check(`${label}: the 2.x search index is read as it is, nothing rewritten by a status call`, documents > 0 && documents === expected.documents, `${documents} document(s), 2.x had ${expected.documents}`);
     const claim = await readJson(`${status.index_path}.vault`).catch(() => null);
-    check(`${label}: a command with another vault, run first, left the 2.x index to this install`,
-      path.basename(String(status.index_path ?? "")) === "ai-dev-search.sqlite" && Boolean(claim) && !String(claim.vault_root).includes(path.basename(otherVault)),
-      `${path.basename(String(status.index_path ?? ""))}, claimed by ${claim?.vault_root ?? "nobody"}`);
+    const tookIt = path.basename(String(status.index_path ?? "")) === "ai-dev-search.sqlite" && Boolean(claim) && !String(claim.vault_root).includes(path.basename(otherVault));
+    // When it did not: who holds the 2.x file, and how each vault reads it — what a run elsewhere has to send back.
+    let why = "";
+    if (!tookIt && status.index_path) {
+      const defaultFile = path.join(path.dirname(String(status.index_path)), "ai-dev-search.sqlite");
+      const holder = await readJson(`${defaultFile}.vault`).catch(() => null);
+      const same = (left, right) => canonicalFolder(left) === canonicalFolder(right);
+      const vault = path.join(baseRoot, "docker", "public-seed");
+      why = `; the 2.x file is claimed by ${holder?.vault_root ?? "nobody"}; read from this vault: ${JSON.stringify(indexOriginDetail(defaultFile, vault, same))}; from the other: ${JSON.stringify(indexOriginDetail(defaultFile, otherVault, same))}`;
+    }
+    check(`${label}: a command with another vault, run first, left the 2.x index to this install`, tookIt,
+      `${path.basename(String(status.index_path ?? ""))}, claimed by ${claim?.vault_root ?? "nobody"}${why}`);
     if (sqliteSupport().available) {
       // Skills removed: the index has to be stale. Nothing changed: it has to
       // be current. Other changes may or may not touch what it indexes.

@@ -60,7 +60,13 @@ test("the runtime's dependencies lose what win32-x64 never loads, and keep what 
     "node_modules/@img/colour/index.js": "colour",
     "node_modules/@emnapi/runtime/index.js": "emnapi",
     "node_modules/tslib/tslib.js": "tslib",
-    "node_modules/zod/index.js": "zod"
+    "node_modules/zod/index.js": "zod",
+    // Declarations and maps: no Node process reads them; a data file named like one stays.
+    "node_modules/zod/index.d.ts": "types",
+    "node_modules/zod/index.d.cts": "types",
+    "node_modules/@huggingface/transformers/types/pipelines.d.ts.map": "map",
+    "node_modules/@huggingface/transformers/dist/transformers.node.mjs.map": "map",
+    "node_modules/@img/colour/palette.map": "a data file"
   });
   fs.mkdirSync(path.join(runtime, "node_modules", ".bin"));
   fs.symlinkSync("../zod/index.js", path.join(runtime, "node_modules", ".bin", "zod"));
@@ -74,12 +80,14 @@ test("the runtime's dependencies lose what win32-x64 never loads, and keep what 
     `${binaries}/linux`,
     `${binaries}/win32/arm64`,
     "node_modules/onnxruntime-web",
-    "node_modules/tslib"
+    "node_modules/tslib",
+    "node_modules/**/*.d.ts, *.js.map (4 files)"
   ].sort());
   assert.ok(removed.every((item) => item.why), "each cut says why");
   const left = (await listFiles(runtime)).map((file) => file.path);
   assert.deepEqual(left, [
     "node_modules/@img/colour/index.js",
+    "node_modules/@img/colour/palette.map",
     "node_modules/@img/sharp-win32-x64/lib/sharp.node",
     `${binaries}/win32/x64/onnxruntime_binding.node`,
     "node_modules/onnxruntime-node/package.json",

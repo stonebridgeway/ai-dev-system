@@ -76,6 +76,9 @@ export const TRIMMED = Object.freeze([
   Object.freeze({ path: ".bin", why: "npm's command links: the runtime runs none of them, and a link is not a file to ship" })
 ]);
 
+/** Files no Node process loads: TypeScript declarations and source maps. */
+export const UNLOADED_FILE = /\.d\.[cm]?ts(?:\.map)?$|\.[cm]?js\.map$/;
+
 /** Where onnxruntime-node keeps a native build per system and processor: only the target's stays. */
 export const ONNX_BINARIES = "onnxruntime-node/bin/napi-v6";
 
@@ -130,6 +133,25 @@ export async function trimRuntime(runtimeDir, { target = TARGETS["win32-x64"] } 
     removed.push({ path: `node_modules/${relative}`, bytes, why });
   };
   for (const item of TRIMMED) await cut(item.path, item.why);
+  // TypeScript declarations and source maps: read by an editor and a debugger,
+  // never by Node. They are among the deepest paths in the tree: under a long
+  // profile folder one of transformers' maps passed Windows' 260 characters,
+  // and the uninstaller left it behind.
+  let declarations = 0;
+  let declarationBytes = 0;
+  const sweep = async (dir) => {
+    for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await sweep(full);
+      else if (entry.isFile() && UNLOADED_FILE.test(entry.name)) {
+        declarationBytes += (await fs.stat(full)).size;
+        await fs.rm(full, { force: true });
+        declarations += 1;
+      }
+    }
+  };
+  await sweep(modules);
+  if (declarations) removed.push({ path: `node_modules/**/*.d.ts, *.js.map (${declarations} files)`, bytes: declarationBytes, why: "TypeScript declarations and source maps: an editor's and a debugger's, never loaded by Node" });
   // sharp's native builds of other systems, should a build machine have put any there.
   for (const name of await fs.readdir(path.join(modules, "@img")).catch(() => [])) {
     if (name.startsWith("sharp-") && !target.sharp.includes(name)) await cut(`@img/${name}`, "a native sharp of another system");

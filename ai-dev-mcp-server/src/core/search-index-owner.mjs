@@ -96,12 +96,24 @@ const SAMPLE_NOTES = 200;
  * @returns {"this" | "another" | "unknown"}
  */
 export function indexOrigin(file, vaultRoot, same) {
-  if (!sqliteSupport().available) return "unknown";
+  return indexOriginDetail(file, vaultRoot, same).verdict;
+}
+
+/**
+ * {@link indexOrigin} with what it was decided by: the vault the index
+ * records, or how many notes of its sample are here with the same content and
+ * how many untouched, and the first that is not and why — for a report that
+ * has to say why an index was not taken.
+ *
+ * @returns {{ verdict: "this" | "another" | "unknown", recorded?: string, sampled?: number, identical?: number, unchanged?: number, first?: { path: string, why: string }, error?: string }}
+ */
+export function indexOriginDetail(file, vaultRoot, same) {
+  if (!sqliteSupport().available) return { verdict: "unknown", error: "no SQLite" };
   let db;
   try {
     db = new (loadSqlite().DatabaseSync)(file, { readOnly: true });
     const recorded = db.prepare("SELECT value FROM meta WHERE key = 'vault_root'").get()?.value;
-    if (recorded) return same(String(recorded), vaultRoot) ? "this" : "another";
+    if (recorded) return { verdict: same(String(recorded), vaultRoot) ? "this" : "another", recorded: String(recorded) };
     // A 2.x index names no vault, only the notes it was built from: their
     // paths, content and modification times. That a path exists says nothing
     // — a vault sharing the skill catalog took the index that way
@@ -117,14 +129,19 @@ export function indexOrigin(file, vaultRoot, same) {
         return relative && !path.isAbsolute(relative) && !path.win32.isAbsolute(relative) && !isGeneratedVaultFile(relative, { ignoreCase: true });
       })
       .slice(0, SAMPLE_NOTES);
-    if (!notes.length) return "unknown";
+    if (!notes.length) return { verdict: "unknown", sampled: 0 };
     let identical = 0;
     let unchanged = 0;
+    let first;
     for (const row of notes) {
       const note = noteIdentity(vaultRoot, String(row.path));
-      if (!note || note.contentHash !== row.content_hash) continue;
+      if (!note || note.contentHash !== row.content_hash) {
+        first ??= { path: String(row.path), why: note ? "content differs" : "missing or unreadable" };
+        continue;
+      }
       identical += 1;
       if (Math.abs(note.mtime - Number(row.mtime)) < 1e-6) unchanged += 1;
+      else first ??= { path: String(row.path), why: `modified: ${note.mtime} here, ${row.mtime} in the index` };
     }
     // The vault it was built from: at least half of the sample is the very
     // files it indexed, untouched since — a pull rewrites only what it
@@ -135,9 +152,10 @@ export function indexOrigin(file, vaultRoot, same) {
     // is another, whichever way they came. A copy of the whole vault cannot be
     // told from it: whichever starts first takes the index, which is right
     // for its notes, and the other builds its own.
-    return unchanged * 2 >= notes.length || identical === notes.length ? "this" : "another";
-  } catch {
-    return "unknown";
+    const verdict = unchanged * 2 >= notes.length || identical === notes.length ? "this" : "another";
+    return { verdict, sampled: notes.length, identical, unchanged, ...(first ? { first } : {}) };
+  } catch (error) {
+    return { verdict: "unknown", error: error instanceof Error ? error.message : String(error) };
   } finally {
     db?.close();
   }

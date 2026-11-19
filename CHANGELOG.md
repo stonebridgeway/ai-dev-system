@@ -340,6 +340,9 @@ has it with what each one says.
 - **The terminal menu ends on Windows when it is left.** After a list was left with Esc, q or
   Ctrl-C ended the menu but not the process: a console read started in raw mode stayed pending.
   The menu gives the terminal back as it ends. Found by the manual acceptance on Windows 11.
+- **The app's runtime ships no TypeScript declarations or source maps**: 2,746 files and 11 MB no
+  Node process reads, and among the deepest paths in it — under a long profile folder on Windows
+  one passed 260 characters and the uninstaller left it behind.
 - **Release mechanics.** The Linux app's restart after a failed start names the AppImage file, not
   the mount that goes with the process. The published image's licence label is PolyForm
   Noncommercial, not what GitHub reads off the repository.
