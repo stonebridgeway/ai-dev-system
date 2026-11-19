@@ -84,6 +84,7 @@ test("create, list, and remove task worktrees with handoff files and dirty guard
   const again = await createTaskWorktree({ projectRoot: repo, name: "login-form" });
   assert.equal(again.created, false);
   await assert.rejects(createTaskWorktree({ projectRoot: repo, name: "../escape" }), /Invalid worktree name/);
+  await assert.rejects(createTaskWorktree({ projectRoot: repo, name: "an-option", baseRef: "--detach" }), /base_ref is not a git ref/);
 
   // A worktree can be created from inside another worktree; it still lands under the main root.
   const nested = await createTaskWorktree({ projectRoot: created.path, name: "second", baseRef: "main" });
@@ -214,7 +215,7 @@ test("states and cleanup over a real repository, and nothing goes without being 
   assert.equal(applied.removed[0].branch_deleted, true);
   assert.deepEqual(applied.problems, []);
   // Each record says what was removed, not only that something was: the plan
-  // entry's name, state and reason, plus the outcome (Д-27).
+  // entry's name, state and reason, plus the outcome.
   assert.equal(applied.removed[0].name, "merged");
   assert.equal(applied.removed[0].state, "orphan");
   assert.match(applied.removed[0].branch, /merged$/);

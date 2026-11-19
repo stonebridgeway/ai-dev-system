@@ -53,6 +53,10 @@ test("begin_task_in_worktree starts the task inside a fresh worktree and remove 
   assert.equal(begun.worktree.branch, "task/login-validation");
   assert.equal(begun.context.worktree.path, path.join(realRepo, ".worktrees", "login-validation"));
   assert.match(begun.next_actions[0], /Work only inside/);
+  // Like begin_task, it answers with the summary: the whole record is asked for, then shaped once.
+  assert.equal(calls[0].args.include_details, true);
+  assert.equal("baseline" in begun, false);
+  assert.match(begun.details, /get_task returns the whole record/);
   assert.equal(runGit(begun.worktree.path, ["branch", "--show-current"]), "task/login-validation");
 
   const listed = await registry.handlers.get("list_task_worktrees")({ project_path: repo });
@@ -88,8 +92,10 @@ test("begin_task_in_worktree starts the task inside a fresh worktree and remove 
   await assert.rejects(registry.handlers.get("remove_task_worktree")({}), /task_id or worktree_path is required/);
 
   // Auto-generated names are derived from the task text plus a timestamp.
-  const auto = await registry.handlers.get("begin_task_in_worktree")({ project_path: repo, task: "Починить форму логина" });
+  const auto = await registry.handlers.get("begin_task_in_worktree")({ project_path: repo, task: "Починить форму логина", include_details: true });
   assert.match(auto.worktree.branch, /^task\/[a-z0-9-]+-\d{8}$/);
+  assert.deepEqual(auto.baseline, { fingerprint: "a" }, "include_details: true returns the whole record");
+  assert.equal(auto.context.worktree.branch, auto.worktree.branch);
 });
 
 

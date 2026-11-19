@@ -313,7 +313,7 @@ test("the stacks the newer rule packs are chosen by are detected from root files
 });
 
 
-// Д-19 and Д-18. A .NET, F#, Swift or Xcode project file is named after the
+// A .NET, F#, Swift or Xcode project file is named after the
 // product, so no list of paths can find it: the root has to be listed.
 test("a project file named after the product is found by listing the root", async () => {
   const dotnet = detectorOver({ "Atlas.csproj": "<Project/>", "src/": "" });

@@ -1,5 +1,5 @@
 /**
- * The conventions a codebase already keeps, written down (PLAN.md, stage 3.7).
+ * The conventions a codebase already keeps, written down.
  *
  * `install_project_rules` installs the rules this system believes in. This does
  * the opposite direction: it reads the repository and reports what it already

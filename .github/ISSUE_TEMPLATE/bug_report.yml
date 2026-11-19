@@ -24,10 +24,13 @@ body:
     attributes:
       label: How are you running it
       options:
-        - Docker image (GHCR)
+        - Windows installer (AI-Dev-Setup-<version>.exe)
+        - Linux app (AppImage)
+        - Linux app (.deb)
+        - npx ai-dev-system
+        - Docker image (GHCR), through bootstrap.sh or bootstrap.ps1
         - Docker image (built locally)
-        - From source (node src/server.mjs)
-        - Arch package / Homebrew formula
+        - From a clone (npm run setup)
     validations:
       required: true
   - type: input

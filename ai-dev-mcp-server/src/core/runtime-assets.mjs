@@ -1,14 +1,14 @@
 /**
  * Where the runtime's helper trees are, in a vault and in a plain checkout.
  *
- * Four things the server runs rather than reads: the SQLite search helper, the
- * search-eval cases, the BGE-M3 embedding scripts, and the Frontend QA runner.
+ * Two things the server runs rather than reads: the search-eval cases and the
+ * Frontend QA runner. (The Python search helper `search-index/` and the Python
+ * embedding scripts `embeddings/` are gone: search and the model run in Node.)
  * In an Obsidian vault they live under `09-mcp/`, next to the server itself,
  * and every path in the runtime was written for that layout.
  *
- * A standalone checkout of this repository has all four — at `search-index/`,
- * `search-eval/`, `embeddings/` and `frontend-qa/` in the root — and no
- * `09-mcp/` at all. `resolveVaultRoot` falls back to the bundled
+ * A standalone checkout of this repository has both — at `search-eval/` and
+ * `frontend-qa/` in the root — and no `09-mcp/` at all. `resolveVaultRoot` falls back to the bundled
  * `docker/public-seed` tree, which carries the notes and the skill catalogue
  * but not the helpers, so a cloned repository reported "Search helper not
  * found: …/docker/public-seed/09-mcp/search-index/search_cli.py" — a path that
@@ -28,9 +28,7 @@ import path from "node:path";
  * in a vault, and where it sits in a checkout of this repository.
  */
 export const RUNTIME_ASSET_TREES = Object.freeze({
-  searchIndex: Object.freeze({ vault: ["09-mcp", "search-index"], repository: ["search-index"] }),
   searchEval: Object.freeze({ vault: ["09-mcp", "search-eval"], repository: ["search-eval"] }),
-  embeddings: Object.freeze({ vault: ["09-mcp", "embeddings"], repository: ["embeddings"] }),
   frontendQa: Object.freeze({ vault: ["09-mcp", "frontend-qa"], repository: ["frontend-qa"] })
 });
 
@@ -61,7 +59,7 @@ export const VAULT_ONLY_NOTES = Object.freeze(["00-start-here.md"]);
  * the runtime trees symlinked into `09-mcp/`, which made it look exactly like a
  * hand-made Obsidian vault to the check below — so it was held to the whole
  * note list, including the entry page no distribution ships, and a correct
- * container reported missing notes forever (docs/DEFECTS.md, Д-57). The seed
+ * container reported missing notes forever. The seed
  * says what it is; the marker is in `public-seed.manifest.json` and lands at
  * the root of whatever it seeds.
  */
@@ -151,7 +149,7 @@ export function resolveAssetTree({ tree, vaultRoot, repositoryRoot, exists = exi
  * @param {string} input.vaultRoot
  * @param {string} input.repositoryRoot
  * @param {(target: string) => boolean} [input.exists]
- * @returns {{ searchIndexDir: string, searchEvalDir: string, embeddingsDir: string, frontendQaDir: string, sources: Record<string, string> }}
+ * @returns {{ searchEvalDir: string, frontendQaDir: string, sources: Record<string, string> }}
  */
 export function resolveRuntimeAssets({ vaultRoot, repositoryRoot, exists = existsSync }) {
   const resolved = Object.fromEntries(Object.entries(RUNTIME_ASSET_TREES).map(([name, tree]) => [
@@ -159,9 +157,7 @@ export function resolveRuntimeAssets({ vaultRoot, repositoryRoot, exists = exist
     resolveAssetTree({ tree, vaultRoot, repositoryRoot, exists })
   ]));
   return {
-    searchIndexDir: resolved.searchIndex.dir,
     searchEvalDir: resolved.searchEval.dir,
-    embeddingsDir: resolved.embeddings.dir,
     frontendQaDir: resolved.frontendQa.dir,
     sources: Object.fromEntries(Object.entries(resolved).map(([name, item]) => [name, item.source]))
   };

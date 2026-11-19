@@ -116,6 +116,12 @@ test("pullRequestTitle builds a conventional title within the length budget", ()
   assert.ok(long.startsWith("feat: add a CSV export button to the report screen"), long);
   assert.ok(!/[\s,;:-]$/.test(long), long);
   assert.equal(pullRequestTitle({ task: "   ", files: [] }), "feat: update");
+  // A feature that is also tested is a feature, and the subject ends on a whole clause, not on "and".
+  assert.equal(
+    pullRequestTitle({ task: "Add CSV export for the report, cover the change with tests, and run verify_task.", files: [] }),
+    "feat: add CSV export for the report, cover the change with tests"
+  );
+  assert.equal(pullRequestTitle({ task: "Add tests for the CSV export", files: [] }), "test: add tests for the CSV export");
 });
 
 test("outstandingItems reports unmet criteria, a missing verification and blocking hygiene", () => {
@@ -263,7 +269,7 @@ test("resolveBaseRef and collectPullRequestChanges read a real repository", asyn
 });
 
 test("the system's own housekeeping does not name the branch's scope", () => {
-  // Д-76 (upstream #64): `.ai-dev/` is rewritten on nearly every task — brief,
+  // `.ai-dev/` is rewritten on nearly every task — brief,
   // map, quality gate, caches — so it outvoted the code the task was about and
   // the title read "feat(ai-dev): add a subtract function to the widget".
   assert.equal(

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AR Security Review"
+  short_description: "Scan, plan and fix vulnerabilities and malware"
+  default_prompt: "Use $ar-security-review to scan this project for vulnerable and malicious dependencies, leaked secrets and insecure changes, plan the fixes, and apply them after I confirm."

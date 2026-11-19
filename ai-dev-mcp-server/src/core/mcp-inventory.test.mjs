@@ -233,7 +233,7 @@ test("transports, substitutions and JSON-with-comments are read the way the clie
 });
 
 
-// Д-17. `~/.claude.json` declares the user's MCP servers and, in the same file,
+// `~/.claude.json` declares the user's MCP servers and, in the same file,
 // keeps Claude Code's conversation history for every project it has opened.
 // Parsing it whole to reach two keys is the wrong amount of work; the file is
 // streamed and only those two keys are kept.

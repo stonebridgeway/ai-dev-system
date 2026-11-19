@@ -39,6 +39,25 @@ function at(base, daysAgo, hour) {
   return new Date(localMidnight(base, daysAgo).getTime() + hour * 3_600_000).toISOString();
 }
 
+test("a call's answer size is kept, never the answer, and the report gives each tool's average and 95th percentile", async (t) => {
+  const stateRoot = await fs.mkdtemp(path.join(os.tmpdir(), "usage-ledger-"));
+  t.after(() => fs.rm(stateRoot, { recursive: true, force: true }));
+  const ledger = new UsageLedger({ stateRoot });
+  for (const size of [100, 200, 300, 4000]) {
+    await ledger.recordToolCall({ tool: "verify_task", ok: true, durationMs: 1, bytesIn: 20, bytesOut: size, argsHash: "a".repeat(16), resultHash: "b".repeat(16) });
+  }
+  // A line written before sizes were recorded, or by a caller that has none.
+  await ledger.recordToolCall({ tool: "begin_task", ok: true, durationMs: 1 });
+  const events = await ledger.readEvents();
+  assert.deepEqual([events[0].bytes_in, events[0].bytes_out, events[0].args_hash, events[0].result_hash], [20, 100, "a".repeat(16), "b".repeat(16)]);
+  assert.equal("bytes_out" in events.at(-1), false);
+  const report = await ledger.report();
+  const verify = report.tools.find((row) => row.tool === "verify_task");
+  assert.deepEqual([verify.average_bytes_out, verify.p95_bytes_out, verify.max_bytes_out], [1150, 4000, 4000]);
+  assert.equal("sizes" in verify, false);
+  assert.equal("average_bytes_out" in report.tools.find((row) => row.tool === "begin_task"), false);
+});
+
 test("usage ledger records tool calls and usage, then aggregates a report", async (t) => {
   const stateRoot = await fs.mkdtemp(path.join(os.tmpdir(), "usage-ledger-"));
   t.after(() => fs.rm(stateRoot, { recursive: true, force: true }));
@@ -280,7 +299,7 @@ test("the ledger can be rotated to a line count, and says what a rotation would 
 });
 
 
-// Д-8. The prices of retired models were read from a page that no longer lists
+// The prices of retired models were read from a page that no longer lists
 // them, so nothing re-verifies them. They stay in the table because a ledger
 // keeps old events, and they are marked so a total that rests on them says so.
 test("a model the price page no longer lists is priced, marked and reported apart", async (t) => {
@@ -353,4 +372,28 @@ test("the historical list is exactly the models the price page dropped", () => {
   assert.equal(isHistoricalModel("claude-opus-5[1m]"), false);
   assert.equal(isHistoricalModel(""), false);
   assert.equal(isHistoricalModel(undefined), false);
+});
+
+test("a project's report takes its folders, the project through a link, and the calls that named only its task", async (t) => {
+  const tmp = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "usage-scope-")));
+  t.after(() => fs.rm(tmp, { recursive: true, force: true }));
+  const project = path.join(tmp, "project");
+  await fs.mkdir(path.join(project, "packages", "web"), { recursive: true });
+  // Windows makes a link only for an administrator or in developer mode: there the path itself stands in.
+  const link = await fs.symlink(project, path.join(tmp, "link"), "dir").then(() => path.join(tmp, "link"), () => project);
+  const ledger = new UsageLedger({ stateRoot: path.join(tmp, "state") });
+  await ledger.recordToolCall({ tool: "begin_task", ok: true, durationMs: 1, projectPath: project });
+  await ledger.recordToolCall({ tool: "analyze_project", ok: true, durationMs: 1, projectPath: path.join(project, "packages", "web") });
+  await ledger.recordToolCall({ tool: "prepare_project", ok: true, durationMs: 1, projectPath: link });
+  await ledger.recordToolCall({ tool: "verify_task", ok: true, durationMs: 1, taskId: "task-mine" });
+  // Not the project's: another project's task, a neighbour whose name begins the same, a folder that is gone.
+  await ledger.recordToolCall({ tool: "complete_task", ok: true, durationMs: 1, taskId: "task-theirs" });
+  await ledger.recordToolCall({ tool: "list_tasks", ok: true, durationMs: 1, projectPath: `${project}-sibling` });
+  await ledger.recordToolCall({ tool: "read_project", ok: true, durationMs: 1, projectPath: path.join(tmp, "gone") });
+
+  const report = await ledger.report({ projectPath: project, projectTaskIds: ["task-mine"] });
+  assert.deepEqual(report.tools.map((row) => row.tool).sort(), ["analyze_project", "begin_task", "prepare_project", "verify_task"]);
+  const unnamed = await ledger.report({ projectPath: project });
+  assert.equal(unnamed.tools.some((row) => row.tool === "verify_task"), false, "a task nobody named as the project's is not counted");
+  assert.equal((await ledger.report({ projectPath: link, projectTaskIds: ["task-mine"] })).events, 4, "asked through the link, the same");
 });

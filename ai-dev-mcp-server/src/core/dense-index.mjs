@@ -1,28 +1,27 @@
 /**
- * Embedding the vault with a backend that does not live in the indexer.
+ * Embedding the vault's passages for the dense half of hybrid search.
  *
- * The sqlite index is written by `search-index/search_cli.py`, and the ONNX
- * model runs in Node (docs/DEFECTS.md, Д-62). Neither half can move: the helper
- * owns the schema, the document collection and the locking, and the model is
- * the whole point of not needing Python. So the two meet over two files and one
- * extra pass:
+ * Planning, embedding and writing are three steps, each where it belongs:
  *
- *   1. `dense-plan` collects the documents and prints only the passages whose
- *      vectors are missing or stale for this backend, revision and dtype;
- *   2. this module embeds them in batches through the injected backend;
- *   3. `rebuild --dense-vectors-json` writes them, loading no model at all.
+ *   1. `densePlan` (`search-store.mjs`) collects the documents and returns only
+ *      the passages whose vectors are missing or stale for this model,
+ *      revision and dtype;
+ *   2. this module embeds them in batches through the ONNX model in a worker
+ *      thread;
+ *   3. `storeDenseVectors` writes each slice as it is done, and the closing
+ *      rebuild keeps them — so a cancelled run keeps what it embedded.
  *
  * A document edited between (1) and (3) has a different content hash by then,
- * so the helper declines the stale vector and counts the document as pending
+ * so the writer declines the stale vector and counts the document as pending
  * rather than storing a vector against text it no longer has. The next rebuild
- * picks it up. That is why the pending count is no longer forced to zero.
- *
- * The legacy Python backend does not come through here: it loads its model
- * inside the helper, as it always has.
+ * picks it up. That is why the pending count is not forced to zero.
  */
 
 /** Most passages to hand the backend in one call. */
 export const DENSE_PLAN_BATCH = 16;
+
+/** Passages embedded between two writes to the index: what a cancel or a crash can cost. */
+export const DENSE_COMMIT_EVERY = 64;
 
 /**
  * Turn a plan into vectors.
@@ -33,12 +32,14 @@ export const DENSE_PLAN_BATCH = 16;
  * @param {number} deps.dimensions - What the manifest promises.
  * @param {number} [deps.batchSize]
  * @param {(done: number, total: number) => void} [deps.onProgress]
+ * @param {AbortSignal} [deps.signal] - Checked before each batch.
  * @returns {Promise<object[]>} `{ id, content_hash, vector }`.
  */
-export async function embedDensePlan({ records, embed, dimensions, batchSize = DENSE_PLAN_BATCH, onProgress }) {
+export async function embedDensePlan({ records, embed, dimensions, batchSize = DENSE_PLAN_BATCH, onProgress, signal }) {
   const limit = Math.max(1, Number(batchSize) || DENSE_PLAN_BATCH);
   const vectors = [];
   for (let index = 0; index < records.length; index += limit) {
+    if (signal?.aborted) throw Object.assign(new Error("Embedding cancelled."), { name: "AbortError", cancelled: true });
     const slice = records.slice(index, index + limit);
     const answer = await embed(slice.map((record) => record.text));
     const rows = answer?.embeddings ?? [];
@@ -48,8 +49,8 @@ export async function embedDensePlan({ records, embed, dimensions, batchSize = D
     for (let offset = 0; offset < slice.length; offset += 1) {
       const vector = rows[offset];
       // A vector of the wrong width would be written into the index and then
-      // silently score zero against every query, because the helper's dot
-      // product returns 0.0 for a length mismatch. Refuse it here instead.
+      // silently score zero against every query, because the dense dot
+      // product is 0.0 for a length mismatch. Refuse it here instead.
       if (!Array.isArray(vector) || vector.length !== dimensions) {
         throw new Error(
           `Dense backend returned a ${Array.isArray(vector) ? vector.length : "non-array"} vector; `
@@ -64,56 +65,28 @@ export async function embedDensePlan({ records, embed, dimensions, batchSize = D
 }
 
 /**
- * The `rebuild` arguments that carry a run's provenance.
+ * The index's dense coverage as the model that answers now sees it.
  *
- * Every run passes these, legacy included, so a vector's origin is recorded by
- * the same code path whichever backend produced it.
+ * Hybrid search compares only vectors of the model that embeds the question
+ * (`backend/revision/dtype`), so a vector another model made — the 2.x Python
+ * backend's, an older revision's — is a document still waiting for one, not a
+ * document that has one. Counted that way, `setup -- --model` re-embeds them
+ * instead of calling the step done.
  *
- * @param {{ backend: string, revision: string, dtype: string }} provenance
- * @returns {string[]}
+ * @param {object} status - `search_index_status`, with `dense_models` from the store.
+ * @param {{ backend: string, revision: string, dtype: string }|null} provenance - The current model's.
+ * @returns {object} The same status: `dense_documents` and `dense_pending_documents`
+ *   for the current model, `dense_other_model_documents` for the rest.
  */
-export function denseProvenanceArgs(provenance) {
-  return [
-    "--dense-backend", String(provenance.backend),
-    "--dense-revision", String(provenance.revision),
-    "--dense-dtype", String(provenance.dtype)
-  ];
-}
-
-/**
- * Run the plan/embed half and hand back the file the rebuild should read.
- *
- * @param {object} deps
- * @param {(args: string[], options?: object) => Promise<object>} deps.runPlan
- * @param {string[]} deps.planArgs - Everything but the provenance flags.
- * @param {(texts: string[]) => Promise<object>} deps.embed
- * @param {{ backend: string, revision: string, dtype: string, dimensions: number }} deps.provenance
- * @param {(target: string, value: object) => Promise<void>} deps.writeJson
- * @param {string} deps.vectorsPath
- * @param {number} [deps.batchSize]
- * @param {(done: number, total: number) => void} [deps.onProgress]
- * @returns {Promise<{ planned: number, embedded: number, reusable: number, vectorsPath: string }>}
- */
-export async function planAndEmbedDenseVectors({
-  runPlan,
-  planArgs,
-  embed,
-  provenance,
-  writeJson,
-  vectorsPath,
-  batchSize = DENSE_PLAN_BATCH,
-  onProgress
-}) {
-  const plan = await runPlan(["dense-plan", ...planArgs, ...denseProvenanceArgs(provenance)]);
-  const records = plan.records ?? [];
-  const vectors = records.length
-    ? await embedDensePlan({ records, embed, dimensions: provenance.dimensions, batchSize, onProgress })
-    : [];
-  await writeJson(vectorsPath, { provenance, vectors });
-  return {
-    planned: records.length,
-    embedded: vectors.length,
-    reusable: Number(plan.reusable || 0),
-    vectorsPath
-  };
+export function denseCoverage(status, provenance) {
+  const models = Array.isArray(status?.dense_models) ? status.dense_models : null;
+  if (!models || !provenance?.backend) return status;
+  const same = (entry) => entry.backend === provenance.backend && entry.revision === provenance.revision && entry.dtype === provenance.dtype;
+  const current = models.filter(same).reduce((sum, entry) => sum + entry.documents, 0);
+  const other = models.filter((entry) => !same(entry)).reduce((sum, entry) => sum + entry.documents, 0);
+  const eligible = Number(status.dense_eligible_documents) || Number(status.dense_documents || 0) + Number(status.dense_pending_documents || 0);
+  status.dense_documents = current;
+  status.dense_other_model_documents = other;
+  status.dense_pending_documents = Math.max(0, eligible - current);
+  return status;
 }

@@ -68,18 +68,14 @@ test("a staged tree that imports what it does not carry is reported before an im
   assert.deepEqual(await findDanglingImports(root), []);
 });
 
-test("the runtime tree is audited through the layout the image gives it", async (t) => {
-  // Д-56: the Frontend QA runner imports the server as `../ai-dev-mcp-server`,
-  // which is where it sits in a checkout and where the Dockerfile symlinks it
-  // in the image. In the staged context the server is under `app/` and the
-  // runner under `runtime/frontend-qa/`, so without the alias every one of the
-  // runner's server imports reads as dangling and the check is red by
-  // construction; with it, a file the runner needs and the allowlist dropped
-  // is caught before an image is built.
+test("the Frontend QA runner's imports of the server resolve in the distribution's own layout", async (t) => {
+  // The runner imports the server as `../ai-dev-mcp-server`. Every target
+  // is laid out as the distribution is, so the staged tree answers for it as is:
+  // a file the runner needs and the allowlist dropped is caught before a build.
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "runtime-imports-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const core = path.join(root, "app", "src", "core");
-  const runner = path.join(root, "runtime", "frontend-qa");
+  const core = path.join(root, "ai-dev-mcp-server", "src", "core");
+  const runner = path.join(root, "frontend-qa");
   await fs.mkdir(core, { recursive: true });
   await fs.mkdir(runner, { recursive: true });
   await fs.writeFile(path.join(core, "command-policy.mjs"), "export const policy = 1;\n", "utf8");
@@ -89,24 +85,12 @@ test("the runtime tree is audited through the layout the image gives it", async 
     'export { policy, run };'
   ].join("\n"), "utf8");
 
-  const aliases = [[path.join(root, "runtime", "ai-dev-mcp-server"), path.join(root, "app")]];
-  const runtimeRoot = path.join(root, "runtime");
-  const findings = await findDanglingImports(runtimeRoot, { aliases });
   // One shipped, one not: only the missing one is a finding.
+  const findings = await findDanglingImports(runner);
   assert.deepEqual(findings.map((item) => item.specifier), ["../ai-dev-mcp-server/src/core/process-runner.mjs"]);
-  assert.equal(findings[0].file, "frontend-qa/frontend_qa_runner.mjs");
-
+  assert.equal(findings[0].file, "frontend_qa_runner.mjs");
   await fs.writeFile(path.join(core, "process-runner.mjs"), "export const run = 2;\n", "utf8");
-  assert.deepEqual(await findDanglingImports(runtimeRoot, { aliases }), []);
-
-  // Without the alias the same tree reads as two broken imports, which is what
-  // the audit would have had to ignore had it walked `runtime/` as it stood.
-  assert.equal((await findDanglingImports(runtimeRoot)).length, 2);
-
-  // The alias forgives only the path the Dockerfile actually creates.
-  await fs.writeFile(path.join(runner, "other.mjs"), 'import "../elsewhere/thing.mjs";\n', "utf8");
-  const elsewhere = await findDanglingImports(runtimeRoot, { aliases });
-  assert.deepEqual(elsewhere.map((item) => item.specifier), ["../elsewhere/thing.mjs"]);
+  assert.deepEqual(await findDanglingImports(runner), []);
 });
 
 test("distribution audit accepts a clean allowlisted tree", async (t) => {
@@ -125,6 +109,28 @@ test("distribution audit blocks owner context without exposing source text", asy
   const audit = await auditDistributionTree(root, { forbiddenTerms: ["private-owner"] });
   assert.equal(audit.ok, false);
   assert.deepEqual(audit.findings, [{ rule: "private-owner-context", path: "note.md" }]);
+});
+
+test("distribution audit rejects a NUL byte in a text file and nowhere else", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-nul-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  // The shape upstream shipped: a run of NULs where a skill's description was.
+  await fs.writeFile(path.join(root, "SKILL.md"), Buffer.concat([
+    Buffer.from("# Confluent\n\n"), Buffer.alloc(150), Buffer.from("\n\nOfficial docs\n")
+  ]));
+  await fs.writeFile(path.join(root, "notes.txt"), Buffer.from("text\0"));
+  // Images are binary and are meant to carry NULs; so is a program a skill
+  // ships without an extension.
+  await fs.writeFile(path.join(root, "logo.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0, 0, 0x0d]));
+  await fs.mkdir(path.join(root, "bin"));
+  await fs.writeFile(path.join(root, "bin", "tool"), Buffer.from([0x7f, 0x45, 0x4c, 0x46, 2, 1, 1, 0, 0, 0]));
+  await fs.writeFile(path.join(root, "clean.md"), "# Clean\n");
+  const audit = await auditDistributionTree(root);
+  assert.deepEqual(audit.findings, [
+    { rule: "nul-byte-in-text", path: "notes.txt" },
+    { rule: "nul-byte-in-text", path: "SKILL.md" }
+  ]);
+  assert.throws(() => assertCleanDistribution(audit, "public seed"), /nul-byte-in-text: SKILL\.md/);
 });
 
 test("ownerUsername returns a string without throwing", () => {
@@ -182,14 +188,14 @@ test("a whole vendored catalogue set reports nothing missing", () => {
 test("a catalogue the seed refresh dropped is reported, not passed over", () => {
   // The defect this guards: `copySkillSources` reads an allowlist of vault
   // directories, the vendored catalogues live only in the checkout, and the
-  // refresh replaces the seed wholesale — so a missing entry means 3,074 skills
+  // refresh replaces the seed wholesale — so a missing entry means 460 skills
   // silently leave the distribution.
   const counts = Object.fromEntries(
     VENDORED_SEED_CATALOGUES.map(({ relative, minimumSkills }) => [relative, minimumSkills])
   );
   delete counts["external/membrane"];
   assert.deepEqual(missingVendoredCatalogues(counts), [
-    { relative: "external/membrane", expected: 3074, found: 0 }
+    { relative: "external/membrane", expected: 460, found: 0 }
   ]);
 });
 

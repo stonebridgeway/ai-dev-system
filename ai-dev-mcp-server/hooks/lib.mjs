@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { Worker } from "node:worker_threads";
+import { fileURLToPath } from "node:url";
 
 export const MAX_STDIN = 1024 * 1024;
 export const PROFILES = ["minimal", "standard", "strict"];
@@ -115,15 +116,42 @@ function hashKey(key) {
   return crypto.createHash("sha256").update(process.platform === "win32" ? key.toLowerCase() : key).digest("hex").slice(0, 20);
 }
 
-export function projectRootOf(cwd) {
-  const canonical = realpathOf(cwd);
+/** The Git root of `cwd`, when it may stand for a project; "" otherwise. */
+function gitRootOf(cwd) {
   const top = git(cwd, ["rev-parse", "--show-toplevel"]);
-  if (!top) return canonical;
+  if (!top) return "";
   // A dotfiles clone in `~` answers `--show-toplevel` with the home directory
   // for every project below it, which is the server's `rawGitRoot` fallback and
-  // is gated there the same way (docs/DEFECTS.md, Д-48).
+  // is gated there the same way.
   const root = realpathOf(top);
-  return isProjectBoundaryCandidate(root, { homeDir: canonicalUserHome() }) ? root : canonical;
+  return isProjectBoundaryCandidate(root, { homeDir: canonicalUserHome() }) ? root : "";
+}
+
+/**
+ * The workspace a hook fired in `cwd` works in: the Git root, or `cwd` outside
+ * Git. Its `.ai-dev/policy.json` and `hooks/patterns.json` are the ones
+ * `install_agent_hooks` wrote, `git status` paths are relative to it, its
+ * `node_modules/.bin` holds the formatter. In a package of a monorepo this is
+ * the repository, not the package.
+ */
+export function projectRootOf(cwd) {
+  return gitRootOf(cwd) || realpathOf(cwd);
+}
+
+/**
+ * The project the server would name for `cwd` — derived as its
+ * resolveProjectIdentity derives it: the nearest project boundary at or above
+ * `cwd` first, the Git root only when there is none, then `cwd` itself. The
+ * memory a hook reads and writes is keyed by it, so that a session in
+ * `<repo>/apps/web` meets the memory the server keeps for `apps/web`.
+ * For everything else the hooks use
+ * {@link projectRootOf}.
+ */
+export function identityRootOf(cwd) {
+  const canonical = realpathOf(cwd);
+  const boundary = projectBoundaryOf(canonical);
+  if (boundary) return realpathOf(boundary);
+  return gitRootOf(cwd) || canonical;
 }
 
 /** Same normalization as the server's project identity: POSIX separators, case-folded on Windows. */
@@ -168,13 +196,13 @@ export function userHomeDirectory(options = {}) {
  * marker, so a single `package.json` in `~` — and anyone who has once run npm
  * from their home directory has one — made every project below it collapse
  * onto one memory key: the session handoffs, instincts and context of one
- * project served to an agent working in another, silently
- * (docs/DEFECTS.md, Д-48). So a marker sitting in the home directory itself, or
+ * project served to an agent working in another, silently.
+ * So a marker sitting in the home directory itself, or
  * anywhere above it, is not a boundary. Below the home directory, and outside
  * it entirely (`/srv/app`, `C:\work\app`), nothing changes.
  *
  * Pass canonical (realpath) values, as the walk does, so a home reached through
- * a symlink still compares equal to the walked path (docs/DEFECTS.md, Д-51).
+ * a symlink still compares equal to the walked path.
  */
 export function isProjectBoundaryCandidate(directory, options = {}) {
   const platform = options.platform ?? process.platform;
@@ -238,7 +266,7 @@ function projectBoundaryOf(start) {
   while (true) {
     // Once the walk reaches the home directory every remaining ancestor is
     // above it too, so there is nothing left that may be a boundary: the start
-    // directory stands for itself (docs/DEFECTS.md, Д-48).
+    // directory stands for itself.
     if (!isProjectBoundaryCandidate(current, { homeDir })) return "";
     for (const marker of BOUNDARY_MARKERS) {
       const markerPath = path.join(current, marker);
@@ -305,8 +333,13 @@ export function stateRoot() {
 }
 
 /**
- * The runtime tree itself (`<home>/.ai-dev`), which is what the server's
- * `resolveRuntimeStateRoot` returns.
+ * The runtime tree itself — `AI_DEV_HOME`, else `<home>/.ai-dev` — which is what
+ * the server's `resolveRuntimeStateRoot` returns (src/core/runtime-home.mjs).
+ *
+ * `AI_DEV_HOME` names the runtime folder itself; 2.x appended `.ai-dev` to it
+ * on both sides. The one
+ * value that keeps the 2.x meaning is the home directory itself: taken at its
+ * word it would scatter the runtime tree across the home.
  *
  * `stateRoot()` is one level below it, and comparing that against a candidate
  * `<dir>/.ai-dev` never matched — so the runtime directory was read as a
@@ -322,8 +355,51 @@ export function stateRoot() {
  * @returns {string}
  */
 export function runtimeStateRoot() {
-  const home = process.env.AI_DEV_HOME || process.env.USERPROFILE || process.env.HOME || os.homedir();
-  return path.join(home, ".ai-dev");
+  const home = process.env.USERPROFILE || process.env.HOME || os.homedir();
+  return explicitRuntimeHome() || recordedRuntimeHome() || path.join(home, ".ai-dev");
+}
+
+/** The file beside the hooks that names the server's runtime folder. */
+export const RUNTIME_HOME_FILE = ".ai-dev-home";
+
+/**
+ * The runtime folder of the server that installed these hooks, when
+ * `AI_DEV_HOME` named one: `install_agent_hooks` records it beside them, kept
+ * out of git like `.node-path`. A client started from the Dock or the Start
+ * menu runs its hooks without the shell's variables, while its server has
+ * `AI_DEV_HOME` from the client's config — without the record the two
+ * kept their state in different places. The server
+ * reads no such file: its environment carries the variable. In the hooks it
+ * comes after `AI_DEV_HOME` and before `~/.ai-dev`, as the server's copy has
+ * nothing to put between them.
+ *
+ * @returns {string}
+ */
+export function recordedRuntimeHome() {
+  try {
+    const value = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), RUNTIME_HOME_FILE), "utf8").trim();
+    return value && path.isAbsolute(value) ? path.resolve(value) : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Same as the server's `sameDirectory`: through symlinks, and case-blind on Windows and macOS. */
+export function sameDirectory(left, right, { platform = process.platform, realpath = realpathOf } = {}) {
+  const paths = platform === "win32" ? path.win32 : path.posix;
+  const canonical = (value) => {
+    const resolved = paths.resolve(realpath(paths.resolve(value)));
+    return platform === "win32" || platform === "darwin" ? resolved.toLowerCase() : resolved;
+  };
+  return canonical(left) === canonical(right);
+}
+
+/** Same as the server's `explicitRuntimeHome`: `AI_DEV_HOME`, unless it names the home itself. */
+export function explicitRuntimeHome(options = {}) {
+  const raw = String(process.env.AI_DEV_HOME ?? "").trim();
+  if (!raw) return "";
+  const homes = [process.env.USERPROFILE, process.env.HOME, os.homedir()].filter(Boolean);
+  return homes.some((home) => sameDirectory(home, raw, options)) ? "" : path.resolve(raw);
 }
 
 /** Same sanitisation as the server's SessionStore.directoryFor. */
@@ -537,7 +613,7 @@ export function compileRegex(source, flags = "i") {
  * A pattern that backtracks catastrophically cannot be interrupted on this
  * thread, and one such rule in `.ai-dev/policy.json` stalls the guard on every
  * Bash command and every file write: `(a|a)+$` against twenty-eight characters
- * takes 38.8 seconds (docs/DEFECTS.md, Д-16). The server refuses to
+ * takes 38.8 seconds. The server refuses to
  * write such a rule, but nothing stops a hand edit, so the guard never trusts
  * the pattern either: it matches in a worker thread it can kill.
  *
@@ -547,9 +623,13 @@ export function compileRegex(source, flags = "i") {
 export const POLICY_MATCH_BUDGET_MS = 250;
 // One deadline for the whole event on top of the per-rule budget. Thirty slow
 // rules used to cost thirty budgets — 8.7 seconds measured, against a client
-// that abandons a hook at ten (docs/DEFECTS.md, Д-22) — so the rules
+// that abandons a hook at ten — so the rules
 // the deadline cuts off are reported as unchecked instead of being run.
 export const POLICY_MATCH_DEADLINE_MS = 1000;
+// How long the match threads of one event may take to start, all together. Startup is the machine's cost, not a
+// rule's: charged to the first rule, it let a forbidden command through 27 times in 30 under 32 busy loops on 4
+// cores, blaming a pattern that had never run. The deadline above counts matching only.
+export const POLICY_MATCH_START_MS = 3000;
 export const POLICY_MATCH_MAX_INPUT = 4096;
 
 const MATCH_WORKER_SOURCE = `
@@ -567,38 +647,54 @@ for (const job of workerData.jobs) {
 parentPort.postMessage({ done: true });
 `;
 
-function runMatchBatch(jobs, budgetMs) {
+// Why a worker failed, in words that are never empty: a worker that throws `new Error("")` has failed all the same.
+// The server's copy reads a failure with this same expression, so both say the same of one.
+function failureReason(cause) {
+  return String((cause && cause.message) || cause || "").trim() || "it gave no reason";
+}
+
+// Until the worker says `ready` it is only starting: that has its own ceiling, `startMs`, and charges no rule.
+// A worker that fails instead — it cannot be created, or errors or exits — comes back `failed`, its reason in
+// `error`: that is not a slow start, and the job it was on is answered as run, as the server's copy does.
+// The flag tells the two apart, never the reason's text.
+function runMatchBatch(jobs, budgetMs, startMs) {
   return new Promise((resolve) => {
     const results = [];
+    const created = Date.now();
+    let startupMs = null;
     let settled = false;
     let timer = null;
     let worker = null;
-    const finish = (timedOutAt) => {
+    const finish = (timedOutAt, failed = false, error = "") => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       if (worker) worker.terminate();
-      resolve({ results, timedOutAt });
+      resolve({ results, timedOutAt, failed, error, startupMs: startupMs === null ? Date.now() - created : startupMs, notStarted: startupMs === null });
     };
+    const fail = (cause) => finish(-1, true, failureReason(cause));
     const arm = () => {
       clearTimeout(timer);
       timer = setTimeout(() => finish(results.length), budgetMs);
     };
     try {
       worker = new Worker(MATCH_WORKER_SOURCE, { eval: true, workerData: { jobs } });
-    } catch {
-      finish(-1);
+    } catch (error) {
+      fail(error);
       return;
     }
     worker.on("message", (message) => {
-      if (message && message.ready) return arm();
+      if (message && message.ready) {
+        startupMs = Date.now() - created;
+        return arm();
+      }
       if (message && message.done) return finish(-1);
       results.push(message && typeof message.matched === "boolean" ? message.matched : null);
       return arm();
     });
-    worker.on("error", () => finish(-1));
-    worker.on("exit", () => finish(-1));
-    arm();
+    worker.on("error", fail);
+    worker.on("exit", () => fail("the match worker exited before it answered"));
+    timer = setTimeout(() => finish(-1), startMs);
   });
 }
 
@@ -609,17 +705,25 @@ function runMatchBatch(jobs, budgetMs) {
  * - `{ checked: true, matched: true | false }` — the job ran.
  * - `{ checked: true, matched: null }` — it outlived its own budget. The jobs
  *   behind it are run in a fresh worker, because killing the stuck one is the
- *   only way to stop it.
- * - `{ checked: false, matched: null }` — the deadline passed first, so it was
- *   never run. The guard says how many of those there were, in one line.
+ *   only way to stop it. With `error`, the worker failed on it instead of
+ *   timing out, and the jobs behind it get a fresh worker the same way — or,
+ *   when it failed before it was ready, every job left gets that error.
+ * - `{ checked: false, matched: null, not_run }` — never run: the deadline
+ *   passed first (`not_run: "deadline"`), or no thread could start for it in
+ *   time (`not_run: "start"` — the machine is too busy). The guard says how
+ *   many of those there were, in one line.
+ *
+ * The deadline counts the time the rules run, not the time threads take to
+ * start; that has its own allowance, `startMs`.
  *
  * @param {Array<{ pattern: string, flags?: string, haystack?: string }>} jobs
- * @param {{ budgetMs?: number, deadlineMs?: number }} [options]
- * @returns {Promise<Array<{ matched: boolean | null, checked: boolean }>>}
+ * @param {{ budgetMs?: number, deadlineMs?: number, startMs?: number }} [options]
+ * @returns {Promise<Array<{ matched: boolean | null, checked: boolean, error?: string, not_run?: "deadline" | "start" }>>}
  */
 export async function matchWithBudget(jobs, options = {}) {
   const budgetMs = Number.isFinite(options.budgetMs) && options.budgetMs > 0 ? options.budgetMs : POLICY_MATCH_BUDGET_MS;
   const deadlineMs = Number.isFinite(options.deadlineMs) && options.deadlineMs > 0 ? options.deadlineMs : POLICY_MATCH_DEADLINE_MS;
+  const startMs = Number.isFinite(options.startMs) && options.startMs > 0 ? options.startMs : POLICY_MATCH_START_MS;
   const list = Array.isArray(jobs) ? jobs : [];
   if (!list.length) return [];
   const prepared = list.map((job) => ({
@@ -628,23 +732,42 @@ export async function matchWithBudget(jobs, options = {}) {
     haystack: String((job && job.haystack) || "").slice(0, POLICY_MATCH_MAX_INPUT)
   }));
   const answers = new Array(prepared.length).fill(null);
-  const startedAt = Date.now();
+  let matching = 0;
+  let starting = 0;
+  let notRun = "deadline";
   let offset = 0;
   while (offset < prepared.length) {
     // What is left of the deadline is also the ceiling for the next job: the
     // last rule of an event may not overrun the event.
-    const left = deadlineMs - (Date.now() - startedAt);
+    const left = deadlineMs - matching;
     if (left <= 0) break;
-    const { results, timedOutAt } = await runMatchBatch(prepared.slice(offset), Math.min(budgetMs, left));
+    if (startMs - starting <= 0) {
+      notRun = "start";
+      break;
+    }
+    const began = Date.now();
+    const { results, timedOutAt, failed, error, startupMs, notStarted } = await runMatchBatch(prepared.slice(offset), Math.min(budgetMs, left), startMs - starting);
+    starting += startupMs;
+    matching += Math.max(0, Date.now() - began - startupMs);
+    if (notStarted && !failed) {
+      notRun = "start";
+      break;
+    }
+    if (notStarted) {
+      // A worker that failed before it was ready ran none of these rules, and the next one would fail the same way:
+      // every rule left is answered with its error, instead of a thread made and lost per rule.
+      for (let index = offset; index < prepared.length; index += 1) answers[index] = { matched: null, checked: true, error };
+      break;
+    }
     for (let index = 0; index < results.length && offset + index < prepared.length; index += 1) {
       answers[offset + index] = { matched: results[index], checked: true };
     }
     const stuck = timedOutAt >= 0 ? offset + timedOutAt : offset + results.length;
     if (stuck >= prepared.length) break;
-    answers[stuck] = { matched: null, checked: true };
+    answers[stuck] = timedOutAt < 0 && failed ? { matched: null, checked: true, error } : { matched: null, checked: true };
     offset = stuck + 1;
   }
-  return answers.map((answer) => answer || { matched: null, checked: false });
+  return answers.map((answer) => answer || { matched: null, checked: false, not_run: notRun });
 }
 
 /** Split a shell command into segments on unquoted ; | & and newlines, stripping quotes. */
@@ -686,19 +809,42 @@ export function tokensOf(segment) {
 }
 
 /** The task a project is working on right now, or null. Shared by stop-check and cost-capture. */
-export function activeTaskFor(projectRoot) {
-  const directory = path.join(stateRoot(), "tasks");
+/** Whether `directory` is `root` or lies below it, compared the way the platform compares paths. */
+export function isWithin(directory, root) {
+  if (!directory || !root) return false;
+  const inner = normalizePath(directory);
+  const outer = normalizePath(root);
+  return inner === outer || inner.startsWith(`${outer}/`);
+}
+
+/**
+ * The open tasks (active or verified) whose project holds `directory`, the
+ * nearest project first: a task begun for the repository covers a session in
+ * one of its packages, and a task begun for the package does too.
+ *
+ * @param {string} directory - Usually {@link identityRootOf} the hook's `cwd`.
+ * @returns {object[]}
+ */
+export function openTasksFor(directory) {
+  const folder = path.join(stateRoot(), "tasks");
   let names = [];
   try {
-    names = fs.readdirSync(directory).filter((name) => name.endsWith(".json"));
+    names = fs.readdirSync(folder).filter((name) => name.endsWith(".json"));
   } catch {
-    return null;
+    return [];
   }
+  const tasks = [];
   for (const name of names) {
-    const record = readJson(path.join(directory, name));
-    if (record && ["active", "verified"].includes(record.status) && samePath(record.project?.path, projectRoot)) return record;
+    const record = readJson(path.join(folder, name));
+    if (record && ["active", "verified"].includes(record.status) && isWithin(directory, record.project?.path)) tasks.push(record);
   }
-  return null;
+  return tasks.sort((left, right) => normalizePath(right.project.path).length - normalizePath(left.project.path).length
+    || String(right.updated_at).localeCompare(String(left.updated_at)));
+}
+
+/** The task a hook in `directory` works under: the nearest open one, or null. */
+export function activeTaskFor(directory) {
+  return openTasksFor(directory)[0] ?? null;
 }
 
 /** The usage ledger the server reads (`src/core/usage-ledger.mjs`). */
@@ -706,11 +852,231 @@ export function usageLedgerPath() {
   return path.join(stateRoot(), "usage", "events.jsonl");
 }
 
+/*
+ * Cross-process file locks — a synchronous copy of src/core/file-lock.mjs.
+ *
+ * The usage ledger is written by every MCP server process and by these hooks
+ * at once, so an append or a prune that does not hold the lock loses somebody's
+ * lines. The protocol must stay identical to the
+ * server's: the lock is `<target>.lock`, created exclusively
+ * and holding `{ pid, host, token, acquired_at }`; it is stale when its process
+ * is gone (same host), when it is older than LOCK_STALE_MS, or when it has no
+ * readable holder for EMPTY_LOCK_GRACE_MS; a stale lock is broken under
+ * `<target>.lock.break`, and only if it is still the file judged stale (same
+ * identity, same holder); release deletes the lock only if it still carries this
+ * holder's token.
+ */
+export const LOCK_SUFFIX = ".lock";
+export const LOCK_STALE_MS = 30_000;
+export const EMPTY_LOCK_GRACE_MS = 2_000;
+export const BREAK_LOCK_STALE_MS = 5_000;
+/** A hook must not hold the agent up for long; giving up costs one ledger line. */
+export const HOOK_LOCK_TIMEOUT_MS = 5_000;
+const LOCK_MAX_BACKOFF_MS = 50;
+const LOCK_TRANSIENT_CODES = new Set(["EPERM", "EBUSY", "EACCES"]);
+
+export function lockPathFor(filePath) {
+  return `${path.resolve(filePath)}${LOCK_SUFFIX}`;
+}
+
+// A process's state letter from /proc/<pid>/stat; "" when it is not there; null where there is no /proc.
+export function procStateLetter(pid) {
+  try {
+    const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+    return stat.charAt(stat.lastIndexOf(")") + 2) || null;
+  } catch (error) {
+    return error?.code === "ENOENT" && fs.existsSync("/proc/self/stat") ? "" : null;
+  }
+}
+
+// Running, or there and unknown: a process that has exited and waits to be collected (a zombie, which kill(pid, 0)
+// still answers for) is not, where /proc tells — the server's file-lock.mjs judges it the same. A /proc
+// that does not show the process kill has just found hides it (hidepid): there, and alive.
+export function processAlive(pid, { platform = process.platform, proc = procStateLetter } = {}) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+  } catch (error) {
+    if (error?.code !== "EPERM") return false;
+  }
+  if (platform === "win32") return true;
+  const letter = proc(pid);
+  return letter !== "Z" && letter !== "X";
+}
+
+export function lockIsLive(observed, { now = Date.now(), staleMs = LOCK_STALE_MS, emptyGraceMs = EMPTY_LOCK_GRACE_MS, host = os.hostname(), alive = processAlive } = {}) {
+  if (observed?.unreadable) return true;
+  const holder = observed?.holder;
+  if (!holder || typeof holder !== "object") {
+    return now - Number(observed?.mtimeMs || 0) < emptyGraceMs;
+  }
+  if (now - Number(holder.acquired_at || 0) >= staleMs) return false;
+  if (holder.host && holder.host !== host) return true;
+  return alive(Number(holder.pid));
+}
+
+export function readLockSync(lockPath) {
+  let fd;
+  try {
+    fd = fs.openSync(lockPath, "r");
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    if (LOCK_TRANSIENT_CODES.has(error?.code)) return { holder: null, mtimeMs: Date.now(), id: "", unreadable: true };
+    throw error;
+  }
+  try {
+    const stat = fs.fstatSync(fd, { bigint: true });
+    const text = fs.readFileSync(fd, "utf8");
+    let holder = null;
+    try {
+      holder = JSON.parse(text);
+    } catch {
+      holder = null;
+    }
+    return { holder, mtimeMs: Number(stat.mtimeMs), id: `${stat.dev}:${stat.ino}` };
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+export function sameLock(left, right) {
+  if (!left || !right || !left.id || left.id !== right.id) return false;
+  const leftToken = left.holder?.token ?? null;
+  if (leftToken !== (right.holder?.token ?? null)) return false;
+  return leftToken !== null || left.mtimeMs === right.mtimeMs;
+}
+
+export function breakStaleLockSync(lockPath, observed, { staleMs = LOCK_STALE_MS } = {}) {
+  const breaker = `${lockPath}.break`;
+  try {
+    fs.closeSync(fs.openSync(breaker, "wx", 0o600));
+  } catch (error) {
+    if (error?.code === "EEXIST") {
+      try {
+        if (Date.now() - fs.statSync(breaker).mtimeMs >= BREAK_LOCK_STALE_MS) fs.rmSync(breaker, { force: true });
+      } catch {
+        // The other breaker finished meanwhile.
+      }
+      return false;
+    }
+    if (error?.code === "ENOENT" || LOCK_TRANSIENT_CODES.has(error?.code)) return false;
+    throw error;
+  }
+  try {
+    const current = readLockSync(lockPath);
+    if (!sameLock(current, observed) || lockIsLive(current, { staleMs })) return false;
+    fs.rmSync(lockPath, { force: true });
+    return true;
+  } finally {
+    try {
+      fs.rmSync(breaker, { force: true });
+    } catch {
+      // Left behind, it is cleared as stale by the next breaker.
+    }
+  }
+}
+
+function releaseLockSync(lockPath, token) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      const current = readLockSync(lockPath);
+      if (current?.unreadable) throw Object.assign(new Error("lock busy"), { code: "EBUSY" });
+      if (current?.holder?.token === token) fs.rmSync(lockPath, { force: true });
+      return;
+    } catch (error) {
+      if (!LOCK_TRANSIENT_CODES.has(error?.code)) throw error;
+      sleepSync(10 * (attempt + 1));
+    }
+  }
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+export function acquireFileLockSync(filePath, { timeoutMs = HOOK_LOCK_TIMEOUT_MS, staleMs = LOCK_STALE_MS } = {}) {
+  const lockPath = lockPathFor(filePath);
+  const token = crypto.randomUUID();
+  const deadline = Date.now() + timeoutMs;
+  let backoff = 2;
+  for (;;) {
+    try {
+      const fd = fs.openSync(lockPath, "wx", 0o600);
+      try {
+        fs.writeSync(fd, JSON.stringify({ pid: process.pid, host: os.hostname(), token, acquired_at: Date.now() }));
+      } finally {
+        fs.closeSync(fd);
+      }
+      return () => releaseLockSync(lockPath, token);
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+        continue;
+      }
+      if (error?.code !== "EEXIST" && !(process.platform === "win32" && LOCK_TRANSIENT_CODES.has(error?.code))) throw error;
+    }
+    const observed = readLockSync(lockPath);
+    if (observed && !lockIsLive(observed, { staleMs })) {
+      if (breakStaleLockSync(lockPath, observed, { staleMs })) continue;
+    }
+    if (Date.now() >= deadline) {
+      const owner = observed?.holder?.pid ? ` (held by pid ${observed.holder.pid})` : "";
+      throw new Error(`Timed out after ${timeoutMs} ms waiting for the lock ${lockPath}${owner}.`);
+    }
+    sleepSync(backoff + Math.floor(Math.random() * backoff));
+    backoff = Math.min(backoff * 2, LOCK_MAX_BACKOFF_MS);
+  }
+}
+
+export function withFileLockSync(filePath, operation, options = {}) {
+  const release = acquireFileLockSync(filePath, options);
+  try {
+    return operation();
+  } finally {
+    release();
+  }
+}
+
+/** Cut a trailing partial line — a record a killed writer never finished — off a JSONL file. */
+export function truncateTornTailSync(filePath) {
+  let fd;
+  try {
+    fd = fs.openSync(filePath, "r+");
+  } catch (error) {
+    if (error?.code === "ENOENT") return 0;
+    throw error;
+  }
+  try {
+    const { size } = fs.fstatSync(fd);
+    if (size === 0) return 0;
+    const last = Buffer.alloc(1);
+    fs.readSync(fd, last, 0, 1, size - 1);
+    if (last[0] === 0x0a) return 0;
+    const chunk = Buffer.alloc(64 * 1024);
+    let end = size;
+    while (end > 0) {
+      const start = Math.max(0, end - chunk.length);
+      const bytesRead = fs.readSync(fd, chunk, 0, end - start, start);
+      const newline = chunk.subarray(0, bytesRead).lastIndexOf(0x0a);
+      if (newline >= 0) {
+        fs.ftruncateSync(fd, start + newline + 1);
+        return size - (start + newline + 1);
+      }
+      end = start;
+    }
+    fs.ftruncateSync(fd, 0);
+    return size;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
 /** Same self-limiting as UsageLedger: 8 MB, then keep the newest 20 000 lines. */
 export const USAGE_LEDGER_MAX_BYTES = 8 * 1024 * 1024;
 export const USAGE_LEDGER_KEEP_LINES = 20_000;
 
-function pruneUsageLedger(target) {
+/** Prune under the ledger's lock — the caller holds it. */
+function pruneUsageLedgerLocked(target) {
   let size = 0;
   try {
     size = fs.statSync(target).size;
@@ -720,7 +1086,7 @@ function pruneUsageLedger(target) {
   if (size <= USAGE_LEDGER_MAX_BYTES) return;
   try {
     const kept = fs.readFileSync(target, "utf8").split("\n").filter(Boolean).slice(-USAGE_LEDGER_KEEP_LINES);
-    const temp = `${target}.${process.pid}.tmp`;
+    const temp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
     fs.writeFileSync(temp, `${kept.join("\n")}\n`, "utf8");
     fs.renameSync(temp, target);
   } catch {
@@ -732,8 +1098,9 @@ function pruneUsageLedger(target) {
  * Append events to the usage ledger. The hook writes the file directly rather
  * than calling `record_usage`, because the server may be running in Docker while
  * the hook runs on the developer's machine — and because a Stop hook must not
- * depend on an MCP round trip. Lines are appended with O_APPEND (one write per
- * call, no read-modify-write) so a concurrent server append cannot be clobbered.
+ * depend on an MCP round trip. The append is one O_APPEND write under the same
+ * cross-process lock the server's `appendJsonLines` takes, after cutting off a
+ * record a killed writer left without its newline.
  *
  * @param {object[]} events
  * @returns {boolean} Whether anything was written.
@@ -743,8 +1110,11 @@ export function appendUsageEvents(events) {
   if (!payload) return false;
   const target = usageLedgerPath();
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.appendFileSync(target, payload, "utf8");
-  pruneUsageLedger(target);
+  withFileLockSync(target, () => {
+    truncateTornTailSync(target);
+    fs.appendFileSync(target, payload, "utf8");
+    pruneUsageLedgerLocked(target);
+  });
   return true;
 }
 

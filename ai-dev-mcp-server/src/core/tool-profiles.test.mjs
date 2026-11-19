@@ -3,12 +3,14 @@ import test from "node:test";
 import {
   ALL_PROFILES,
   ALWAYS_ON_PROFILE,
+  DEFAULT_PROFILE_IDS,
   PROFILE_IDS,
   TOOL_PROFILES,
   auditProfileCoverage,
   filterToolsByProfiles,
   findProfile,
   parseProfileSetting,
+  profileNotes,
   profileOfTool,
   profilesFromEnvironment,
   resolveToolNames
@@ -62,13 +64,32 @@ test("profileOfTool answers for a known tool and stays quiet for an unknown one"
   assert.equal(profileOfTool("not_a_tool"), undefined);
 });
 
-test("an absent setting means the whole surface", () => {
+test("an absent setting means the whole surface an agent gets: every profile but the opt-in ones", () => {
   for (const raw of [undefined, null, "", "   "]) {
     const parsed = parseProfileSetting(raw);
     assert.equal(parsed.all, true);
-    assert.deepEqual(parsed.ids, [...PROFILE_IDS]);
+    assert.deepEqual(parsed.ids, [...DEFAULT_PROFILE_IDS]);
     assert.deepEqual(parsed.unknown, []);
   }
+  assert.deepEqual(PROFILE_IDS.filter((id) => !DEFAULT_PROFILE_IDS.includes(id)), ["control"]);
+});
+
+test("an opt-in profile is listed only when a session names it: beside all, or with core alone", () => {
+  assert.deepEqual(parseProfileSetting("control"), { ids: ["core", "control"], all: false, unknown: [] });
+  assert.deepEqual(parseProfileSetting("all,control"), { ids: [...PROFILE_IDS], all: true, unknown: [] });
+  assert.equal(parseProfileSetting("all").ids.includes("control"), false);
+});
+
+test("stderr says what a narrowed session leaves out, and how to list everything", () => {
+  assert.deepEqual(profileNotes({ tools_listed: 135, tools_total: 135, tools_opt_in: 0, profiles: [] }), []);
+  assert.deepEqual(profileNotes({ tools_listed: 148, tools_total: 135, tools_opt_in: 13, profiles: [] }), []);
+  assert.deepEqual(profileNotes({ tools_listed: 25, tools_total: 135, tools_opt_in: 0, profiles: ["core"] }), [
+    "ai-dev: capability profiles core — 25 of 135 tools listed. Unset AI_DEV_PROFILES for all of them."
+  ]);
+  assert.deepEqual(profileNotes({ tools_listed: 38, tools_total: 135, tools_opt_in: 13, profiles: ["core", "control"], unknown_profiles: ["contrl"] }), [
+    "ai-dev: capability profiles core, control — 25 of 135 tools listed, and the 13 of control. AI_DEV_PROFILES=all,control lists all of them.",
+    "ai-dev: AI_DEV_PROFILES names \"contrl\", which is not a capability profile; ignoring it."
+  ]);
 });
 
 test("`all` means the whole surface however it is written", () => {

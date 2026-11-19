@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import crypto from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -38,6 +38,8 @@ import {
   groupWikiLink,
   isDesignSkill,
   isMembraneSkill,
+  membraneSourceLayout,
+  MEMBRANE_SOURCE_IDS,
   skillCardPath,
   skillGroupNotePath
 } from "./core/skill-catalog.mjs";
@@ -53,12 +55,10 @@ import {
   taskLooksLandingConversion
 } from "./core/skill-recommendation.mjs";
 import { listSearchPresets } from "./core/search-runtime.mjs";
-import { createSearchIndexRuntime } from "./core/search-index.mjs";
-import { createEmbeddingRuntime } from "./core/embedding-workers.mjs";
+import { createSearchIndexRuntime, vaultIndexPath } from "./core/search-index.mjs";
 import { createDenseRuntime } from "./core/dense-runtime.mjs";
 import { createOnnxDenseRuntime, defaultOnnxModelDir } from "./core/dense-onnx.mjs";
 import { readDenseManifest } from "./core/dense-manifest.mjs";
-import { EMBEDDING_MODEL_REQUIREMENTS } from "./core/embedding-health.mjs";
 import { isDirectExecution } from "./core/direct-execution.mjs";
 import {
   isPathInside,
@@ -86,14 +86,21 @@ import {
 } from "./core/project-markdown.mjs";
 import { loadImportGraph, renderImportGraphMarkdown } from "./core/import-graph.mjs";
 import { configureRuntimeStateRoot, resolveProjectIdentity } from "./core/project-identity.mjs";
+import { resolvePythonCommand } from "./core/python-command.mjs";
+import { optionalPythonFailure, UI_UX_PYTHON_TOOLS } from "./core/python-failure.mjs";
+import { prepareRuntimeHome } from "./core/runtime-home-migration.mjs";
+import { currentInstallLayout } from "./core/install-layout.mjs";
+import { prepareUserVault } from "./core/seed-sync.mjs";
 import { resolveRuntimeAssets } from "./core/runtime-assets.mjs";
-import { resolveRuntimeHome } from "./core/runtime-home.mjs";
+import { resolveUserHome } from "./core/runtime-home.mjs";
 import {
   compileContextPack,
   contextPackFreshness
 } from "./core/context-compiler.mjs";
 import { loadContextExtras } from "./core/context-extras.mjs";
 import { routeSkills } from "./core/skill-router.mjs";
+import { createSkillRegistryReader, keepSkillRegistryDate, withCurrentSkillRegistry } from "./core/skill-registry-freshness.mjs";
+import { writeSkillSubgroupNotes } from "./core/skill-group-notes.mjs";
 import { prioritizeKnowledgeResults } from "./core/knowledge-router.mjs";
 import {
   hardNegativeRulesFromCases,
@@ -125,6 +132,7 @@ import { captureProjectState } from "./core/evidence.mjs";
 import { filterToolsByProfiles, profilesFromEnvironment } from "./core/tool-profiles.mjs";
 import { TaskStore } from "./core/task-lifecycle.mjs";
 import { UsageLedger, usageHintsFromArgs } from "./core/usage-ledger.mjs";
+import { answerMeasures, skillGroupsView, skillRow, wantsDetails } from "./core/response-budget.mjs";
 import { SessionStore } from "./core/session-memory.mjs";
 import { InstinctStore } from "./core/instincts.mjs";
 import { SkillOutcomeStore } from "./core/skill-outcomes.mjs";
@@ -183,46 +191,24 @@ const packageVersion = (() => {
   }
 })();
 
-/**
- * Resolve the vault root the server reads content from.
- *
- * Order: an explicit `AI_DEV_VAULT_ROOT`, then the sibling Obsidian vault three
- * levels up (the normal in-vault layout), then the `docker/public-seed` tree
- * bundled in the published repository. The seed fallback lets a standalone
- * checkout — and the test suite running against it — work without a full vault.
- *
- * @returns {string} absolute path to the resolved vault root
- */
-function resolveVaultRoot() {
-  if (process.env.AI_DEV_VAULT_ROOT) {
-    return path.resolve(process.env.AI_DEV_VAULT_ROOT);
-  }
-  const siblingVault = path.resolve(path.join(serverDir, "..", "..", ".."));
-  const looksLikeVault = existsSync(path.join(siblingVault, "03-skills-catalog"))
-    || existsSync(path.join(siblingVault, "01-system"));
-  if (looksLikeVault) {
-    return siblingVault;
-  }
-  const bundledSeed = path.resolve(path.join(serverDir, "..", "..", "docker", "public-seed"));
-  if (existsSync(bundledSeed)) {
-    return bundledSeed;
-  }
-  return siblingVault;
-}
-
-const vaultRoot = resolveVaultRoot();
+// Where this install keeps its content: AI_DEV_VAULT_ROOT, the Obsidian vault
+// around the server, a clone's bundled seed, or — for a package, whose own
+// folder is read-only — the user's vault, ~/.ai-dev/vault, brought up to the
+// seed the package ships before anything reads it (`core/install-layout.mjs`).
+const installLayout = currentInstallLayout();
+const vaultRoot = installLayout.contentRoot;
 
 // Home for regenerable runtime data (task state, search cache, models, QA
-// artifacts). Agent-neutral: defaults to ~/.ai-dev, overridable per directory
-// with the AI_DEV_* env vars, and falls back to a pre-existing ~/.codex/<...>
-// layout so installs migrated from the Codex-only runtime keep their history.
-const userHome = resolveRuntimeHome(vaultRoot);
-configureRuntimeStateRoot(path.join(userHome, ".ai-dev"));
-function aiDevRuntimePath(envVar, segments, legacySegments = segments) {
+// artifacts): the layout's, as the hooks have it, overridable per
+// directory with the AI_DEV_* env vars. What 2.x left in AI_DEV_HOME/.ai-dev
+// or in ~/.codex moves here first; ~/.codex is not read any more.
+await prepareRuntimeHome();
+const seedSync = await prepareUserVault(installLayout, { version: packageVersion });
+const userHome = resolveUserHome(vaultRoot);
+const runtimeStateRoot = configureRuntimeStateRoot(installLayout.runtimeRoot);
+function aiDevRuntimePath(envVar, segments) {
   if (process.env[envVar]) return path.resolve(process.env[envVar]);
-  const next = path.join(userHome, ".ai-dev", ...segments);
-  const legacy = path.join(userHome, ".codex", ...legacySegments);
-  return !existsSync(next) && existsSync(legacy) ? legacy : next;
+  return path.join(runtimeStateRoot, ...segments);
 }
 
 const skillIndexPath = path.join(
@@ -261,16 +247,8 @@ const runtimeAssets = resolveRuntimeAssets({
   vaultRoot,
   repositoryRoot: path.resolve(serverDir, "..", "..")
 });
-const searchSourceDir = runtimeAssets.searchIndexDir;
-const searchIndexDir = path.resolve(
-  aiDevRuntimePath(
-    "AI_DEV_SEARCH_INDEX_DIR",
-    ["cache", "search-index"],
-    ["cache", "ai-dev-system", "search-index"]
-  )
-);
-const searchIndexPath = path.join(searchIndexDir, "ai-dev-search.sqlite");
-const searchCliPath = path.join(searchSourceDir, "search_cli.py");
+const searchIndexDir = path.resolve(aiDevRuntimePath("AI_DEV_SEARCH_INDEX_DIR", ["cache", "search-index"]));
+const searchIndexPath = vaultIndexPath({ dir: searchIndexDir, vaultRoot }).path;
 const searchEvalCasesPath = path.join(runtimeAssets.searchEvalDir, "search_eval_cases.json");
 // The routing benchmark's golden cases. `skillRoutingEvalRelativePath` above is
 // what a report prints; this is where the file actually is, which in a plain
@@ -278,7 +256,6 @@ const searchEvalCasesPath = path.join(runtimeAssets.searchEvalDir, "search_eval_
 // compares the report against this, so editing the cases asks for a rerun
 // instead of being invisible.
 const skillRoutingEvalCasesPath = path.join(runtimeAssets.searchEvalDir, "skill_routing_eval_cases.json");
-const embeddingsDir = runtimeAssets.embeddingsDir;
 const frontendQaRunnerPath = path.join(runtimeAssets.frontendQaDir, "frontend_qa_runner.mjs");
 const frontendQaPackagePath = path.join(runtimeAssets.frontendQaDir, "package.json");
 const uiUxProMaxRoot = path.join(
@@ -299,25 +276,16 @@ const archifyArtifactsRoot = path.resolve(
 const archifyReceiptsRoot = path.resolve(
   aiDevRuntimePath("AI_DEV_ARCHIFY_RECEIPTS_ROOT", ["state", "archify-receipts"])
 );
-const taskStateRoot = path.resolve(
-  aiDevRuntimePath("AI_DEV_STATE_ROOT", ["state"], ["state", "ai-dev-system"])
-);
+const taskStateRoot = path.resolve(aiDevRuntimePath("AI_DEV_STATE_ROOT", ["state"]));
 const taskStore = new TaskStore({ stateRoot: taskStateRoot });
 const usageLedger = new UsageLedger({ stateRoot: taskStateRoot });
 const sessionStore = new SessionStore({ stateRoot: taskStateRoot });
 const instinctStore = new InstinctStore({ stateRoot: taskStateRoot });
 const skillOutcomeStore = new SkillOutcomeStore({ stateRoot: taskStateRoot });
 const pilotStore = new PilotStore({ stateRoot: taskStateRoot });
-const bgeM3EmbedCliPath = path.join(embeddingsDir, "bge_m3_embed.py");
-const bgeM3WorkerCliPath = path.join(embeddingsDir, "bge_m3_worker.py");
-const defaultBgeM3ModelDir = path.resolve(
-  aiDevRuntimePath("BGE_M3_MODEL_DIR", ["models", "bge-m3"])
-);
-// The ONNX export lives beside the legacy weights, not among them: the two hold
-// different files for the same model (docs/DEFECTS.md, Д-62).
-const defaultBgeM3OnnxDir = path.resolve(
-  aiDevRuntimePath("BGE_M3_ONNX_DIR", ["models", "bge-m3-onnx"])
-);
+// The ONNX export — in the image a host's folder mounted at /models first, as the CLI finds it. 2.x kept
+// the Python backend's torch weights beside it in models/bge-m3; that folder is only looked at to say it can go.
+const defaultBgeM3OnnxDir = defaultOnnxModelDir({ aiDevHome: runtimeStateRoot });
 const denseManifest = readDenseManifest();
 let searchHardNegativeCache = null;
 
@@ -328,20 +296,8 @@ let searchHardNegativeCache = null;
  * surface, the system extension's health checks read them, and writers all over
  * this module call `markSearchIndexDirty` so the next query rebuilds the index.
  * Both are created here because only this module knows where the vault, the
- * cache directory and the Python runtimes are.
+ * cache directory and the model are.
  */
-const embeddingRuntime = createEmbeddingRuntime({
-  embedCliPath: bgeM3EmbedCliPath,
-  workerCliPath: bgeM3WorkerCliPath,
-  defaultModelDir: defaultBgeM3ModelDir,
-  searchIndexDir,
-  searchIndexPath,
-  vaultRoot,
-  pythonCommand: () => embeddingPythonCommand(),
-  pathExists: (target) => pathExists(target),
-  fileStatus: (target) => fileStatus(target),
-  execFile: (command, args, options) => execFile(command, args, options)
-});
 const onnxDenseRuntime = createOnnxDenseRuntime({
   modelDir: defaultBgeM3OnnxDir,
   manifest: denseManifest,
@@ -351,34 +307,27 @@ const onnxDenseRuntime = createOnnxDenseRuntime({
   )
 });
 /**
- * Which dense backend runs. Asked here once so `embedding_status`, the health
- * check and a rebuild cannot each answer differently (docs/DEFECTS.md, Д-62).
+ * Whether dense search runs, asked here once so `embedding_status`, the health
+ * check, a rebuild and every embedding cannot each answer differently.
  */
 const denseRuntime = createDenseRuntime({
   manifest: denseManifest,
   onnxModelDir: defaultBgeM3OnnxDir,
   onnxRuntime: onnxDenseRuntime,
-  pythonRuntime: embeddingRuntime,
-  pythonReady: async () => {
-    const status = await embeddingRuntime.status();
-    return EMBEDDING_MODEL_REQUIREMENTS.every((key) => status.availability?.[key]?.exists);
-  },
+  stampDir: path.join(runtimeStateRoot, "cache", "dense-model"),
+  legacyModelDir: process.env.BGE_M3_MODEL_DIR || path.join(runtimeStateRoot, "models", "bge-m3"),
   env: process.env
 });
 const searchRuntime = createSearchIndexRuntime({
   vaultRoot,
-  searchCliPath,
   searchIndexDir,
   searchIndexPath,
-  defaultModelDir: defaultBgeM3ModelDir,
-  pythonCommand: () => pythonCommand(),
-  embeddingPythonCommand: () => embeddingPythonCommand(),
-  pathExists: (target) => pathExists(target),
-  execFile: (command, args, options) => execFile(command, args, options),
+  defaultModelDir: defaultBgeM3OnnxDir,
   embedQuery: (payload, options) => denseRuntime.embed(payload, options),
   denseIndexBackend: { describe: () => denseRuntime.describe() },
   hardNegativeRules: () => activeSearchHardNegativeRules(),
   readSkillIndex: () => readSkillIndex(),
+  refreshSkillRegistry: () => skillRegistry.ensureFresh(),
   ranking: {
     repairSearchMojibake,
     prioritizeKnowledgeResults,
@@ -406,7 +355,7 @@ function textContent(value) {
     content: [
       {
         type: "text",
-        text: typeof value === "string" ? value : JSON.stringify(value, null, 2)
+        text: typeof value === "string" ? value : JSON.stringify(value)
       }
     ]
   };
@@ -461,10 +410,9 @@ async function readText(relativePath) {
   return fs.readFile(safePath(relativePath), "utf8");
 }
 
-async function readSkillIndex() {
-  const raw = await fs.readFile(skillIndexPath, "utf8");
-  return JSON.parse(raw.replace(/^\uFEFF/, ""));
-}
+// Rebuilt first when its skills changed on disk.
+const skillRegistry = createSkillRegistryReader({ registryPath: skillIndexPath, catalogRoot: skillCatalogRoot, rebuild: () => rebuildIndex(), onError: (error) => console.error(`[ai-dev] skill registry: ${error.message}`) });
+const readSkillIndex = () => skillRegistry.read();
 
 async function pathExists(target) {
   try {
@@ -546,7 +494,7 @@ async function listSkillFilesInSkillsDir(skillsDir) {
   const entries = await fs.readdir(skillsDir, { withFileTypes: true });
   const files = [];
   for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
+    if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
     const skillFile = path.join(skillsDir, entry.name, "SKILL.md");
     if (await pathExists(skillFile)) {
       files.push({ folderName: entry.name, filePath: skillFile });
@@ -599,15 +547,14 @@ async function collectCustomSkills() {
 }
 
 async function collectMembraneSkills() {
-  const membraneRoot = path.join(sourcesRoot, "membrane", "application-skills");
-  const skillsDir = path.join(membraneRoot, "skills");
-  const files = await listSkillFilesInSkillsDir(skillsDir);
+  const { id: membraneSource, root: membraneRoot } = membraneSourceLayout(sourcesRoot);
+  const files = await listSkillFilesInSkillsDir(path.join(membraneRoot, "skills"));
   const commit = await getGitCommit(membraneRoot);
   const repository = await getGitRemote(membraneRoot) || "https://github.com/membranedev/application-skills";
   return Promise.all(files.map(({ folderName, filePath }) => skillItemFromFile({
     filePath,
     folderName,
-    source: "membrane/application-skills",
+    source: membraneSource,
     type: "app-integration",
     categories: [],
     requires: ["network access", "Membrane account", "app connection"],
@@ -659,7 +606,7 @@ async function collectExternalSkills() {
   if (!(await pathExists(externalRoot))) return [];
 
   const repos = (await fs.readdir(externalRoot, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
+    .filter((entry) => entry.isDirectory() && !MEMBRANE_SOURCE_IDS.includes(`external/${entry.name}`))
     .sort((a, b) => a.name.localeCompare(b.name));
   const result = [];
 
@@ -1245,16 +1192,7 @@ async function writeSkillTaxonomyArtifacts(items) {
     await writeText(skillGroupNotePath(group.id), renderSkillGroupNote(group, members, graphGroup));
   }
 
-  for (const group of groups) {
-    for (const subgroup of group.subgroups) {
-      const members = items.filter((item) => item.primary_group === group.id && (item.subgroups || []).includes(subgroup.id));
-      if (!members.length) continue;
-      await writeText(
-        `${skillGroupsRelativeDir}/${group.id}/${subgroup.id}.md`,
-        renderSkillSubgroupNote(group, subgroup, members)
-      );
-    }
-  }
+  await writeSkillSubgroupNotes({ groupsRoot: safePath(skillGroupsRelativeDir), groups, items, render: renderSkillSubgroupNote, writeText: (relative, text) => writeText(`${skillGroupsRelativeDir}/${relative}`, text) });
   const visualGraph = await writeSkillGraphArtifacts(graphPlan, groups);
   return { schema_version: SKILL_TAXONOMY_SCHEMA_VERSION, total: items.length, groups, visual_graph: visualGraph };
 }
@@ -1415,7 +1353,8 @@ async function readSkillOverlayDocument({ create = true } = {}) {
   return document;
 }
 
-async function rebuildSkillTaxonomy({ sync_cards = true } = {}) {
+const rebuildSkillTaxonomy = (args) => withCurrentSkillRegistry(skillRegistry, registryDir, () => rebuildSkillTaxonomyHeld(args)); // its folders are rebuild_index's
+async function rebuildSkillTaxonomyHeld({ sync_cards = true } = {}) {
   const current = await readSkillIndex();
   const overlays = await readSkillOverlayDocument();
   const items = applySkillOverlays(current.map(classifySkill), overlays);
@@ -1426,7 +1365,7 @@ async function rebuildSkillTaxonomy({ sync_cards = true } = {}) {
     external: items.filter((item) => String(item.source || "").startsWith("external/"))
   };
 
-  await writeJson("03-skills-catalog/registries/skills.index.json", items);
+  await keepSkillRegistryDate(skillIndexPath, () => writeJson("03-skills-catalog/registries/skills.index.json", items));
   await writeJson("03-skills-catalog/registries/custom.skills.index.json", bySource.custom);
   await writeJson("03-skills-catalog/registries/design.skills.index.json", bySource.design);
   await writeJson("03-skills-catalog/registries/membrane.skills.index.json", bySource.membrane);
@@ -1560,8 +1499,8 @@ async function buildRuntimeDistributionManifest() {
   });
   const validation = validateRuntimeProfile(profile);
   const flavor = runtimeFlavor({ platform: process.platform, env: process.env });
-  const expectations = distributionExpectations(flavor);
-  const plan = distributionFilePlan(flavor, { serverRoot, vaultRoot });
+  const expectations = distributionExpectations(flavor, { packaged: installLayout.kind === "package" });
+  const plan = distributionFilePlan(flavor, { serverRoot, vaultRoot, packaged: installLayout.kind === "package" });
   const fileStatus = Object.fromEntries(await Promise.all(Object.entries(plan).map(async ([key, entry]) => [
     key,
     entry.applicable === false ? entry : { ...entry, exists: await pathExists(entry.path) }
@@ -1830,31 +1769,6 @@ function truncateOutput(value, max = 6000) {
   return `${text.slice(0, max)}\n...[truncated ${text.length - max} chars]`;
 }
 
-function pythonCommand() {
-  if (process.env.AI_DEV_PYTHON) return process.env.AI_DEV_PYTHON;
-  const dependenciesRoot = path.resolve(path.dirname(process.execPath), "..", "..");
-  const bundled = process.platform === "win32"
-    ? path.join(dependenciesRoot, "python", "python.exe")
-    : path.join(dependenciesRoot, "python", "bin", "python");
-  if (existsSync(bundled)) return bundled;
-  // `python3` off Windows, because `python` is not a command there any more:
-  // macOS dropped it with the Python 2 removal, and a fresh install ends at
-  // `spawn python ENOENT` while building the search index — `npm run setup`
-  // reports a failed step and `npm run doctor` says `fail`, on a machine where
-  // nothing is wrong (docs/DEFECTS.md, Д-72). Windows keeps `python`: its
-  // installer and the Store alias both provide that name and not `python3`.
-  // `scripts/install-local-mcp-clients.mjs` already chose `python3` for the
-  // same fallback; this is the other half of that decision.
-  return process.platform === "win32" ? "python" : "python3";
-}
-
-function embeddingPythonCommand() {
-  if (process.env.BGE_M3_PYTHON) return process.env.BGE_M3_PYTHON;
-  if (process.env.AI_DEV_EMBEDDINGS_PYTHON) return process.env.AI_DEV_EMBEDDINGS_PYTHON;
-  return process.platform === "win32"
-    ? path.join(embeddingsDir, ".venv", "Scripts", "python.exe")
-    : path.join(embeddingsDir, ".venv", "bin", "python");
-}
 
 async function runUiUxProMax(args, { json = false } = {}) {
   if (!(await pathExists(uiUxProMaxSearchPath))) {
@@ -1865,11 +1779,9 @@ async function runUiUxProMax(args, { json = false } = {}) {
     allowAbsolute: false,
     allowRoot: false
   });
-  const output = await execFile(
-    pythonCommand(),
-    [scriptPath, ...args],
-    { cwd: uiUxProMaxRoot, timeoutMs: 120000 }
-  );
+  const python = resolvePythonCommand();
+  const output = await execFile(python, [scriptPath, ...args], { cwd: uiUxProMaxRoot, timeoutMs: 120000 })
+    .catch((failure) => { throw optionalPythonFailure(failure, { tool: UI_UX_PYTHON_TOOLS, interpreter: python }); });
   if (!json) return output.stdout.trim();
   try {
     return JSON.parse(stripBom(output.stdout));
@@ -1955,8 +1867,7 @@ async function frontendQaEnvironmentStatus() {
   //
   // Which of the two ERR_MODULE_NOT_FOUND shapes it is decides what the health
   // check says, so the reason is read out of the whole output rather than taken
-  // from its first line, which is the frame Node threw from and never the cause
-  // (docs/DEFECTS.md, Д-56).
+  // from its first line, which is the frame Node threw from and never the cause.
   let output;
   try {
     output = await runFrontendQaStatus();
@@ -2160,7 +2071,7 @@ async function resolveTaskProjectRoot(projectPath) {
 function assertNotProtectedProjectRoot(projectRoot, {
   homeDirectory = os.homedir(),
   runtimeHome = userHome,
-  runtimeStateDirectory = path.join(userHome, ".ai-dev"),
+  runtimeStateDirectory = runtimeStateRoot,
   stateDirectory = taskStateRoot,
   knowledgeVault = vaultRoot
 } = {}) {
@@ -2429,7 +2340,7 @@ ${autoCommandsMarkdown()}
 async function buildProjectMapMd(detected) {
   const tree = await projectTree(detected.project_path);
   // The graph is re-read only when the source files moved; the fingerprint
-  // costs a directory walk, the parse costs the whole tree (PLAN.md 3.8).
+  // costs a directory walk, the parse costs the whole tree.
   const importGraph = await loadImportGraph(detected.project_path).catch(() => null);
   return `# Project Map
 
@@ -3130,7 +3041,7 @@ async function updateFrontendProductBrief({
   };
   const saved = await writeFrontendProductState(projectRoot, next);
   const brief = buildFrontendProductFiles(saved).get(FRONTEND_PRODUCT_PATHS.designBrief);
-  await writeProjectFile(projectRoot, FRONTEND_PRODUCT_PATHS.designBrief, brief, true);
+  await writeProjectFile(projectRoot, FRONTEND_PRODUCT_PATHS.designBrief, true);
   return {
     action: "frontend_product_brief_updated",
     project_path: projectRoot,
@@ -3414,7 +3325,7 @@ async function prepareProject({
 
   let search_index = null;
   if (rebuild_search) {
-    search_index = await searchRuntime.rebuild({ include_external_project_files: true });
+    search_index = await searchRuntime.rebuildIfSupported({ include_external_project_files: true });
   }
 
   return {
@@ -3979,7 +3890,7 @@ async function refreshProjectMemory({
 
   let search_index = null;
   if (rebuild_search) {
-    search_index = await searchRuntime.rebuild({ include_external_project_files: true });
+    search_index = await searchRuntime.rebuildIfSupported({ include_external_project_files: true });
   }
 
   return {
@@ -4430,7 +4341,7 @@ async function projectPilotStatus({ pilot_id = "", project_path = "" } = {}) {
 // Extension tools live in src/extensions/* and receive shared runtime services
 // through this host object (see src/tool-extensions.mjs).
 const extensions = createExtensionTools({
-  vaultRoot, taskStateRoot, taskStore, skillOutcomeStore, pilotStore, usageLedger, sessionStore,
+  vaultRoot, installLayout, taskStateRoot, taskStore, skillOutcomeStore, pilotStore, usageLedger, sessionStore,
   instinctStore, callTool,
   serverRoot: path.resolve(serverDir, ".."),
   resolveProjectIdentity, detectProject, captureProjectState, readProjectTextIfExists,
@@ -4454,8 +4365,8 @@ const extensions = createExtensionTools({
     systemDashboard: systemDashboardRelativePath,
     systemDashboardState: systemDashboardStateRelativePath
   },
-  searchIndexPath, skillRoutingEvalCasesPath,
-  frontendQaRunnerPath, frontendQaPackagePath, frontendQaArtifactsRoot,
+  searchIndexPath, skillRoutingEvalCasesPath, frontendQaRunnerPath, frontendQaPackagePath, frontendQaArtifactsRoot,
+  handler: (name) => extensions.handlers.get(name),
   // `tools` is assembled from the extension definitions below, so it is read lazily.
   toolCount: () => tools.length,
   safePath, fileStatus, pathExists, readJsonIfExists, writeJson, writeText, listMarkdownFiles,
@@ -4466,18 +4377,12 @@ const extensions = createExtensionTools({
   // drives; the named wrappers below are what the system extension's health
   // checks ask for, and `runSearchEval` is the search extension's own tool
   // reached the same way `prepare_pull_request` is.
-  search: searchRuntime, embeddings: embeddingRuntime, dense: denseRuntime,
+  search: searchRuntime, dense: denseRuntime,
   searchIndexStatus: (args) => searchRuntime.status(args),
   rebuildSearchIndex: (args) => searchRuntime.rebuild(args),
   searchIndex: (args) => searchRuntime.search(args),
   hybridSearchIndex: (args) => searchRuntime.hybridSearch(args),
-  // The health check grades this payload, so it carries the backend choice too:
-  // with ONNX selected, a missing Python stack is not what "dense search is not
-  // set up" means, and the advice differs (docs/DEFECTS.md, Д-62).
-  embeddingStatus: async (args) => ({
-    ...await embeddingRuntime.status(args),
-    dense_backend: await denseRuntime.describe()
-  }),
+  embeddingStatus: (args) => denseRuntime.status(args),
   runSearchEval: (args) => extensions.handlers.get("run_search_eval")(args),
   // The sibling tools the lifecycle extension drives. Reached through the
   // registry rather than `callTool`, so a composed run records one ledger entry
@@ -4493,7 +4398,7 @@ const extensions = createExtensionTools({
   skillCatalogRoot, skillSourcesRoot: sourcesRoot, skillRegistryDir: registryDir,
   collectCustomSkills, collectDesignSkills, collectMembraneSkills, collectExternalSkills,
   writeSkillTaxonomyArtifacts, syncSkillCards, projectRecommendationContext,
-  embedTexts: (args) => embeddingRuntime.embedTexts(args),
+  embedTexts: (args) => denseRuntime.embed(args),
   // Frontend product state and project-card writers. The state readers stay here
   // because `compile_project_context`, `verify_task` and the product tools that
   // have not been extracted yet all read them; the frontend extensions reach
@@ -4530,11 +4435,11 @@ const tools = [...buildToolDefinitions({
 // Capability profiles narrow what `tools/list` advertises — never what
 // `callTool` accepts. A client that already knows a tool's name keeps working
 // after the surface is narrowed; the saving is the schema text a model would
-// otherwise carry for 133 tools it is not going to use. Resolved once, because
+// otherwise carry for tools it is not going to use. Resolved once, because
 // the setting cannot change without restarting the server.
 const activeProfiles = profilesFromEnvironment();
 
-const profiledTools = activeProfiles.all ? tools : filterToolsByProfiles(tools, activeProfiles.ids);
+const profiledTools = filterToolsByProfiles(tools, activeProfiles.ids);
 
 /**
  * The tool list as the active profiles leave it.
@@ -4543,25 +4448,6 @@ const profiledTools = activeProfiles.all ? tools : filterToolsByProfiles(tools, 
  */
 function visibleTools() {
   return profiledTools;
-}
-
-async function searchKnowledge({ query, limit = 10 }) {
-  if (!query || typeof query !== "string") throw new Error("query is required.");
-  const files = await listMarkdownFiles(vaultRoot);
-  const matches = [];
-  for (const file of files) {
-    if (file.includes("03-skills-catalog/sources/membrane/application-skills/skills/")) continue;
-    const text = await readText(file);
-    const score = scoreText(query, [file, text.slice(0, 8000)]);
-    if (score > 0) {
-      matches.push({
-        path: file,
-        score,
-        preview: text.replace(/\s+/g, " ").slice(0, 240)
-      });
-    }
-  }
-  return matches.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)).slice(0, limit);
 }
 
 async function projectRecommendationContext({ project, project_path } = {}) {
@@ -4692,14 +4578,15 @@ async function readSkill({ name, source }) {
   return readText(path.join("03-skills-catalog", item.path));
 }
 
-async function dispatchTool(name, args) {
-  if (name === "search_knowledge") return textContent(await searchKnowledge(args));
+async function dispatchTool(name, args, context = {}) {
+  // Over the search index, not every file on disk.
+  if (name === "search_knowledge") return textContent(await searchRuntime.searchKnowledge(args));
   if (name === "read_knowledge") return textContent(await readText(args.path));
-  if (name === "search_skills") return textContent(await searchSkills(args));
+  if (name === "search_skills") return textContent(await searchSkills(args).then((found) => (wantsDetails(args) ? found : found.map(skillRow))));
   if (name === "read_skill") return textContent(await readSkill(args));
   if (name === "query_ui_ux_knowledge") return textContent(await queryUiUxKnowledge(args));
-  if (name === "list_skill_groups") return textContent(await listSkillGroups(args));
-  if (name === "browse_skill_group") return textContent(await browseSkillGroup(args));
+  if (name === "list_skill_groups") return textContent(await listSkillGroups(args).then((listing) => (wantsDetails(args) ? listing : skillGroupsView(listing))));
+  if (name === "browse_skill_group") return textContent(await browseSkillGroup(args).then((found) => (wantsDetails(args) ? found : { ...found, results: found.results.map(skillRow) })));
   if (name === "rebuild_skill_taxonomy") return textContent(await rebuildSkillTaxonomy(args));
   if (name === "sync_skill_overlays") return textContent(await syncSkillOverlays(args));
   if (name === "list_skill_overlays") return textContent(await listSkillOverlays(args));
@@ -4756,7 +4643,7 @@ async function dispatchTool(name, args) {
   if (name === "write_knowledge_note") return textContent(await writeKnowledgeNote(args));
   if (name === "append_knowledge_note") return textContent(await appendKnowledgeNote(args));
   const extension = extensions.handlers.get(name);
-  if (extension) return textContent(await extension(args));
+  if (extension) return textContent(await extension(args, context));
   throw new Error(`Unknown tool: ${name}`);
 }
 
@@ -4779,21 +4666,21 @@ async function dispatchTool(name, args) {
  *
  * @param {string} name - Tool name.
  * @param {object} args - Tool arguments.
- * @param {{ transportMs?: number }} [context] - Transport overhead to add to the recorded duration.
+ * @param {{ transportMs?: number, signal?: AbortSignal, onProgress?: (event: object) => void }} [context] - Transport overhead to add to the recorded duration; the request's cancellation and a progress listener, for the tools that take them.
  * @returns {Promise<{ content: Array<{ type: string, text: string }> }>}
  */
-async function callTool(name, args, { transportMs = 0 } = {}) {
+async function callTool(name, args, { transportMs = 0, ...context } = {}) {
   const startedAt = Date.now();
   const overhead = Math.max(0, Number(transportMs) || 0);
   const hints = usageHintsFromArgs(args);
-  const record = (ok, error = "") => {
+  const record = (ok, error = "", answer = error) => {
     usageLedger
-      .recordToolCall({ tool: name, ok, durationMs: Date.now() - startedAt + overhead, error, ...hints })
+      .recordToolCall({ tool: name, ok, durationMs: Date.now() - startedAt + overhead, error, ...hints, ...answerMeasures(args, answer) })
       .catch(() => undefined);
   };
   try {
-    const result = await dispatchTool(name, args);
-    record(true);
+    const result = await dispatchTool(name, args, context);
+    record(true, "", result?.content?.map((item) => item.text ?? "").join("") ?? "");
     return result;
   } catch (error) {
     record(false, error instanceof Error ? error.message : String(error));
@@ -4895,14 +4782,15 @@ export {
   activeProfiles,
   assertNotProtectedProjectRoot,
   callTool,
-  // Where the runtime keeps the two things a first run builds. Exported so
+  // Where the runtime keeps what a first run builds. Exported so
   // `scripts/first-run.mjs` asks the runtime instead of re-deriving the
   // fallback chain — the mismatch that made a checkout look empty.
-  embeddingsDir,
   extensionReadOnlyTools,
   resolveTaskProjectRoot,
   safeProjectRoot,
+  installLayout,
   searchIndexPath,
+  seedSync,
   shutdownBgeWorkers,
   skillRoutingEvalCasesPath,
   tools,

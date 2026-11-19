@@ -24,7 +24,7 @@ const verified = await verifyDenseModelDirectory({ manifest, dir: modelDir });
 const skip = verified.ready
   ? false
   : `the pinned export is not in ${modelDir} (${verified.missing.length} file(s) missing, `
-    + `${verified.mismatched.length} mismatched). Run \`npm run setup -- --dense\`.`;
+    + `${verified.mismatched.length} mismatched). Run \`npm run setup -- --model\`.`;
 
 test("the pinned export embeds text into normalized vectors of the promised width", { skip }, async (t) => {
   const runtime = createOnnxDenseRuntime({

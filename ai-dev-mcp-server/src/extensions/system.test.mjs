@@ -8,6 +8,7 @@ import { createExtensionTools } from "../tool-extensions.mjs";
 import { SKILL_GROUPS } from "../skill-taxonomy.mjs";
 import { SKILL_SCHEMA_VERSION } from "../skill-quality.mjs";
 import { createSkillOverlayDocument } from "../core/skill-overlays.mjs";
+import { resolvePythonCommand } from "../core/python-command.mjs";
 import { REQUIRED_SEARCH_PRESETS, REQUIRED_SYSTEM_NOTES } from "../core/system-health.mjs";
 import { createSystemTools } from "./system.mjs";
 
@@ -86,14 +87,17 @@ async function createFixture(t) {
   const calls = [];
   const host = {
     // The security_scanners check asks the host which binaries exist, so the
-    // fixture answers for a machine with all six rather than for whichever
+    // fixture answers for a machine with all of them rather than for whichever
     // machine runs the suite. It also asks a subcommand scanner whether its
-    // plugin is really there (docs/DEFECTS.md, Д-64), and that goes through the
+    // plugin is really there, and that goes through the
     // host too — otherwise this unit test spawns a real `cargo` and its answer
     // depends on the machine running the suite.
     locateExecutable: async (executable) => `/usr/bin/${executable}`,
     runProcess: async (options) => {
       calls.push({ tool: "runProcess", options });
+      if (options.args?.[0] === "--version" && /python/.test(options.executable)) {
+        return { ok: true, exitCode: 0, stdout: "Python 3.12.1\n", stderr: "", timedOut: false };
+      }
       return { ok: true, exitCode: 0, stdout: "cargo-audit-audit 0.21.0", stderr: "", timedOut: false };
     },
     vaultRoot,
@@ -154,11 +158,13 @@ async function createFixture(t) {
       summary: { passed: 2, failed: 0, skipped: 0 }, cases: []
     }),
     embeddingStatus: async () => ({
-      backend: "bge-m3-local", dense_model: "BAAI/bge-m3", dense_dimensions: 1024, configured_device: "cpu",
-      paths: {}, workers: { count: 1, states: [] },
-      availability: Object.fromEntries([
-        "search_index", "embeddings_python", "embed_helper", "worker_helper", "model_dir", "model_file", "modules_file"
-      ].map((key) => [key, { exists: true }]))
+      backend: "onnx", dense_model: "BAAI/bge-m3", dense_dimensions: 1024, model_dir: "/models/bge-m3-onnx",
+      installed: true, available: true, partial: [], worker: { started: false },
+      dense_backend: {
+        backend: "onnx", available: true, reason: "The verified ONNX export is on disk; no Python is involved.",
+        onnx: { ready: true, dir: "/models/bge-m3-onnx", export: "Xenova/bge-m3", revision: "4de13258303883538bd53b696b452bf8099f0858", dtype: "int8", missing: [], mismatched: [] },
+        legacy: { notes: [], command: "" }
+      }
     }),
     frontendQaEnvironmentStatus: async () => ({
       playwright_available: true, chromium_available: true, browser_launch_ok: true, playwright_source: "vault"
@@ -187,8 +193,8 @@ test("health check runs every check through the host", async (t) => {
   const result = await registry.handlers.get("system_health_check")({});
 
   assert.deepEqual(result.checks.map((check) => check.name), [
-    "vault_root", "required_notes", "search_index_file", "search_index_freshness", "frontend_qa_runner",
-    "frontend_qa_environment", "security_scanners", "embedding_backend", "skill_registry", "skill_taxonomy",
+    "vault_root", "runtime_home", "required_notes", "search_index_file", "search_index_freshness", "frontend_qa_runner",
+    "frontend_qa_environment", "security_scanners", "ui_ux_knowledge", "embedding_backend", "skill_registry", "skill_taxonomy",
     "skill_visual_graph", "skill_quality", "skill_routing_benchmark", "skill_outcomes", "skill_cards",
     "project_registry", "auto_commands", "search_presets", "search_smoke", "hybrid_smoke_no_dense",
     "dense_smoke", "search_eval"
@@ -196,14 +202,17 @@ test("health check runs every check through the host", async (t) => {
   const failing = result.checks.filter((check) => check.status !== "ok" && check.status !== "skipped");
   assert.deepEqual(failing, [], `unexpected non-ok checks: ${JSON.stringify(failing)}`);
   assert.equal(result.status, "ok");
-  assert.deepEqual(result.summary, { ok: 20, warn: 0, fail: 0, skipped: 2 });
+  assert.deepEqual(result.summary, { ok: 22, warn: 0, fail: 0, skipped: 2 });
+  const uiUx = result.checks.find((check) => check.name === "ui_ux_knowledge");
+  assert.deepEqual([uiUx.status, uiUx.details.version, uiUx.details.command], ["ok", "3.12.1", resolvePythonCommand()]);
+  assert.match(uiUx.summary, /^query_ui_ux_knowledge and generate_ui_ux_design_system run their helper with .*\(Python 3\.12\.1\)/);
   const scanners = result.checks.find((check) => check.name === "security_scanners");
-  assert.match(scanners.summary, /6 of 6 security scanners installed/);
+  assert.match(scanners.summary, /10 of 10 security scanners installed/);
   assert.equal(result.recommendations.length, 1);
   assert.match(result.recommendations[0], /include_dense_smoke=true/);
 });
 
-// Д-55: nothing told a user that this machine cannot run a single scanner, so
+// Nothing told a user that this machine cannot run a single scanner, so
 // `run_security_scan` came back empty and nobody knew why until they read it.
 test("a machine with no security scanner installed is warned about, not failed", async (t) => {
   const { calls, host, registry } = await createFixture(t);
@@ -213,7 +222,7 @@ test("a machine with no security scanner installed is warned about, not failed",
   const check = result.checks.find((item) => item.name === "security_scanners");
   assert.equal(check.status, "warn");
   assert.equal(check.critical, false, "a gap in tooling is not a broken system");
-  assert.match(check.summary, /None of the 6 security scanners is installed/);
+  assert.match(check.summary, /None of the 10 security scanners is installed/);
   assert.deepEqual(check.details.installed, []);
   // Nothing on the PATH means nothing to probe either.
   assert.equal(calls.some((call) => call?.tool === "runProcess"), false);
@@ -253,6 +262,29 @@ test("health check honours the include flags and the smoke limit", async (t) => 
   assert.equal(byName.search_eval, "ok");
   assert.deepEqual(limits, [5]);
   assert.equal(result.recommendations.length, 0);
+});
+
+test("without the model the dense smoke is not advised, and asked for it fails with the reason", async (t) => {
+  const { host, registry } = await createFixture(t);
+  const reason = "Dense search is not installed: the model is not on this machine. Run `npm run setup -- --model` to download it.";
+  host.embeddingStatus = async () => ({
+    backend: "onnx", installed: false, available: false, reason, partial: [], worker: { started: false },
+    dense_backend: { backend: "onnx", available: false, reason, onnx: { ready: false, dir: "/m", missing: ["config.json"], mismatched: [] }, legacy: { notes: [], command: "" } }
+  });
+  let denseQueries = 0;
+  host.hybridSearchIndex = async (options) => {
+    if (options.dense_weight) denseQueries += 1;
+    return [{ title: "Two", path: "two.md", scope: options.scope, score: 4, dense_score: 0 }];
+  };
+  const quiet = await registry.handlers.get("system_health_check")({});
+  assert.equal(quiet.checks.find((check) => check.name === "embedding_backend").status, "skipped");
+  assert.equal(quiet.status, "ok", "an install without the optional model is healthy");
+  assert.equal(quiet.recommendations.some((item) => /include_dense_smoke/.test(item)), false);
+  const asked = await registry.handlers.get("system_health_check")({ include_dense_smoke: true });
+  const smoke = asked.checks.find((check) => check.name === "dense_smoke");
+  assert.equal(smoke.status, "fail");
+  assert.equal(smoke.summary, `Dense search cannot run here, so the smoke test had nothing to test. ${reason}`);
+  assert.equal(denseQueries, 0, "no dense query is sent to a model that is not there");
 });
 
 test("a check that throws is recorded as a failure instead of aborting the run", async (t) => {
@@ -324,9 +356,16 @@ test("dashboard rebuild writes the note and snapshot, and status compares finger
   assert.equal(rebuilt.search_rebuilt, false);
   assert.equal(rebuilt.search, null);
   assert.equal(rebuilt.source_fingerprint, rebuilt.snapshot.source_fingerprint);
-  assert.deepEqual(calls, [["markSearchIndexDirty", "generated system dashboard updated"]]);
+  assert.deepEqual(calls.filter(Array.isArray), [["markSearchIndexDirty", "generated system dashboard updated"]]);
   const markdown = await fs.readFile(path.join(vaultRoot, VAULT_PATHS.systemDashboard), "utf8");
   assert.match(markdown, /115 tools/);
+  // The runtime rows are the health checks as they ran, without the
+  // ones the dashboard does not run.
+  const checked = rebuilt.snapshot.checks.map((check) => check.name);
+  assert.ok(checked.includes("vault_root") && checked.includes("skill_registry"), checked.join(", "));
+  assert.ok(!checked.includes("dense_smoke") && !checked.includes("search_eval"));
+  assert.match(markdown, /\| Vault root \| Ready \| Vault root exists\. \|/);
+  assert.doesNotMatch(markdown, /Search Ranking v2|Reference Factory v2/);
   const saved = JSON.parse(await fs.readFile(path.join(vaultRoot, VAULT_PATHS.systemDashboardState), "utf8"));
   assert.equal(saved.source_fingerprint, rebuilt.source_fingerprint);
 
@@ -341,12 +380,28 @@ test("dashboard rebuild writes the note and snapshot, and status compares finger
   assert.equal(drifted.next_step, "Run rebuild_system_dashboard.");
 });
 
+test("before setup the dashboard says what to run, not which file is missing", async (t) => {
+  const { host, registry } = await createFixture(t);
+  host.readSkillIndex = async () => {
+    const error = new Error("ENOENT: no such file or directory, open '/vault/03-skills-catalog/registries/skills.index.json'");
+    Object.assign(error, { code: "ENOENT", path: "/vault/03-skills-catalog/registries/skills.index.json" });
+    throw error;
+  };
+  for (const tool of ["rebuild_system_dashboard", "system_dashboard_status"]) {
+    await assert.rejects(registry.handlers.get(tool)({}), /^Error: The skill registry is not built yet \(\/vault\/03-skills-catalog\/registries\/skills\.index\.json\): run `ai-dev setup` first\./, tool);
+  }
+  host.readSkillIndex = async () => {
+    throw Object.assign(new Error("EACCES: permission denied"), { code: "EACCES" });
+  };
+  await assert.rejects(registry.handlers.get("rebuild_system_dashboard")({}), /EACCES/, "another failure is told as it is");
+});
+
 test("rebuild_system_dashboard can chain a search index rebuild", async (t) => {
   const { calls, registry } = await createFixture(t);
   const result = await registry.handlers.get("rebuild_system_dashboard")({ rebuild_search: true });
   assert.equal(result.search_rebuilt, true);
   assert.deepEqual(result.search, { rebuilt: true });
-  assert.deepEqual(calls[1], ["rebuildSearchIndex", {
+  assert.deepEqual(calls.filter(Array.isArray)[1], ["rebuildSearchIndex", {
     include_external_project_files: true,
     dense_embeddings: false,
     preserve_dense: true

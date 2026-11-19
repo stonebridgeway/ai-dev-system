@@ -38,8 +38,7 @@ function checkSucceeded(item) {
   // Security scanners: a `block` is a critical or high dependency or secret
   // finding. A scanner that was missing, inapplicable or offline is `skipped`,
   // which cannot block — a run where none of them could run is `unchecked`,
-  // which does not block either but never reads as "checked and clean"
-  // (docs/DEFECTS.md, Д-55).
+  // which does not block either but never reads as "checked and clean".
   if (item.type === "security_scan") return item.result?.status !== "block";
   // A coverage floor only runs when a task asked for one, and a floor nobody
   // could measure is not a floor that was met.
@@ -118,13 +117,12 @@ export function firstMeaningfulLine(output, limit = 200) {
  *
  * Without this a failed verification reads `quality_gate: failed` and nothing
  * more, and the cause stays in a command's stdout that no reader of the verdict
- * ever sees (docs/DEFECTS.md, Д-54).
+ * ever sees.
  *
  * A third thing rides along when the gate found one: the Node the project asks
  * for against the Node its commands ran on. That is a warning rather than a
  * cause — the gate ran everything it was asked to — but it is the difference
- * between "your test fails" and "your test fails on a Node you never chose"
- * (docs/DEFECTS.md, Д-67).
+ * between "your test fails" and "your test fails on a Node you never chose".
  *
  * @param {{ type: string, result: object }} item
  * @returns {{ output?: string, hint?: string, engines_mismatch?: object } | null}
@@ -163,7 +161,7 @@ export function verificationCheckSummary(checks) {
     if (!checkSucceeded(item)) return detail ? { ...entry, detail } : entry;
     // A check that came back good says nothing further — except the one thing
     // that is a warning rather than a cause, and would otherwise be visible
-    // only when something else had already failed (docs/DEFECTS.md, Д-67).
+    // only when something else had already failed.
     return detail?.engines_mismatch
       ? { ...entry, detail: { engines_mismatch: detail.engines_mismatch } }
       : entry;

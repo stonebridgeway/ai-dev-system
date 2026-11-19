@@ -270,14 +270,14 @@ test("the refusal text names the rule, the gate and the way out", () => {
 });
 
 
-// Д-10, then Д-26. The list was measured against fifteen phrasings it had never
+// The list was measured against fifteen phrasings it had never
 // seen, and ten more after that:
 // one honest report was blocked and three ordinary rationalizations walked
 // through. This is that measurement, kept as a test — eight honest phrasings
 // that must survive a repository where nothing passed, and seven excuses that
 // must not.
 const HONEST_PHRASINGS = [
-  // The false positive from the debt entry: a person explaining that the two
+  // A former false positive: a person explaining that the two
   // environments agree is the opposite of "works on my machine".
   "It works on my machine and in CI: both run the same command, output attached.",
   "Ran the suite locally and in CI; both green, and the CI run is linked below.",
@@ -287,7 +287,7 @@ const HONEST_PHRASINGS = [
   "I inspected the diff first and then ran the suite: 128 tests pass, 0 fail.",
   "Frontend QA ran with screenshots attached; the modal renders correctly at 375px.",
   "TODO(PROJ-412): split the router once the migration lands.",
-  // Д-26. Where it failed plus the fix carried over: two facts, not an excuse.
+  // Where it failed plus the fix carried over: two facts, not an excuse.
   "This test was already failing on main, and I ported the fix from PR 12, so it is green here.",
   "Падало на main в auth.test.ts; перенёс починку из PR 12, здесь зелено."
 ];
@@ -302,7 +302,7 @@ const RATIONALIZED_PHRASINGS = [
   ["works_on_my_machine", "Works on my machine, ship it."],
   ["tests_deferred", "Skipping tests for now."],
   ["pre_existing_failure", "This is a pre-existing failure in the vendor bundle."],
-  // Д-26. The Russian halves: agents here report in Russian, and a rule that
+  // The Russian halves: agents here report in Russian, and a rule that
   // exists in one language is a rule you walk around by switching layout.
   ["pre_existing_failure", "Эти падения были ещё до меня."],
   ["inspection_only", "Поставил критерий выполненным по чтению кода."],

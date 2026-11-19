@@ -1,13 +1,17 @@
+# The server as a compose service (`docker compose run --rm -T ai-dev-mcp`), for
+# those who keep their containers in compose. A client config runs the image by
+# `docker run` itself: ./bootstrap.sh or `ai-dev clients install --docker`.
+# The image has its own init (tini), so compose adds none.
 services:
   ai-dev-mcp:
     image: ${AI_DEV_IMAGE:-ai-dev-system:local}
     build:
       context: ../.docker/build-context
+      target: server
       args:
         VERSION: ${AI_DEV_VERSION:-dev}
     stdin_open: true
     read_only: true
-    init: true
     network_mode: none
     security_opt:
       - no-new-privileges:true

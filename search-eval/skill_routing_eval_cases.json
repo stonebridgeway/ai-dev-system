@@ -223,6 +223,23 @@
       "id": "en-reactivity-not-frontend",
       "task": "Improve reactivity of the vitest suite",
       "must_not": ["beta-frontend-maintainer", "frontend-quality-gate"]
+    },
+    {
+      "id": "ru-vulnerability-remediation",
+      "task": "Просканируй проект на уязвимости в зависимостях и залатай их",
+      "expected_all": ["ar-security-review", "secrets-dependencies-auditor"],
+      "must_not": ["data-pipeline-engineer"]
+    },
+    {
+      "id": "en-malware-response",
+      "task": "A package in our lockfile was flagged as malware: remove it and fix the vulnerable dependencies",
+      "expected_all": ["ar-security-review"],
+      "must_not": ["data-pipeline-engineer"]
+    },
+    {
+      "id": "ru-security-review-skill",
+      "task": "Запусти ar-security-review после изменений на бэке и фронте",
+      "expected_all": ["ar-security-review"]
     }
   ]
 }

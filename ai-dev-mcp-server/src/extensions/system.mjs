@@ -8,6 +8,7 @@ import {
   renderSystemDashboard
 } from "../core/system-dashboard.mjs";
 import { locateExecutable } from "../core/process-runner.mjs";
+import { probePython, resolvePythonCommand } from "../core/python-command.mjs";
 import { resolveRuntimeNote } from "../core/runtime-assets.mjs";
 import {
   evaluateSecurityScanners,
@@ -21,9 +22,11 @@ import {
   evaluateDenseSmoke,
   evaluateFrontendQaEnvironment,
   evaluateFrontendQaRunner,
+  evaluateUiUxKnowledge,
   evaluateHybridSmoke,
   evaluateProjectRegistry,
   evaluateRequiredNotes,
+  evaluateRuntimeHome,
   evaluateSearchEval,
   evaluateSearchIndexFile,
   evaluateSearchIndexFreshness,
@@ -39,6 +42,8 @@ import {
   evaluateVaultRoot
 } from "../core/system-health.mjs";
 import { evaluateEmbeddingBackend } from "../core/embedding-health.mjs";
+import { describeRuntimeHome } from "../core/runtime-home-migration.mjs";
+import { describeSeedSync, evaluateVaultSeed } from "../core/seed-sync.mjs";
 
 const DENSE_SMOKE_QUERY = "создай качественный интерфейс без ИИ слопа по утвержденным референсам";
 
@@ -50,6 +55,22 @@ function serverSourceDir(host) {
   return path.join(host.serverRoot, "src");
 }
 
+/** The checks the dashboard leaves out: they take from seconds to minutes, and `system_health_check` runs them on request. */
+const DASHBOARD_SKIPS = new Set(["dense_smoke", "search_eval"]);
+
+/**
+ * The skill registry, or an error that says what to run: before `setup` there
+ * is none, and the dashboard summarizes it.
+ */
+async function registryForDashboard(host) {
+  try {
+    return await host.readSkillIndex();
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    throw new Error(`The skill registry is not built yet (${error.path ?? "skills.index.json"}): run \`ai-dev setup\` first. It builds the registry, its quality report and the search index this dashboard summarizes.`);
+  }
+}
+
 /**
  * Read every live source the System Dashboard summarizes and assemble the
  * machine snapshot. All I/O happens here; the shaping is pure
@@ -57,8 +78,8 @@ function serverSourceDir(host) {
  */
 async function buildSnapshot(host) {
   const paths = host.vaultPaths;
+  const skills = await registryForDashboard(host);
   const [
-    skills,
     cards,
     qualityReport,
     projects,
@@ -67,9 +88,9 @@ async function buildSnapshot(host) {
     pilots,
     overlays,
     searchCases,
-    runtimeSource
+    runtimeSource,
+    health
   ] = await Promise.all([
-    host.readSkillIndex(),
     host.readJsonIfExists(host.safePath(paths.skillCardsIndex)),
     host.readJsonIfExists(host.safePath(paths.skillQualityIndex)),
     host.projectSummaries({ dedupe: true }),
@@ -78,7 +99,8 @@ async function buildSnapshot(host) {
     host.pilotStore.status(),
     host.readSkillOverlayDocument(),
     host.readSearchEvalCases(),
-    fs.readFile(path.join(serverSourceDir(host), "mcp-stdio.mjs"), "utf8")
+    fs.readFile(path.join(serverSourceDir(host), "mcp-stdio.mjs"), "utf8"),
+    systemHealthCheck(host, { include_dense_smoke: false, include_search_eval: false })
   ]);
   return buildSystemSnapshot({
     toolCount: host.toolCount(),
@@ -91,7 +113,8 @@ async function buildSnapshot(host) {
     pilots,
     overlaySummary: summarizeSkillOverlays(overlays, skills),
     searchEvalCases: searchCases.cases.length,
-    runtimeLines: runtimeSource.split(/\r?\n/).length
+    runtimeLines: runtimeSource.split(/\r?\n/).length,
+    checks: health.checks.filter((check) => !DASHBOARD_SKIPS.has(check.name))
   });
 }
 
@@ -165,6 +188,16 @@ async function systemHealthCheck(host, {
     evaluateVaultRoot(await host.fileStatus(host.vaultRoot))
   ));
 
+  await report.runCheck("runtime_home", false, async () => evaluateRuntimeHome(await describeRuntimeHome()));
+
+  // A package's own folder is read-only; its content is the user's vault, kept
+  // current with the seed it ships — and an update can leave files to merge.
+  if (host.installLayout?.seedRoot) {
+    await report.runCheck("vault_seed", false, async () => (
+      evaluateVaultSeed({ root: host.vaultRoot, ...await describeSeedSync(host.vaultRoot) })
+    ));
+  }
+
   await report.runCheck("required_notes", false, async () => {
     const files = [];
     for (const relative of REQUIRED_SYSTEM_NOTES) {
@@ -208,17 +241,24 @@ async function systemHealthCheck(host, {
   // Not critical: no scanner installed is a gap, not a broken system. It is
   // checked here because `run_security_scan` is only run on demand, so a
   // machine that can check nothing stays silent until a task asks for a scan
-  // and gets `unchecked` back (docs/DEFECTS.md, Д-55).
+  // and gets `unchecked` back.
   await report.runCheck("security_scanners", false, async () => {
     // Through the host when it offers a locator or a runner, so a fixture can
     // answer for a machine other than the one running the test. A scanner that
     // is a subcommand of another tool is asked rather than assumed: `cargo` on
-    // the PATH is not `cargo audit` (docs/DEFECTS.md, Д-64).
+    // the PATH is not `cargo audit`.
     return evaluateSecurityScanners(await securityScannerAvailability({
       locate: host.locateExecutable ?? locateExecutable,
       ...(host.runProcess ? { runner: host.runProcess } : {})
     }));
   });
+
+  // Optional, like the scanners: the UI UX Pro Max dataset is read through its
+  // own Python script, by the only two tools that still need an interpreter.
+  await report.runCheck("ui_ux_knowledge", false, async () => evaluateUiUxKnowledge(await probePython(resolvePythonCommand(), {
+    locate: host.locateExecutable ?? locateExecutable,
+    ...(host.runProcess ? { runner: host.runProcess } : {})
+  })));
 
   if (include_embedding_status) {
     await report.runCheck("embedding_backend", true, async () => (
@@ -344,15 +384,21 @@ async function systemHealthCheck(host, {
   }
 
   if (include_dense_smoke) {
-    await report.runCheck("dense_smoke", true, async () => evaluateDenseSmoke(await host.hybridSearchIndex({
-      query: DENSE_SMOKE_QUERY,
-      scope: "knowledge",
-      limit: safeSmokeLimit,
-      keyword_weight: 0.25,
-      semantic_weight: 0.25,
-      dense_weight: 0.50,
-      ensure_fresh: false
-    })));
+    await report.runCheck("dense_smoke", true, async () => {
+      // Asked for where the model cannot run, it still fails — the test was
+      // asked for — but says why.
+      const dense = await host.embeddingStatus({});
+      if (!dense.available) return evaluateDenseSmoke([], { unavailable: dense.reason });
+      return evaluateDenseSmoke(await host.hybridSearchIndex({
+        query: DENSE_SMOKE_QUERY,
+        scope: "knowledge",
+        limit: safeSmokeLimit,
+        keyword_weight: 0.25,
+        semantic_weight: 0.25,
+        dense_weight: 0.50,
+        ensure_fresh: false
+      }));
+    });
   } else {
     report.skip("dense_smoke", false, "Dense smoke skipped. Set include_dense_smoke=true to test BGE-M3 end-to-end.");
   }

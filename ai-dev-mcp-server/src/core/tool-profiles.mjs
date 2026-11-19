@@ -1,7 +1,9 @@
 /**
- * Capability profiles: eight named slices of the tool surface.
+ * Capability profiles: named slices of the tool surface — eight an agent
+ * chooses from, and `control`, the desktop app's, which only a session that
+ * names it lists.
  *
- * The server exposes 133 tools. That is a strength when an agent needs one of
+ * The server exposes 135 tools to an agent. That is a strength when an agent needs one of
  * them and a cost the rest of the time: every tool in `tools/list` is schema
  * text in the model's context before the first word of the task is read. The
  * profiles cut the surface along the lines a person already thinks in — "I am
@@ -26,6 +28,8 @@
  * @property {string} title Human-readable name.
  * @property {string} summary One line: what a session gains by turning it on.
  * @property {boolean} always `true` when the profile cannot be switched off.
+ * @property {boolean} [optIn] `true` when only a session that names it lists it:
+ *   neither an empty setting nor `all` turns it on.
  * @property {readonly string[]} tools Tool names, in the order they are documented.
  */
 
@@ -99,7 +103,7 @@ export const TOOL_PROFILES = Object.freeze([
   {
     id: "memory",
     title: "Memory",
-    summary: "What survives the session: decisions, handoffs, learned instincts, and the notes behind them.",
+    summary: "What survives the session: decisions, handoffs, learned instincts, the notes behind them, and a galaxy to fly through them.",
     always: false,
     tools: Object.freeze([
       "record_decision",
@@ -117,7 +121,8 @@ export const TOOL_PROFILES = Object.freeze([
       "import_instincts",
       "prune_state",
       "write_knowledge_note",
-      "append_knowledge_note"
+      "append_knowledge_note",
+      "render_knowledge_galaxy"
     ])
   },
   {
@@ -177,10 +182,11 @@ export const TOOL_PROFILES = Object.freeze([
   {
     id: "security",
     title: "Security",
-    summary: "The guard rails: secret and dependency scans, command and write policy, and an inventory of what your agents are wired to.",
+    summary: "The guard rails: secret and dependency scans, dependency fix plans, command and write policy, and an inventory of what your agents are wired to.",
     always: false,
     tools: Object.freeze([
       "run_security_scan",
+      "plan_security_fixes",
       "install_agent_hooks",
       "agent_hooks_status",
       "list_policy_rules",
@@ -233,6 +239,33 @@ export const TOOL_PROFILES = Object.freeze([
       "prepare_runtime_distribution",
       "runtime_distribution_status"
     ])
+  },
+  {
+    id: "control",
+    title: "Control",
+    summary: "What the desktop app drives: status, setup, the local model, client connections, logs, settings, the person's own skills and an overview of the work. Listed only to a session that names it.",
+    always: false,
+    // An agent's context does not carry the app's buttons, and an agent is not
+    // handed `clients_remove` or `model_remove` unless its client asks for them.
+    optIn: true,
+    tools: Object.freeze([
+      "system_status",
+      "setup_run",
+      "model_install",
+      "model_import",
+      "model_verify",
+      "model_remove",
+      "clients_list",
+      "clients_install",
+      "clients_remove",
+      "logs_tail",
+      "settings_get",
+      "settings_set",
+      "custom_skills_list",
+      "custom_skills_add",
+      "custom_skills_remove",
+      "workspace_overview"
+    ])
   }
 ]);
 
@@ -246,6 +279,9 @@ const PROFILE_OF_TOOL = new Map(
 
 /** Every profile id, in documentation order. @type {readonly string[]} */
 export const PROFILE_IDS = Object.freeze(TOOL_PROFILES.map((profile) => profile.id));
+
+/** The profiles an empty setting and `all` turn on: every one but the opt-in ones. @type {readonly string[]} */
+export const DEFAULT_PROFILE_IDS = Object.freeze(TOOL_PROFILES.filter((profile) => !profile.optIn).map((profile) => profile.id));
 
 /**
  * @param {string} id
@@ -268,30 +304,29 @@ export function profileOfTool(toolName) {
  * a typo should not silently cost a session half its tools, so an unknown name
  * is reported and everything else still resolves.
  *
- * An empty or absent value means the whole surface, so an installation that
- * never heard of profiles behaves exactly as it did before they existed.
+ * An empty or absent value means the whole surface an agent gets, so an
+ * installation that never heard of profiles behaves exactly as it did before
+ * they existed. `all` means the same; an opt-in profile (`control`) is listed
+ * only when named, beside `all` or on its own.
  *
  * @param {string | undefined | null} raw
- * @returns {{ ids: string[], all: boolean, unknown: string[] }}
+ * @returns {{ ids: string[], all: boolean, unknown: string[] }} `all`: every
+ *   default profile is on.
  */
 export function parseProfileSetting(raw) {
-  const text = String(raw ?? "").trim();
-  if (!text) return { ids: [...PROFILE_IDS], all: true, unknown: [] };
-
-  const requested = text
+  const requested = String(raw ?? "")
     .split(/[,\s]+/)
     .map((part) => part.trim().toLowerCase())
     .filter(Boolean);
-  if (requested.includes(ALL_PROFILES)) return { ids: [...PROFILE_IDS], all: true, unknown: [] };
-
   const unknown = [];
   const ids = new Set([ALWAYS_ON_PROFILE]);
+  if (!requested.length || requested.includes(ALL_PROFILES)) for (const id of DEFAULT_PROFILE_IDS) ids.add(id);
   for (const name of requested) {
     if (BY_ID.has(name)) ids.add(name);
-    else unknown.push(name);
+    else if (name !== ALL_PROFILES) unknown.push(name);
   }
   const ordered = PROFILE_IDS.filter((id) => ids.has(id));
-  return { ids: ordered, all: ordered.length === PROFILE_IDS.length, unknown };
+  return { ids: ordered, all: DEFAULT_PROFILE_IDS.every((id) => ids.has(id)), unknown };
 }
 
 /**
@@ -331,6 +366,32 @@ export function resolveToolNames(profileIds) {
 export function filterToolsByProfiles(tools, profileIds) {
   const allowed = resolveToolNames(profileIds);
   return tools.filter((tool) => !PROFILE_OF_TOOL.has(tool.name) || allowed.has(tool.name));
+}
+
+/**
+ * What stderr says when a session's profiles leave tools out: the stdio
+ * server's words, and the bridge's for the session a daemon serves.
+ *
+ * @param {object} counts - As `sessionToolCounts` in `server.mjs` gives them.
+ * @param {number} counts.tools_listed - Every tool the session lists.
+ * @param {number} counts.tools_total - The tools an unset `AI_DEV_PROFILES` lists.
+ * @param {number} [counts.tools_opt_in] - The listed tools of opt-in profiles,
+ *   which an unset `AI_DEV_PROFILES` does not list.
+ * @param {string[]} [counts.profiles]
+ * @param {string[]} [counts.unknown_profiles]
+ * @returns {string[]}
+ */
+export function profileNotes({ tools_listed: listed, tools_total: total, tools_opt_in: optIn = 0, profiles = [], unknown_profiles: unknown = [] }) {
+  const notes = [];
+  const ofDefault = listed - optIn;
+  if (Number.isInteger(listed) && Number.isInteger(total) && ofDefault < total) {
+    const named = profiles.filter((id) => BY_ID.get(id)?.optIn);
+    notes.push(named.length
+      ? `ai-dev: capability profiles ${profiles.join(", ")} — ${ofDefault} of ${total} tools listed, and the ${optIn} of ${named.join(", ")}. AI_DEV_PROFILES=${[ALL_PROFILES, ...named].join(",")} lists all of them.`
+      : `ai-dev: capability profiles ${profiles.join(", ")} — ${ofDefault} of ${total} tools listed. Unset AI_DEV_PROFILES for all of them.`);
+  }
+  for (const name of unknown) notes.push(`ai-dev: AI_DEV_PROFILES names "${name}", which is not a capability profile; ignoring it.`);
+  return notes;
 }
 
 /**

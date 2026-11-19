@@ -1,11 +1,11 @@
 {
   "mcpServers": {
     "ai-dev": {
-      "command": "docker",
+      "command": "/usr/local/bin/docker",
       "args": [
         "run",
-        "--rm",
         "-i",
+        "--rm",
         "--read-only",
         "--tmpfs",
         "/tmp:rw,exec,nosuid,size=512m",
@@ -19,7 +19,13 @@
         "ALL",
         "--mount",
         "type=volume,source=ai-dev-system-data,target=/data",
-        "ai-dev-system:local"
+        "--mount",
+        "type=bind,source=/home/YOU/.ai-dev/state,target=/ai-dev-state",
+        "--env",
+        "AI_DEV_STATE_ROOT=/ai-dev-state",
+        "--mount",
+        "type=bind,source=/home/YOU/AI-Dev-Projects,target=/home/YOU/AI-Dev-Projects",
+        "ghcr.io/stonebridgeway/ai-dev-system:latest"
       ]
     }
   }

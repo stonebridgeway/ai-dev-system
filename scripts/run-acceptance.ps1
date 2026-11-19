@@ -4,85 +4,38 @@ param(
   [switch]$IncludeDense
 )
 
+# 2.x ran the gate once with this script, looking for Node in the Codex desktop
+# runtime. It is `npm run check` now, on any system, with Node from PATH,
+# then the Frontend QA runner's tests when its
+# dependencies are installed; `npm run acceptance` runs the gate ten times. With
+# -IncludeDense the dense checks follow: `ai-dev doctor --dense-smoke
+# --search-eval`. This wrapper stays until 4.0 and says so on stderr.
 $ErrorActionPreference = "Stop"
-if (-not $VaultRoot) {
-  $VaultRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-}
-
-function Resolve-Runtime([string]$explicit, [string]$name, [string]$codexRelative) {
-  if ($explicit -and (Test-Path -LiteralPath $explicit -PathType Leaf)) { return $explicit }
-  $onPath = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue
-  if ($onPath) { return $onPath.Source }
-  $codex = Join-Path $env:USERPROFILE $codexRelative
-  if (Test-Path -LiteralPath $codex -PathType Leaf) { return $codex }
-  throw "$name not found. Install it, or set AI_DEV_NODE / AI_DEV_PYTHON."
-}
-
-$node = Resolve-Runtime $env:AI_DEV_NODE "node" ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-$python = Resolve-Runtime $env:AI_DEV_PYTHON "python" ".cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
-$server = Join-Path $VaultRoot "09-mcp\ai-dev-mcp-server"
-$frontendQa = Join-Path $VaultRoot "09-mcp\frontend-qa"
-$search = Join-Path $VaultRoot "09-mcp\search-index"
-
+[Console]::Error.WriteLine("ai-dev: scripts/run-acceptance.ps1 is ``npm run check`` now (``npm run acceptance`` for ten runs); this wrapper stays until 4.0.")
+$server = (Resolve-Path (Join-Path $PSScriptRoot "..\ai-dev-mcp-server")).Path
+$node = if ($env:AI_DEV_NODE) { $env:AI_DEV_NODE } else { (Get-Command node -CommandType Application -ErrorAction SilentlyContinue).Source }
+if (-not $node) { throw "Node.js not found. Install Node 22.16+ or 24+, or set AI_DEV_NODE." }
+$npm = (Get-Command npm -CommandType Application -ErrorAction SilentlyContinue).Source
+if (-not $npm) { throw "npm not found on PATH; it comes with Node." }
+if ($VaultRoot) { $env:AI_DEV_VAULT_ROOT = (Resolve-Path -LiteralPath $VaultRoot).Path }
 Push-Location $server
 try {
-  & $node "scripts\static-quality.mjs"
-  if ($LASTEXITCODE -ne 0) { throw "MCP static quality gate failed." }
-  & $node --test --experimental-test-coverage "--test-coverage-include=src/core/*.mjs" "--test-coverage-exclude=src/core/*.test.mjs" "--test-coverage-lines=85" "--test-coverage-branches=60" "--test-coverage-functions=85"
-  if ($LASTEXITCODE -ne 0) { throw "MCP tests or coverage thresholds failed." }
-  & $node "scripts\security-check.mjs"
-  if ($LASTEXITCODE -ne 0) { throw "MCP security gate failed." }
-  & $node "scripts\protocol-smoke.mjs"
-  if ($LASTEXITCODE -ne 0) { throw "MCP protocol smoke failed." }
-  & $node "scripts\lifecycle-smoke.mjs"
-  if ($LASTEXITCODE -ne 0) { throw "Task lifecycle smoke failed." }
-} finally { Pop-Location }
-
-Push-Location $frontendQa
-try {
-  & $node --test
-  if ($LASTEXITCODE -ne 0) { throw "Frontend QA tests failed." }
-} finally { Pop-Location }
-
-Push-Location $search
-try {
-  # Python's unittest runner writes normal progress to stderr. PowerShell 5
-  # surfaces that stream as NativeCommandError when Stop is active, so merge
-  # the streams and trust the native exit code.
-  $previousErrorActionPreference = $ErrorActionPreference
-  $ErrorActionPreference = "Continue"
-  try {
-    & $python -m unittest discover -s . -p "test_*.py" -v 2>&1 |
-      ForEach-Object {
-        $line = [string]$_
-        if ($line -ne "System.Management.Automation.RemoteException") {
-          Write-Output $line
-        }
-      }
-    $pythonExitCode = $LASTEXITCODE
-  } finally {
-    $ErrorActionPreference = $previousErrorActionPreference
+  & $npm run check
+  if ($LASTEXITCODE -ne 0) { throw "npm run check failed." }
+  # The Frontend QA runner's own tests, which 2.x ran here too; they need its
+  # dependencies, which `npm run setup -- --frontend-qa` installs.
+  $frontendQa = (Resolve-Path (Join-Path $PSScriptRoot "..\frontend-qa")).Path
+  if (Test-Path -LiteralPath (Join-Path $frontendQa "node_modules")) {
+    Push-Location $frontendQa
+    try {
+      & $node --test
+      if ($LASTEXITCODE -ne 0) { throw "Frontend QA tests failed." }
+    } finally { Pop-Location }
+  } else {
+    [Console]::Error.WriteLine("ai-dev: Frontend QA tests skipped: its dependencies are not installed (npm run setup -- --frontend-qa).")
   }
-  if ($pythonExitCode -ne 0) { throw "Search index tests failed." }
+  if ($IncludeDense) {
+    & $node "bin\ai-dev.mjs" doctor --dense-smoke --search-eval
+    if ($LASTEXITCODE -ne 0) { throw "The dense checks failed." }
+  }
 } finally { Pop-Location }
-
-if ($IncludeDense) {
-  Push-Location $server
-  try {
-    $script = @'
-import { callTool, shutdownBgeWorkers } from "./src/mcp-stdio.mjs";
-const response = await callTool("run_search_eval", { include_dense: true, max_cases: 100 });
-const report = JSON.parse(response.content[0].text);
-console.log(JSON.stringify({ status: report.status, summary: report.summary }, null, 2));
-await shutdownBgeWorkers();
-if (report.status !== "ok") process.exit(1);
-'@
-    $script | & $node --input-type=module
-    if ($LASTEXITCODE -ne 0) { throw "Dense search evaluation failed." }
-  } finally { Pop-Location }
-}
-
-[pscustomobject]@{
-  status = "pass"
-  dense_search = [bool]$IncludeDense
-}

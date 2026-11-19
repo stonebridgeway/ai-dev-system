@@ -72,6 +72,8 @@ test("a missing gate file names the path it looked for", async () => {
   await assert.rejects(
     () => call(registry, { project_path: "atlas" }),
     (error) => error.message === `Quality gate file not found: ${probed}`
+      // And what writes one, for whoever meets this first: a new repository has none.
+      && error.code === "QUALITY_GATE_MISSING" && /^prepare_project writes \.ai-dev\/quality-gate\.md/.test(error.hint)
   );
 });
 
@@ -94,7 +96,7 @@ test("a dry run selects and blocks without executing anything", async () => {
   assert.ok(result.started_at <= result.finished_at);
 });
 
-// Д-54: on the Docker path the image's Node runs the project's commands, and a
+// On the Docker path the image's Node runs the project's commands, and a
 // script that behaves differently across majors disagreed with the user's own
 // terminal with nothing on the record to say which Node had run it.
 test("the report names the Node that ran the commands", async () => {

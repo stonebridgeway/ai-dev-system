@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { atomicWriteJson } from "./atomic-files.mjs";
+import { atomicWriteJson, withExclusiveFile } from "./atomic-files.mjs";
 import { INTENT } from "./intent-patterns.mjs";
 import { resolveProjectIdentity } from "./project-identity.mjs";
 import { taskRequestsDiagram, taskRequiresFrontendProductWorkflow } from "./skill-router.mjs";
@@ -182,13 +182,14 @@ export class TaskStore {
   }
 
   async update(id, mutate) {
-    return this.lock(id, async () => {
+    // Two clients can work one task, each through its own server process.
+    return this.lock(id, () => withExclusiveFile(this.taskPath(id), async () => {
       const record = await this.read(id);
       const next = await mutate(structuredClone(record));
       next.updated_at = now();
       await atomicWriteJson(this.taskPath(id), next);
       return next;
-    });
+    }));
   }
 
   async checkpoint(id, { summary, changedFiles = [], criteria = [], notes = "" }) {

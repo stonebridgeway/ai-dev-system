@@ -2,11 +2,12 @@
  * The ONNX dense backend: text in, a normalized 1024-dimension vector out, with
  * no Python anywhere in the path.
  *
- * This is the backend Д-62 chose. The legacy one in `embedding-workers.mjs`
- * reaches the same contract through a virtualenv, a CPU build of torch and
- * `sentence-transformers`; this one reaches it through `@huggingface/transformers`
- * over `onnxruntime-node`, both ordinary npm dependencies, so `npm run setup --
- * --dense` is a download and a checksum rather than a build.
+ * This is the dense backend, and since 3.0 the only one: the legacy
+ * Python pool reached the same contract through a virtualenv, a CPU build of
+ * torch and `sentence-transformers`; this one reaches it through
+ * `@huggingface/transformers` over `onnxruntime-node`, both ordinary npm
+ * dependencies, so installing the model is a download and a checksum rather
+ * than a build.
  *
  * ## Why a worker thread and not batches with `await`
  *
@@ -26,23 +27,47 @@
  * that times out, batching, shutdown — is tested against a stub, on a machine
  * with no weights on it. The real worker entry is `src/workers/dense-onnx-worker.mjs`.
  */
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { DENSE_ONNX_BACKEND } from "./dense-backend.mjs";
+import { DENSE_ONNX_BACKEND, DOCKER_MOUNTED_MODEL_DIR, SHARE_UNREACHABLE } from "./dense-backend.mjs";
+import { resolveRuntimeStateRoot } from "./runtime-home.mjs";
 
 /** Most texts one worker message may carry, so a batch cannot grow unbounded. */
 export const MAX_ONNX_BATCH = 32;
+
+/** Most texts one `embed_texts` call may carry. */
+export const MAX_EMBED_TEXTS = 32;
+
+/** Longest single text one `embed_texts` call may carry. */
+export const MAX_EMBED_TEXT_LENGTH = 12000;
+
+/**
+ * Validate and clean the texts of one `embed_texts` request: an MCP client
+ * decides how much it sends, and a model in a worker thread is not the place
+ * to find out it sent ten thousand.
+ *
+ * @param {{ texts?: string[], text?: string }} input
+ * @returns {string[]}
+ */
+export function cleanEmbedTexts({ texts, text } = {}) {
+  const inputTexts = Array.isArray(texts) ? texts : (typeof text === "string" && text ? [text] : []);
+  const cleanTexts = inputTexts.map((value) => String(value ?? "").trim()).filter(Boolean);
+  if (!cleanTexts.length) throw new Error("texts or text is required.");
+  if (cleanTexts.length > MAX_EMBED_TEXTS) throw new Error(`embed_texts accepts at most ${MAX_EMBED_TEXTS} texts per call.`);
+  for (const value of cleanTexts) {
+    if (value.length > MAX_EMBED_TEXT_LENGTH) throw new Error(`Each text must be ${MAX_EMBED_TEXT_LENGTH} characters or less.`);
+  }
+  return cleanTexts;
+}
 
 /** How long one batch may take before the caller is told rather than left hanging. */
 export const DEFAULT_ONNX_TIMEOUT_MS = 600_000;
 
 /**
- * Round one vector the way the Python backend rounds its own.
- *
- * The two backends' vectors are never mixed in one index — that is what the
- * provenance in `dense-manifest.mjs` prevents — but they travel through the
- * same JSON, the same sqlite blob and the same scoring code, so they are the
- * same shape of number by construction rather than by luck.
+ * Round one vector to the precision the index stores — six places, as the 2.x
+ * Python backend stored its own, so vectors from a 2.x index and from this one
+ * are the same shape of number in the same JSON and the same sqlite blob.
  *
  * @param {ArrayLike<number>} values
  * @param {number} precision
@@ -175,8 +200,8 @@ export function createOnnxDenseRuntime({
   }
 
   /**
-   * Embed one set of texts, in batches, and answer in the shape the Python
-   * backend answers in so callers do not branch on which one is running.
+   * Embed one set of texts, in batches, and answer in the shape 2.x answered
+   * in, so callers and clients of `embed_texts` read it as they always did.
    *
    * @param {object} options
    * @returns {Promise<object>}
@@ -257,21 +282,51 @@ export function createOnnxDenseRuntime({
   return { embedTexts, status, shutdown };
 }
 
+export { DOCKER_MOUNTED_MODEL_DIR };
+
 /**
- * Where the ONNX export lives, kept apart from the legacy Python weights.
+ * The errors that say a folder is there and this user cannot read it (a host's
+ * folders 0700) or cannot reach it (a share that dropped). Any other — not
+ * there, a file, a link that loops, no descriptor left — is no model mounted.
+ */
+const THERE_UNREAD = new Set(["EACCES", "EPERM", ...SHARE_UNREACHABLE]);
+
+/**
+ * Whether a folder holds anything — what it holds unseen included, so a model
+ * the host mounted unreadable is said as that, not passed over for the
+ * volume's.
  *
- * The two directories hold different files for the same model — `config.json`
- * and `onnx/model_int8.onnx` here, `pytorch_model.bin` and `modules.json` there
- * — and a single directory holding some of each would satisfy neither check
- * while looking installed to both.
+ * @param {string} folder
+ * @param {(folder: string) => string[]} [list]
+ * @returns {boolean}
+ */
+export function holdsFiles(folder, list = readdirSync) {
+  try {
+    return list(folder).length > 0;
+  } catch (error) {
+    return THERE_UNREAD.has(error?.code);
+  }
+}
+
+/**
+ * Where the ONNX export lives: `BGE_M3_ONNX_DIR`, or `models/bge-m3-onnx` in the
+ * runtime home. 2.x kept the Python backend's torch weights beside it in
+ * `models/bge-m3`; that folder is never read and never written here.
+ *
+ * In the image the runtime home is in the volume, where `ai-dev model install`
+ * puts the model once; a folder the host mounts at
+ * `/models`, as the 2.x launchers do, is used first. The 2.x image named the
+ * mount in its ENV, so a model could not be put in the volume at all.
  *
  * @param {object} [options]
  * @param {Record<string, string|undefined>} [options.env]
  * @param {string} [options.aiDevHome] - Runtime home, when the caller knows it.
+ * @param {(folder: string) => boolean} [options.mounted] - Whether a folder holds anything ({@link holdsFiles}).
  * @returns {string}
  */
-export function defaultOnnxModelDir({ env = process.env, aiDevHome = "" } = {}) {
+export function defaultOnnxModelDir({ env = process.env, aiDevHome = "", mounted = holdsFiles } = {}) {
   if (env.BGE_M3_ONNX_DIR) return path.resolve(env.BGE_M3_ONNX_DIR);
-  const home = aiDevHome || path.join(env.AI_DEV_HOME || env.HOME || env.USERPROFILE || "", ".ai-dev");
+  if (String(env.AI_DEV_RUNTIME ?? "").trim().toLowerCase() === "docker" && mounted(DOCKER_MOUNTED_MODEL_DIR)) return DOCKER_MOUNTED_MODEL_DIR;
+  const home = aiDevHome || resolveRuntimeStateRoot("", env);
   return path.resolve(path.join(home, "models", "bge-m3-onnx"));
 }

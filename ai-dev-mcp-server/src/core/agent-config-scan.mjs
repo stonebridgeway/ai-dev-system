@@ -1,5 +1,5 @@
 /**
- * Grading a repository's agent harness (PLAN.md, stage 3.22).
+ * Grading a repository's agent harness.
  *
  * `list_mcp_servers` answers "what programs will an agent's editor start here".
  * This answers the wider question: what is this repository allowed to make an
@@ -68,7 +68,7 @@ const COMMAND_INJECTION = /!`[^`]+`/;
 //
 // "always run …" used to be here and is not any more: "Always run the tests
 // before you claim the task is done" waives nothing, and a rule that calls an
-// honest instruction a bypass is a rule people stop reading (Д-24). What is
+// honest instruction a bypass is a rule people stop reading. What is
 // left names the confirmation it removes.
 const AUTO_RUN_PROSE = new RegExp([
   "\\bwithout (?:asking|being asked|confirmation|permission|prompting|a prompt)\\b",
@@ -117,7 +117,7 @@ const PERMISSIVE_MODES = Object.freeze({
  * Top-level strings are not where a secret goes. `env` is: it is how Claude
  * Code puts variables into the session, so `env.AWS_ACCESS_KEY_ID` is the most
  * likely credential in the file and used to be the one place this scan did not
- * look (Д-23). Naming the path — `env.AWS_ACCESS_KEY_ID`, not `env` — is what
+ * look. Naming the path — `env.AWS_ACCESS_KEY_ID`, not `env` — is what
  * makes the finding actionable.
  *
  * @param {unknown} value

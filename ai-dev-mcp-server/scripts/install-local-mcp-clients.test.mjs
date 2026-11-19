@@ -1,149 +1,72 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
-import {
-  buildClientServerConfig,
-  installLocalMcpClients,
-  mergeClientDocument,
-  portablePaths
-} from "./install-local-mcp-clients.mjs";
 
-const paths = {
-  nodeExecutable: "C:\\runtime\\node.exe",
-  serverPath: "C:\\vault\\server.mjs",
-  linkedVaultRoot: "C:\\vault",
-  pythonExecutable: "C:\\runtime\\python.exe"
-};
+// The 2.x local installer is `ai-dev clients install` now; the script stays as
+// a wrapper with its flags (dry run unless --apply) and its JSON on stdout.
+const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const script = path.join(serverRoot, "scripts", "install-local-mcp-clients.mjs");
 
-test("client config uses stdio and shared local paths", () => {
-  const vscode = buildClientServerConfig("vscode", paths);
-  const gemini = buildClientServerConfig("gemini", paths);
-  assert.equal(vscode.type, "stdio");
-  assert.equal(gemini.type, undefined);
-  assert.equal(vscode.command, paths.nodeExecutable);
-  assert.deepEqual(vscode.args, [paths.serverPath]);
-  assert.equal(vscode.env.AI_DEV_VAULT_ROOT, paths.linkedVaultRoot);
-});
-
-test("a checkout without a vault registers its own server and no vault root", (t) => {
-  // The layout a new user has: this repository, cloned, and nothing else. The
-  // server path used to be computed as `<vault>/09-mcp/ai-dev-mcp-server/…`,
-  // which resolved to `<home>/09-mcp/…` and made `npm run clients:install` —
-  // the one command the README gives — refuse to install anything.
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-clients-"));
-  t.after(() => fs.rmSync(empty, { recursive: true, force: true }));
-  const resolved = portablePaths({ home: empty, vaultRoot: "" });
-  const serverHere = path.resolve(fileURLToPath(new URL("../src/server.mjs", import.meta.url)));
-  assert.equal(resolved.serverPath, serverHere);
-  assert.ok(fs.existsSync(resolved.serverPath), "the entrypoint it registers has to exist");
-  assert.equal(resolved.linkedVaultRoot, "");
-  const config = buildClientServerConfig("claude", resolved);
-  assert.deepEqual(config.args, [serverHere]);
-  assert.equal("AI_DEV_VAULT_ROOT" in config.env, false, "no vault means no guess at one");
-  assert.ok(config.env.AI_DEV_PYTHON);
-});
-
-test("a vault install keeps the vault's own copy of the server", (t) => {
-  const vault = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-vault-"));
-  t.after(() => fs.rmSync(vault, { recursive: true, force: true }));
-  const inVault = path.join(vault, "09-mcp", "ai-dev-mcp-server", "src");
-  fs.mkdirSync(inVault, { recursive: true });
-  fs.writeFileSync(path.join(inVault, "server.mjs"), "// vault copy\n");
-  const resolved = portablePaths({ home: vault, vaultRoot: vault });
-  assert.equal(resolved.serverPath, path.join(inVault, "server.mjs"));
-  assert.equal(buildClientServerConfig("claude", resolved).env.AI_DEV_VAULT_ROOT, vault);
-});
-
-test("client document merge preserves existing servers", () => {
-  const current = {
-    mcpServers: {
-      existing: { command: "existing.exe" }
+function run(args, home) {
+  return spawnSync(process.execPath, [script, ...args], {
+    cwd: serverRoot,
+    // Every place a client keeps its config, Windows's APPDATA and LOCALAPPDATA
+    // included, inside the test's home.
+    env: {
+      ...process.env,
+      HOME: home,
+      USERPROFILE: home,
+      APPDATA: path.join(home, "AppData", "Roaming"),
+      LOCALAPPDATA: path.join(home, "AppData", "Local"),
+      XDG_CONFIG_HOME: path.join(home, ".config"),
+      CODEX_HOME: "",
+      CLAUDE_CONFIG_DIR: "",
+      AI_DEV_HOME: ""
     },
-    unrelated: true
-  };
-  const merged = mergeClientDocument(
-    "cursor",
-    current,
-    buildClientServerConfig("cursor", paths)
-  );
-  assert.equal(merged.unrelated, true);
-  assert.equal(merged.mcpServers.existing.command, "existing.exe");
-  assert.equal(merged.mcpServers["ai-dev-system"].command, paths.nodeExecutable);
-});
-
-test("VS Code uses its native servers root", () => {
-  const merged = mergeClientDocument(
-    "vscode",
-    { inputs: [] },
-    buildClientServerConfig("vscode", paths)
-  );
-  assert.deepEqual(merged.inputs, []);
-  assert.equal(merged.servers["ai-dev-system"].type, "stdio");
-});
-
-test("the editor configuration tree is the one the platform actually uses", () => {
-  // Д-74: this was the Windows answer on every platform, so `--apply` on macOS
-  // created ~/AppData/Roaming/Code/User/ and VS Code never saw the server.
-  const home = path.join(path.sep, "home", "tester");
-  const darwin = portablePaths({ home, platform: "darwin" });
-  assert.equal(darwin.appData, path.join(home, "Library", "Application Support"));
-
-  const linux = portablePaths({ home, platform: "linux" });
-  assert.equal(linux.appData, process.env.XDG_CONFIG_HOME || path.join(home, ".config"));
-
-  const windows = portablePaths({ home, platform: "win32" });
-  assert.equal(windows.appData, process.env.APPDATA || path.join(home, "AppData", "Roaming"));
-
-  // AppData is a Windows idea; the other two must not borrow it.
-  for (const resolved of [darwin, linux]) {
-    assert.doesNotMatch(
-      path.join(resolved.appData, "Code", "User", "mcp.json"),
-      /AppData/,
-      "only Windows may put the editor tree under AppData"
-    );
-  }
-  assert.match(path.join(windows.appData, "Code", "User", "mcp.json"), /AppData|Roaming/);
-});
-
-/** A checkout-shaped home with the four client files a test wants in it. */
-async function clientHome(t, files = {}) {
-  const home = await fs.promises.mkdtemp(path.join(os.tmpdir(), "mcp-clients-"));
-  t.after(() => fs.promises.rm(home, { recursive: true, force: true }));
-  for (const [relative, body] of Object.entries(files)) {
-    const target = path.join(home, relative);
-    await fs.promises.mkdir(path.dirname(target), { recursive: true });
-    await fs.promises.writeFile(target, body, "utf8");
-  }
-  return home;
+    encoding: "utf8",
+    windowsHide: true
+  });
 }
 
-test("a client whose configuration file is empty is installed into, not refused", async (t) => {
-  // Д-74: the Windows run met a zero-byte mcp.json and got "Unexpected end of
-  // JSON input". An empty file is a client that has not written anything yet.
-  const home = await clientHome(t, { ".cursor/mcp.json": "" });
-  const result = await installLocalMcpClients({ home, apply: true, clients: ["cursor"] });
-  assert.equal(result.status, "applied");
-  assert.equal(result.clients[0].status, "updated");
-  const written = JSON.parse(await fs.promises.readFile(path.join(home, ".cursor", "mcp.json"), "utf8"));
-  assert.ok(written.mcpServers["ai-dev-system"], "the server should have been written in");
+test("the 2.x installer is a dry run without --apply, and says what replaced it", (t) => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "local-installer-"));
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(home, ".cursor"));
+  const result = run([], home);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /install-local-mcp-clients\.mjs is `ai-dev clients install` now/);
+  assert.deepEqual(JSON.parse(result.stdout).clients.map((item) => [item.client, item.status]),
+    [["claude-code", "would-add"], ["cursor", "would-add"], ["vscode", "would-add"], ["gemini", "would-add"]], "the four 2.x wrote, installed or not");
+  assert.equal(fs.existsSync(path.join(home, ".cursor", "mcp.json")), false);
 });
 
-test("one unreadable configuration does not take the other clients down with it", async (t) => {
-  // Д-74: the loop had no guard, so the first throw ended the run and nothing
-  // was installed anywhere — the reader could not even tell which file it was.
-  const home = await clientHome(t, {
-    ".cursor/mcp.json": "{ this is not json",
-    ".gemini/settings.json": "{}"
-  });
-  const result = await installLocalMcpClients({ home, apply: true, clients: ["cursor", "gemini"] });
-  assert.equal(result.status, "partial");
+test("`--clients claude` is Claude Code alone, as in 2.x", (t) => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "local-installer-"));
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  for (const args of [["--clients", "claude"], ["--clients=claude,cursor"]]) {
+    const result = run(args, home);
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(result.stdout).clients.map((item) => item.client), args.join(" ").includes("cursor") ? ["claude-code", "cursor"] : ["claude-code"]);
+  }
+});
 
-  const cursor = result.clients.find((item) => item.client === "cursor");
-  const gemini = result.clients.find((item) => item.client === "gemini");
-  assert.equal(cursor.status, "failed");
-  assert.match(cursor.error, /mcp\.json/, "the failure names the file it is about");
-  assert.equal(gemini.status, "updated", "the healthy client is still installed");
+test("--apply writes ai-dev and takes out the ai-dev-system entry 2.x wrote", (t) => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "local-installer-"));
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(home, ".cursor"));
+  const legacy = { command: process.execPath, args: [path.join(serverRoot, "src", "server.mjs")], env: { AI_DEV_PYTHON: "python3" } };
+  fs.writeFileSync(path.join(home, ".cursor", "mcp.json"), `${JSON.stringify({ mcpServers: { "ai-dev-system": legacy, other: {} } }, null, 2)}\n`);
+  const result = run(["--apply", "--clients", "cursor"], home);
+  assert.equal(result.status, 0, result.stderr);
+  const [cursor] = JSON.parse(result.stdout).clients;
+  assert.equal(cursor.status, "added");
+  assert.deepEqual(cursor.migrated, ["ai-dev-system"]);
+  const servers = JSON.parse(fs.readFileSync(path.join(home, ".cursor", "mcp.json"), "utf8")).mcpServers;
+  assert.deepEqual(Object.keys(servers), ["other", "ai-dev"]);
+  assert.deepEqual(servers["ai-dev"], { command: process.execPath, args: [path.join(serverRoot, "bin", "ai-dev.mjs"), "mcp"] });
+  assert.equal("AI_DEV_PYTHON" in (servers["ai-dev"].env ?? {}), false, "no AI_DEV_PYTHON any more");
 });

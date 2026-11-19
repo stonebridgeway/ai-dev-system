@@ -7,10 +7,11 @@
  *   node scripts/verify-public-seed.mjs --write   # recompute the manifest
  *
  * The image audit trusts the manifest, so a manifest that has drifted from the
- * files turns "what was built is what was audited" into a formality. Three
- * things are checked: the manifest agrees with itself (counts and fingerprint),
- * every file it lists is on disk with the same bytes and hash, and no file on
- * disk is missing from it.
+ * files turns "what was built is what was audited" into a formality. Four
+ * things are checked: the seed passes the distribution audit (no secrets, no
+ * forbidden paths, no NUL bytes in text files), the manifest agrees with itself
+ * (counts and fingerprint), every file it lists is on disk with the same bytes
+ * and hash, and no file on disk is missing from it.
  *
  * `03-skills-catalog/{registries,cards,groups}` is skipped on both sides: those
  * are rebuilt on demand by `npm run skills:ensure-index` in a standalone
@@ -31,6 +32,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { GENERATED_FILES, GENERATED_PREFIXES } from "../src/core/generated-vault-files.mjs";
 import {
   assertCleanDistribution,
   auditDistributionTree,
@@ -44,27 +46,13 @@ const seedRoot = path.join(repositoryRoot, "docker", "public-seed");
 const manifestName = "public-seed.manifest.json";
 const manifestPath = path.join(seedRoot, manifestName);
 
-const GENERATED_PREFIXES = [
-  "03-skills-catalog/registries/",
-  "03-skills-catalog/cards/",
-  "03-skills-catalog/groups/",
-  // A server without an Obsidian vault runs against this seed and writes its
-  // project cards here. Git ignores them; so does the seed.
-  "02-knowledge/Projects/"
-];
+// The registries, the notes and cards rendered from them, the dashboards
+// (`GENERATED_PREFIXES`, `GENERATED_FILES`): output, not seed content, so
+// running the server in a checkout must not read as seed drift.
 
 // Python bytecode from running the seed's own helper scripts. Git ignores it
 // everywhere, and a checkout that has run them is not a drifted seed.
 const GENERATED_PATTERN = /(?:^|\/)__pycache__\/|\.pyc$/;
-
-// Dashboards rendered on demand by `validate_skill_library` and
-// `rebuild_system_dashboard`. Like the registries they are output, not seed
-// content, so running either tool in a checkout must not read as seed drift.
-const GENERATED_FILES = [
-  "03-skills-catalog/Skill Quality Dashboard.md",
-  "01-system/System Dashboard.md",
-  "01-system/system-dashboard.json"
-];
 
 /**
  * @param {string} relativePath - Seed-relative path with forward slashes.
@@ -89,12 +77,19 @@ const write = process.argv.includes("--write");
 const audit = await auditDistributionTree(seedRoot);
 const onDisk = index(audit.files);
 
+// What the audit rejects is wrong in the seed itself, whatever the manifest
+// says: a secret, a forbidden path, or a text cut short by a NUL byte.
+// Generated output is judged by neither mode: it is
+// not shipped from here, and a used checkout has project cards and a rendered
+// galaxy whose embedded data can look like a key.
+const auditFindings = audit.findings.filter((finding) => !skipped(finding.path));
+
 if (write) {
   // The manifest describes the seed without itself, exactly as
   // refresh-public-seed.mjs computes it before writing the file. Generated
   // output is left out so the fingerprint depends only on committed content
   // and stays reproducible from a clean checkout.
-  assertCleanDistribution(audit, "public seed");
+  assertCleanDistribution({ ok: auditFindings.length === 0, findings: auditFindings }, "public seed");
   const files = [...onDisk.values()];
   const manifest = {
     schema_version: 1,
@@ -113,6 +108,19 @@ if (write) {
     fingerprint: manifest.content_fingerprint
   }, null, 2)}\n`);
   process.exit(0);
+}
+
+if (auditFindings.length) {
+  const shown = auditFindings.slice(0, 25);
+  process.stderr.write([
+    `Public seed fails the distribution audit (${auditFindings.length} finding(s)):`,
+    ...shown.map((finding) => `- ${finding.rule}: ${finding.path}`),
+    ...(auditFindings.length > shown.length ? [`- ... and ${auditFindings.length - shown.length} more`] : []),
+    "",
+    "Fix the files themselves: `--write` refuses to record a seed with audit findings.",
+    ""
+  ].join("\n"));
+  process.exit(1);
 }
 
 const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));

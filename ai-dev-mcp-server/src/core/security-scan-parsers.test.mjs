@@ -136,8 +136,13 @@ test("every finding a parser produces has the shape the gate reads", () => {
     ...parseTrivy(TRIVY)
   ];
   assert.ok(all.length >= 12, `expected findings from all six adapters, got ${all.length}`);
+  const base = ["file", "kind", "line", "message", "rule", "severity", "tool"];
+  const details = ["aliases", "fixed_in", "package", "version", "vulnerable"];
   for (const item of all) {
-    assert.deepEqual(Object.keys(item).sort(), ["file", "kind", "line", "message", "rule", "severity", "tool"]);
+    // A finding about a named package also carries what a fix plan reads;
+    // every other finding has the seven fields and no more.
+    const expected = item.package === undefined ? base : [...base, ...details].sort();
+    assert.deepEqual(Object.keys(item).sort(), expected);
     assert.ok(SECURITY_SEVERITIES.includes(item.severity), `${item.tool}: ${item.severity}`);
     assert.ok(SECURITY_FINDING_KINDS.includes(item.kind), `${item.tool}: ${item.kind}`);
     assert.equal(typeof item.line, "number");
@@ -153,6 +158,32 @@ test("npm audit: one finding per advisory, not per affected package", () => {
   assert.equal(findings[0].file, "package-lock.json");
   assert.match(findings[0].message, /lodash <4\.17\.21: Prototype Pollution in lodash \(a fix is available\)/);
   assert.equal(findings.every((item) => item.kind === "dependency"), true);
+  assert.deepEqual(
+    { package: findings[0].package, version: findings[0].version, vulnerable: findings[0].vulnerable },
+    { package: "lodash", version: "", vulnerable: "<4.17.21" },
+    "npm's report names the range, not the installed version"
+  );
+});
+
+test("npm audit: a GitHub malware advisory is malware, critical whatever it was graded", () => {
+  // Measured 2026-09-27: the registry serves "Malware in axios" through the
+  // same endpoint as every other advisory.
+  const report = JSON.stringify({
+    vulnerabilities: {
+      axios: {
+        name: "axios",
+        severity: "critical",
+        via: [{ source: 1115703, name: "axios", title: "Malware in axios", url: "https://github.com/advisories/GHSA-fw8c-xr5c-95f9", severity: "high", range: "=1.14.1" }],
+        fixAvailable: true
+      }
+    }
+  });
+  const [item] = parseNpmAudit(report);
+  assert.equal(item.kind, "malware");
+  assert.equal(item.severity, "critical");
+  assert.equal(item.rule, "GHSA-fw8c-xr5c-95f9");
+  assert.match(item.message, /^axios =1\.14\.1: Malware in axios\. Malicious code ran wherever this version was installed/);
+  assert.doesNotMatch(item.message, /a fix is available/, "an upgrade is not the fix for malware");
 });
 
 test("pip-audit reports no severity, so its findings warn rather than block", () => {

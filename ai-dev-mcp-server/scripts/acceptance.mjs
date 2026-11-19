@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * `npm run acceptance` — the criterion this project ends a session on.
+ * `npm run acceptance` — the check a change is finished with.
  *
- * Ten consecutive `npm run check` runs and the line "N падений из 10". One green
+ * Ten consecutive `npm run check` runs and the line "N failures out of 10". One green
  * run is not proof: the failure this is built around appears in about two runs
- * out of ten and in none of the other eight (Д-11).
+ * out of ten and in none of the other eight.
  *
  * Usage: npm run acceptance [-- --runs 10] [--keep-logs]
  */
@@ -99,7 +99,7 @@ for (let index = 1; index <= options.runs; index += 1) {
 console.log("");
 console.log(renderAcceptanceReport(runs));
 const verdict = acceptanceVerdict(runs);
-if (!verdict.passed) console.log(`\nЛоги прогонов: ${logDir}`);
+if (!verdict.passed) console.log(`\nThe runs' logs: ${logDir}`);
 else if (!options.keepLogs) await fs.rm(logDir, { recursive: true, force: true });
 
 process.exitCode = verdict.passed ? 0 : 1;

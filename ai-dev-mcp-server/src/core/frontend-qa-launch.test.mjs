@@ -37,7 +37,7 @@ const MISSING_FILE_OUTPUT = [
 ].join("\n");
 
 test("a dependency nobody installed is told apart from a file that should be there", () => {
-  // Д-56: both were reduced to the first line of stderr, which for either is
+  // Both used to be reduced to the first line of stderr, which for either is
   // the frame Node threw from — `node:internal/modules/esm/resolve:275` — and
   // never the reason.
   const notInstalled = classifyFrontendQaLaunchFailure(MISSING_PACKAGE_OUTPUT);

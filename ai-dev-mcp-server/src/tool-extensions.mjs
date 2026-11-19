@@ -20,11 +20,13 @@
  * import cycle and couple pure logic to the vault.
  */
 
+import { createControlTools } from "./extensions/control.mjs";
 import { createCoverageTools } from "./extensions/coverage.mjs";
 import { createDecisionTools } from "./extensions/decisions.mjs";
 import { createEpicTools } from "./extensions/epics.mjs";
 import { createFrontendDesignTools } from "./extensions/frontend-design.mjs";
 import { createFrontendQaTools } from "./extensions/frontend-qa.mjs";
+import { createGalaxyTools } from "./extensions/galaxy.mjs";
 import { createHookTools } from "./extensions/hooks.mjs";
 import { createHygieneTools } from "./extensions/hygiene.mjs";
 import { createInstinctTools } from "./extensions/instincts.mjs";
@@ -45,11 +47,13 @@ import { createUsageTools } from "./extensions/usage.mjs";
 import { createWorktreeTools } from "./extensions/worktrees.mjs";
 
 export const EXTENSION_FACTORIES = [
+  createControlTools,
   createCoverageTools,
   createDecisionTools,
   createEpicTools,
   createFrontendDesignTools,
   createFrontendQaTools,
+  createGalaxyTools,
   createHookTools,
   createHygieneTools,
   createInstinctTools,

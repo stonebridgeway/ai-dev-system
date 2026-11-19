@@ -1,6 +1,7 @@
+import { realpathSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { atomicAppendFile, atomicWriteFile } from "./atomic-files.mjs";
+import { appendJsonLines, atomicWriteFile, withExclusiveFile } from "./atomic-files.mjs";
 
 export const USAGE_EVENT_KINDS = ["tool_call", "usage"];
 const MAX_LEDGER_BYTES = 8 * 1024 * 1024;
@@ -47,7 +48,7 @@ export const CACHE_READ_MULTIPLIER = 0.1;
  *
  * Their rows were read from {@link RATE_TABLE_SOURCE} while each model was
  * current, and the page has since dropped them — so `checked_on` does not cover
- * them and nothing re-verifies them (docs/DEFECTS.md, Д-8). They
+ * them and nothing re-verifies them. They
  * stay in the table because a ledger keeps old events and a report over last
  * quarter has to price what actually ran; they are marked so a total that
  * leans on them says so, and they are kept out of the per-model breakdown
@@ -292,6 +293,20 @@ function roundCosts(row) {
   };
 }
 
+/**
+ * How large a tool's answers were, over the calls that recorded it: the average, the
+ * 95th percentile and the largest, in bytes. Nothing when no call recorded a size.
+ */
+function answerSizes(sizes = []) {
+  if (!sizes.length) return {};
+  const sorted = [...sizes].sort((left, right) => left - right);
+  return {
+    average_bytes_out: Math.round(sorted.reduce((sum, size) => sum + size, 0) / sorted.length),
+    p95_bytes_out: sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)],
+    max_bytes_out: sorted.at(-1)
+  };
+}
+
 /** Fold a set of ledger events into per-tool, per-task, per-model and total rows. */
 function accumulate(events, rates) {
   const tools = new Map();
@@ -309,8 +324,9 @@ function accumulate(events, rates) {
   for (const event of events) {
     if (event.kind === "tool_call") {
       toolCalls += 1;
-      const entry = tools.get(event.tool) ?? { tool: event.tool, calls: 0, failures: 0, total_ms: 0, max_ms: 0 };
+      const entry = tools.get(event.tool) ?? { tool: event.tool, calls: 0, failures: 0, total_ms: 0, max_ms: 0, sizes: [] };
       entry.calls += 1;
+      if (Number.isFinite(event.bytes_out)) entry.sizes.push(event.bytes_out);
       if (!event.ok) entry.failures += 1;
       entry.total_ms += Number(event.duration_ms) || 0;
       entry.max_ms = Math.max(entry.max_ms, Number(event.duration_ms) || 0);
@@ -369,7 +385,7 @@ export class UsageLedger {
     this.queue = this.queue
       .catch(() => undefined)
       .then(async () => {
-        await atomicAppendFile(this.filePath, line, "utf8");
+        await appendJsonLines(this.filePath, line);
         await this.pruneIfNeeded();
       });
     await this.queue;
@@ -413,28 +429,36 @@ export class UsageLedger {
    * @returns {Promise<{ lines: number, kept: number, removed: number }>}
    */
   async rotate(keepLines) {
-    const plan = await this.rotationPlan(keepLines);
-    if (plan.removed <= 0) return plan;
-    const lines = (await fs.readFile(this.filePath, "utf8")).split("\n").filter(Boolean);
-    await atomicWriteFile(this.filePath, `${lines.slice(-plan.kept).join("\n")}\n`, "utf8");
-    return plan;
+    // Under the ledger's lock: a hook or another server appending between the
+    // read and the rename would otherwise lose its lines.
+    return withExclusiveFile(this.filePath, async () => {
+      const plan = await this.rotationPlan(keepLines);
+      if (plan.removed <= 0) return plan;
+      const lines = (await fs.readFile(this.filePath, "utf8")).split("\n").filter(Boolean);
+      await atomicWriteFile(this.filePath, `${lines.slice(-plan.kept).join("\n")}\n`, "utf8");
+      return plan;
+    });
   }
 
   async pruneIfNeeded() {
     const stats = await fs.stat(this.filePath).catch(() => null);
     if (!stats || stats.size <= this.maxBytes) return false;
-    const lines = (await fs.readFile(this.filePath, "utf8")).split("\n").filter(Boolean);
-    const kept = lines.slice(-this.keepLines);
-    await atomicWriteFile(this.filePath, `${kept.join("\n")}\n`, "utf8");
-    return true;
+    return withExclusiveFile(this.filePath, async () => {
+      const current = await fs.stat(this.filePath).catch(() => null);
+      if (!current || current.size <= this.maxBytes) return false;
+      const lines = (await fs.readFile(this.filePath, "utf8")).split("\n").filter(Boolean);
+      const kept = lines.slice(-this.keepLines);
+      await atomicWriteFile(this.filePath, `${kept.join("\n")}\n`, "utf8");
+      return true;
+    });
   }
 
   /**
    * Record one MCP tool invocation (name, duration, outcome, task/project hints).
    *
-   * @param {{ tool: string, ok: boolean, durationMs: number, taskId?: string, projectPath?: string, error?: string, client?: string }} input
+   * @param {{ tool: string, ok: boolean, durationMs: number, taskId?: string, projectPath?: string, error?: string, client?: string, bytesIn?: number, bytesOut?: number, argsHash?: string, resultHash?: string }} input
    */
-  async recordToolCall({ tool, ok, durationMs, taskId = "", projectPath = "", error = "", client = "" }) {
+  async recordToolCall({ tool, ok, durationMs, taskId = "", projectPath = "", error = "", client = "", bytesIn, bytesOut, argsHash = "", resultHash = "" }) {
     return this.append({
       at: now(),
       kind: "tool_call",
@@ -444,7 +468,12 @@ export class UsageLedger {
       task_id: String(taskId || ""),
       project_path: String(projectPath || ""),
       error: String(error || "").slice(0, 300),
-      client: String(client || "")
+      client: String(client || ""),
+      // Sizes and hashes, never the arguments or the answer themselves.
+      ...(Number.isFinite(bytesIn) ? { bytes_in: bytesIn } : {}),
+      ...(Number.isFinite(bytesOut) ? { bytes_out: bytesOut } : {}),
+      ...(argsHash ? { args_hash: String(argsHash) } : {}),
+      ...(resultHash ? { result_hash: String(resultHash) } : {})
     });
   }
 
@@ -506,23 +535,28 @@ export class UsageLedger {
    * only, so that a change of prices re-prices history instead of freezing a
    * stale number into the ledger.
    *
-   * @param {{ projectPath?: string, taskId?: string, since?: string, limitTools?: number, rates?: Record<string, object>, now?: Date }} [filter]
+   * @param {{ projectPath?: string, projectTaskIds?: string[], taskId?: string, since?: string, limitTools?: number, rates?: Record<string, object>, now?: Date }} [filter]
+   *   `projectTaskIds`: the project's tasks, for the calls that named a task and no path.
    * @returns {Promise<object>} Report.
    */
-  async report({ projectPath = "", taskId = "", since = "", limitTools = 15, rates = RATE_TABLE, includeHistoricalModels = false, now = new Date() } = {}) {
+  async report({ projectPath = "", projectTaskIds = [], taskId = "", since = "", limitTools = 15, rates = RATE_TABLE, includeHistoricalModels = false, now = new Date() } = {}) {
+    const inProject = projectPath ? projectScope(projectPath) : null;
+    const ownTasks = new Set(projectTaskIds);
     const events = (await this.readEvents()).filter((event) => {
       if (taskId && event.task_id !== taskId) return false;
-      if (projectPath && event.project_path && path.resolve(event.project_path) !== path.resolve(projectPath)) return false;
-      if (projectPath && !event.project_path && !taskId) return false;
+      if (inProject && event.project_path && !inProject(event.project_path)) return false;
+      // A call that named only its task: the project's when the task is.
+      if (inProject && !event.project_path && !taskId && !ownTasks.has(event.task_id)) return false;
       if (since && String(event.at || "") < since) return false;
       return true;
     });
     const { tools, tasks, models, usage, unpriced, historicalModels, toolCalls } = accumulate(events, rates);
     const toolRows = [...tools.values()]
-      .map((item) => ({
+      .map(({ sizes, ...item }) => ({
         ...item,
         average_ms: item.calls ? Math.round(item.total_ms / item.calls) : 0,
-        failure_rate: item.calls ? round(item.failures / item.calls, 4) : 0
+        failure_rate: item.calls ? round(item.failures / item.calls, 4) : 0,
+        ...answerSizes(sizes)
       }))
       .sort((left, right) => right.calls - left.calls || left.tool.localeCompare(right.tool))
       .slice(0, Math.max(1, Math.min(Number(limitTools) || 15, 200)));
@@ -585,6 +619,36 @@ export class UsageLedger {
         .slice(0, 50)
     };
   }
+}
+
+/**
+ * Whether a recorded path is the project or a folder of it. Events keep the
+ * path a caller gave — a package of the project, the project through a link,
+ * another case of the drive letter — and compared as strings each of those
+ * was another project: the report lost them.
+ *
+ * @param {string} projectPath
+ * @returns {(recorded: string) => boolean}
+ */
+function projectScope(projectPath) {
+  const known = new Map();
+  const canonical = (target) => {
+    if (!known.has(target)) {
+      let real = path.resolve(target);
+      try {
+        real = realpathSync.native(real);
+      } catch {
+        // A folder that is gone is compared by its name.
+      }
+      known.set(target, process.platform === "win32" ? real.toLowerCase() : real);
+    }
+    return known.get(target);
+  };
+  const root = canonical(projectPath);
+  return (recorded) => {
+    const relative = path.relative(root, canonical(String(recorded)));
+    return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+  };
 }
 
 /**

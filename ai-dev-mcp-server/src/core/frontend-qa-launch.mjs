@@ -13,7 +13,7 @@
  * Chromium are installed, and the command cannot be run inside the container at
  * all. What had actually happened was that the runner imports two modules from
  * the server by relative path, and in the image the server is not where that
- * path points, so the runner died on its first import (docs/DEFECTS.md, Д-56).
+ * path points, so the runner died on its first import.
  *
  * Node distinguishes the two cases itself and the wording is stable:
  *

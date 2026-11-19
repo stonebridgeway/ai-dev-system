@@ -20,6 +20,12 @@ if (!shell) {
   process.exit(0);
 }
 
+// The 2.x launcher in 3.0: a config naming it still
+// works, it says on stderr that it is the 2.x one, and the server answers its
+// own handshake — 2.x answered `initialize` in the launcher and the server's
+// instructions never reached the client. A config that
+// names the 2.x runtime container gets a session of the configured image too:
+// that container kept the image it was started with.
 const fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), "ai-dev-unix-launcher-"));
 const dockerFixture = path.join(fixtureRoot, "docker");
 const backendFixture = path.join(fixtureRoot, "backend.sh");
@@ -28,7 +34,7 @@ try {
   await fs.writeFile(dockerFixture, [
     "#!/bin/sh",
     "set -eu",
-    "if [ \"$1\" != \"exec\" ]; then exit 64; fi",
+    "if [ \"$1\" != \"run\" ]; then exit 64; fi",
     "exec sh \"$AI_DEV_FAKE_BACKEND\""
   ].join("\n") + "\n", { mode: 0o755 });
   await fs.writeFile(backendFixture, [
@@ -37,7 +43,7 @@ try {
     "while IFS= read -r line; do",
     "  case \"$line\" in",
     "    *'\"method\":\"initialize\"'*)",
-    "      printf '%s\\n' '{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"fake-backend\",\"version\":\"1\"}}}'",
+    "      printf '%s\\n' '{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"fake-backend\",\"version\":\"3.0.0\"},\"instructions\":\"Begin with begin_task.\"}}'",
     "      ;;",
     "    *'\"method\":\"tools/list\"'*)",
     "      printf '%s\\n' '{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[{\"name\":\"fixture_tool\",\"inputSchema\":{\"type\":\"object\"}}]}}'",
@@ -64,6 +70,7 @@ try {
   let buffer = "";
   let stderr = "";
   let initializeMs;
+  let initialized;
   let toolCount;
 
   const completed = new Promise((resolve, reject) => {
@@ -79,6 +86,7 @@ try {
         const message = JSON.parse(line);
         if (message.id === 1 && initializeMs === undefined) {
           initializeMs = Date.now() - startedAt;
+          initialized = message.result;
           child.stdin.write(`${JSON.stringify({
             jsonrpc: "2.0",
             method: "notifications/initialized",
@@ -116,11 +124,16 @@ try {
   })}\n`);
 
   await completed;
-  assert.ok(initializeMs < 500, `initialize took ${initializeMs}ms`);
+  assert.equal(initialized?.serverInfo?.name, "fake-backend", "the server's own answer, not one the launcher made up");
+  assert.equal(initialized?.instructions, "Begin with begin_task.");
   assert.equal(toolCount, 1);
+  assert.match(stderr, /the 2\.x launcher, which works until 4\.0/);
+  assert.match(stderr, /fixture-runtime is not used any more/);
   process.stdout.write(`${JSON.stringify({
     status: "pass",
     initialize_ms: initializeMs,
+    server: initialized.serverInfo,
+    instructions: initialized.instructions.length,
     forwarded_tools: toolCount
   }, null, 2)}\n`);
 } finally {

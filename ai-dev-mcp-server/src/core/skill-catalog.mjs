@@ -10,6 +10,8 @@
  * Paths are vault-relative strings, never absolute: resolving them against a
  * vault root is the runtime's job, not this module's.
  */
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { SKILL_GROUPS } from "../skill-taxonomy.mjs";
 import { slugPart } from "./text-format.mjs";
 
@@ -64,6 +66,45 @@ export function findSkillItem(items, name, source = "") {
 /** Membrane application skills: the large, noisy per-app integration catalog. */
 export function isMembraneSkill(item) {
   return String(item.source ?? "").toLowerCase().includes("membrane");
+}
+
+/**
+ * Where the Membrane catalogue can sit, as source ids: a vault keeps it as a
+ * source of its own, the bundled seed under `external/`. Code that meant
+ * "Membrane" but tested one layout's path never matched the other, and in the
+ * seed all 3 074 connectors were embedded and ranked like any other skill.
+ */
+export const MEMBRANE_SOURCE_IDS = Object.freeze(["membrane/application-skills", "external/membrane"]);
+
+/**
+ * The catalogue source a path belongs to — `<group>/<name>` right under
+ * `03-skills-catalog/sources/` — or "" outside the catalogue. Lets code that
+ * walks files ask `isMembraneSkill` the question the registry answers.
+ *
+ * @param {string} filePath - Vault-relative or absolute, either separator.
+ * @returns {string}
+ */
+export function catalogSourceOfPath(filePath) {
+  const parts = String(filePath ?? "").replaceAll("\\", "/").split("/");
+  for (let index = 1; index < parts.length - 3; index += 1) {
+    if (parts[index - 1] === "03-skills-catalog" && parts[index] === "sources") {
+      return `${parts[index + 1]}/${parts[index + 2]}`.toLowerCase();
+    }
+  }
+  return "";
+}
+
+/**
+ * The Membrane catalogue in this vault: the first source id whose directory
+ * exists, else the vault layout.
+ *
+ * @param {string} sourcesRoot - `<vault>/03-skills-catalog/sources`.
+ * @param {(candidate: string) => boolean} [exists]
+ * @returns {{ id: string, root: string }}
+ */
+export function membraneSourceLayout(sourcesRoot, exists = existsSync) {
+  const layouts = MEMBRANE_SOURCE_IDS.map((id) => ({ id, root: path.join(sourcesRoot, ...id.split("/")) }));
+  return layouts.find((layout) => exists(layout.root)) ?? layouts[0];
 }
 
 /** Design/frontend skills, by source folder or by declared category. */

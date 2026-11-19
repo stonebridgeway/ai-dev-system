@@ -50,7 +50,7 @@ const FORBIDDEN_FILE_PATTERNS = [
   { rule: "log-file", pattern: /\.log$/i }
 ];
 
-function isApprovedVendoredDependencyPath(relativePath) {
+export function isApprovedVendoredDependencyPath(relativePath) {
   return /(?:^|\/)03-skills-catalog\/sources\/external\/archify\/node_modules(?:\/|$)/i.test(relativePath);
 }
 
@@ -231,7 +231,8 @@ async function walk(root, current = root) {
 
 /**
  * Recursively audit a prepared distribution tree: reject symlinks, run path and
- * text privacy checks on every file, and record a SHA-256 per file.
+ * text privacy checks on every file, reject NUL bytes in text files, and record
+ * a SHA-256 per file.
  *
  * @param {string} root - Distribution root directory.
  * @param {{ forbiddenTerms?: string[] }} [options] - Passed to {@link distributionTextFindings}.
@@ -247,6 +248,13 @@ export async function auditDistributionTree(root, options = {}) {
     }
     findings.push(...distributionPathFindings(entry.relative));
     const content = await fs.readFile(entry.absolute);
+    const extension = path.extname(entry.absolute).toLowerCase();
+    if (extension && TEXT_EXTENSIONS.has(extension) && content.includes(0)) {
+      // Any reader that takes text as a C string stops at the first NUL, and
+      // node:sqlite returns a TEXT column only up to it.
+      // A file without an extension may be a program a skill ships.
+      findings.push({ rule: "nul-byte-in-text", path: entry.relative });
+    }
     if (looksTextual(content, entry.absolute)) {
       findings.push(...distributionTextFindings(
         content.toString("utf8"),
@@ -381,27 +389,18 @@ const RELATIVE_IMPORT = /(?:^|[\s;(])(?:import|export)\s[^"'`]*?from\s*["'](\.[^
  * because a shipped module imported one the allowlist excluded. The context is
  * checked for that before an image is ever built.
  *
- * `aliases` exists because the staged tree is not laid out the way the image
- * is. The Frontend QA runner sits beside the server in the image and imports it
- * by relative path; in the context the server is under `app/` and the runner
- * under `runtime/frontend-qa/`, so the same import resolves nowhere and the
- * check would be red by construction. An alias states the one correspondence
- * the Dockerfile creates, and nothing else is forgiven: the runner's import was
- * broken in the published image for exactly this reason, undetected because
- * only `app/` was ever walked (docs/DEFECTS.md, Д-56).
+ * Since 3.0 every target is laid out as the distribution is — the server in
+ * `ai-dev-mcp-server/`, the Frontend QA runner beside it in `frontend-qa/` —
+ * so an import resolves in the staged tree as it does where it runs. Before,
+ * the Docker context had a layout of its own and the runner's imports of the
+ * server resolved nowhere in it; they were broken in the published image,
+ * undetected because only the server's folder was walked.
  *
- * @param {string} root - Directory to walk, e.g. the staged `app/`.
- * @param {object} [options]
- * @param {Array<[string, string]>} [options.aliases] - `[from, to]` absolute path
- *   prefixes; a resolved import starting with `from` is also looked for under `to`.
+ * @param {string} root - Directory to walk, e.g. the staged `ai-dev-mcp-server/`.
  * @returns {Promise<Array<{ file: string, specifier: string, resolved: string }>>}
  */
-export async function findDanglingImports(root, { aliases = [] } = {}) {
+export async function findDanglingImports(root) {
   const base = path.resolve(root);
-  const rewrites = aliases.map(([from, to]) => [path.resolve(from), path.resolve(to)]);
-  const alternatives = (target) => rewrites
-    .filter(([from]) => target === from || target.startsWith(`${from}${path.sep}`))
-    .map(([from, to]) => path.join(to, path.relative(from, target)));
   const findings = [];
   const walk = async (directory) => {
     const entries = await fs.readdir(directory, { withFileTypes: true }).catch(() => []);
@@ -418,7 +417,7 @@ export async function findDanglingImports(root, { aliases = [] } = {}) {
         const specifier = match[1] ?? match[2] ?? match[3];
         if (!specifier) continue;
         const target = path.resolve(path.dirname(absolute), specifier);
-        const candidates = [target, ...alternatives(target)].flatMap((item) => (path.extname(item)
+        const candidates = [target].flatMap((item) => (path.extname(item)
           ? [item]
           : [`${item}.mjs`, `${item}.js`, path.join(item, "index.mjs"), path.join(item, "index.js")]));
         const exists = await Promise.all(candidates.map((item) => fs.stat(item).then(() => true).catch(() => false)));
@@ -473,13 +472,15 @@ export function ownerUsername() {
  * this project's own but ships from here for the same reason. The refresh
  * carries them forward from the checkout and then asserts they survived.
  *
- * `minimumSkills` is the count imported, so a partial copy fails the build
- * rather than shipping a seed that is quietly missing most of its catalogue.
+ * `minimumSkills` is the count the seed carries, so a partial copy fails the
+ * build rather than shipping a seed that is quietly missing most of its
+ * catalogue. Membrane's is the curated set described in its `CURATION.md`, not
+ * the 3,074 connectors upstream publishes.
  *
  * @type {ReadonlyArray<{ relative: string, minimumSkills: number }>}
  */
 export const VENDORED_SEED_CATALOGUES = Object.freeze([
-  Object.freeze({ relative: "external/membrane", minimumSkills: 3074 }),
+  Object.freeze({ relative: "external/membrane", minimumSkills: 460 }),
   Object.freeze({ relative: "external/understand-anything", minimumSkills: 9 }),
   Object.freeze({ relative: "external/mattpocock-skills", minimumSkills: 1 }),
   Object.freeze({ relative: "custom/grill-me", minimumSkills: 1 })

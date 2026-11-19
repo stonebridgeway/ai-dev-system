@@ -4,8 +4,8 @@
  * `~/.claude.json` is the reason this exists. Two keys in it declare
  * user-scope MCP servers — `mcpServers` and `projects[<path>].mcpServers` — and
  * the same file is where Claude Code keeps the conversation history for every
- * project it has ever opened, which on an active machine is tens of megabytes
- * (docs/DEFECTS.md, Д-17). `JSON.parse` of the whole document to
+ * project it has ever opened, which on an active machine is tens of megabytes.
+ * `JSON.parse` of the whole document to
  * reach two keys is the wrong amount of work and the wrong amount of memory,
  * and the parsed history sits in the heap for as long as the call lasts.
  *
@@ -23,7 +23,7 @@
  * than saying nothing: a document that stops in the middle. Nesting is counted
  * as the scan goes, so a file whose last character leaves an object or a string
  * open ends with an error rather than with an empty result — "this file is cut
- * off", not "this file declares no servers" (Д-25).
+ * off", not "this file declares no servers".
  */
 import { createReadStream } from "node:fs";
 

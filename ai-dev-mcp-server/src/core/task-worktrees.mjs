@@ -183,6 +183,8 @@ export function parseWorktreeList(text) {
  */
 export async function createTaskWorktree({ projectRoot, name, baseRef = "HEAD", worktreesDir = WORKTREES_DIR, branchPrefix = TASK_BRANCH_PREFIX }) {
   assertName(name);
+  // A ref never starts with a dash; what does would reach git as an option.
+  if (typeof baseRef !== "string" || !baseRef || baseRef.startsWith("-")) throw new Error(`base_ref is not a git ref: ${String(baseRef).slice(0, 80)}`);
   const { mainRoot, commonDir } = await mainRepositoryRoot(path.resolve(projectRoot));
   const worktreePath = path.join(mainRoot, worktreesDir, name);
   const branch = `${branchPrefix}${name}`;
@@ -369,7 +371,7 @@ export async function cleanupTaskWorktrees({
         // What it was, then what happened to it. The outcome alone carries no
         // `name` and no `state`, so a report of the cleanup could only list
         // paths — `removed.map((item) => item.name)` answered with undefined
-        // for every entry (docs/DEFECTS.md, Д-27).
+        // for every entry.
         removed.push({ ...entry, ...outcome });
       } catch (error) {
         problems.push(`${entry.path}: ${error instanceof Error ? error.message : String(error)}`);

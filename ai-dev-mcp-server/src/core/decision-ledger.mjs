@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { atomicWriteFile } from "./atomic-files.mjs";
+import { atomicWriteFile, withExclusiveFile } from "./atomic-files.mjs";
 
 export const DECISIONS_RELATIVE_DIR = ".ai-dev/decisions";
 export const DECISION_STATUSES = ["proposed", "accepted", "superseded", "rejected"];
@@ -175,6 +175,18 @@ export async function recordDecision(projectRoot, input) {
   }
   const root = path.resolve(projectRoot);
   const directory = path.join(root, ...DECISIONS_RELATIVE_DIR.split("/"));
+  // Choosing the next number and writing the file under one lock: two clients
+  // recording a decision at once would otherwise both take ADR-<n+1>.
+  return withExclusiveFile(path.join(directory, ".numbering"), () => writeNextDecision(directory, input, { title, decision, status }));
+}
+
+/** A list field as an agent may send it: a list, one string for a list of one, or nothing. */
+function listOf(value) {
+  if (Array.isArray(value)) return value;
+  return value === undefined || value === null || value === "" ? [] : [value];
+}
+
+async function writeNextDecision(directory, input, { title, decision, status }) {
   const files = await listDecisionFiles(directory);
   const last = files.length ? Number(files.at(-1).match(FILE_PATTERN)[1]) : 0;
   const number = String(last + 1).padStart(4, "0");
@@ -185,12 +197,12 @@ export async function recordDecision(projectRoot, input) {
     status,
     date: (input?.now || new Date().toISOString()).slice(0, 10),
     task_id: normalize(input?.task_id),
-    tags: (input?.tags ?? []).map((tag) => slugify(tag, "")).filter(Boolean),
+    tags: listOf(input?.tags).map((tag) => slugify(tag, "")).filter(Boolean),
     supersedes: normalize(input?.supersedes),
     context: normalize(input?.context),
     decision,
-    alternatives: (input?.alternatives ?? []).map(normalize).filter(Boolean),
-    consequences: (input?.consequences ?? []).map(normalize).filter(Boolean)
+    alternatives: listOf(input?.alternatives).map(normalize).filter(Boolean),
+    consequences: listOf(input?.consequences).map(normalize).filter(Boolean)
   };
   const supersededFile = record.supersedes
     ? files.find((file) => `ADR-${file.match(FILE_PATTERN)[1]}` === record.supersedes)

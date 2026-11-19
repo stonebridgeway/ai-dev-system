@@ -1,63 +1,57 @@
+// The 2.x launcher Claude on Windows was configured with, kept so that the
+// configs naming it work until 4.0. 3.0 writes
+// `docker run -i --rm ...` into a client's config itself (bootstrap.ps1, or
+// `ai-dev clients install --docker`) and compiles nothing on the user's machine.
+//
+// It used to answer `initialize` itself while the container started and drop
+// the server's own answer, which lost the server's instructions and fixed the
+// version at 2.0.0. The image answers in about a second now: the proxy
+// passes the bytes through, both ways, and the server answers its handshake.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 internal static class ClaudeMcpProxy
 {
-    private static readonly object OutputLock = new object();
-    private static readonly Regex IdPattern = new Regex("\\\"id\\\"\\s*:\\s*(\\\"(?:\\\\.|[^\\\"])*\\\"|-?\\d+)", RegexOptions.Compiled);
-    private static readonly Regex MethodPattern = new Regex("\\\"method\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"", RegexOptions.Compiled);
-    private static readonly Regex ProtocolPattern = new Regex("\\\"protocolVersion\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"", RegexOptions.Compiled);
-
-    private static string backendInitializeId;
-
     private static int Main()
     {
         try
         {
+            Console.Error.WriteLine("ai-dev: this client config runs ClaudeMcpProxy.exe, the 2.x launcher, which works until 4.0. "
+                + "Run bootstrap.ps1 (or `ai-dev clients install --docker`) to write the 3.0 entry: docker run, with the state your agent hooks share.");
             using (var backend = StartDocker())
             {
-                var stdout = PumpBackendOutput(backend);
-                var stderr = PumpBackendError(backend);
-                using (var input = Console.In)
-                {
-                    string line;
-                    while ((line = input.ReadLine()) != null)
-                    {
-                        var method = MethodPattern.Match(line);
-                        if (method.Success && method.Groups[1].Value == "initialize")
-                        {
-                            var id = Require(IdPattern, line, "MCP initialize request id");
-                            var protocolVersion = Require(ProtocolPattern, line, "MCP protocol version");
-                            Volatile.Write(ref backendInitializeId, id);
-                            backend.StandardInput.WriteLine(line);
-                            backend.StandardInput.Flush();
-                            WriteImmediateInitializeResponse(id, protocolVersion);
-                        }
-                        else
-                        {
-                            backend.StandardInput.WriteLine(line);
-                            backend.StandardInput.Flush();
-                        }
-                    }
-                }
-
-                backend.StandardInput.Close();
+                var stdout = Pump(backend.StandardOutput.BaseStream, Console.OpenStandardOutput());
+                var stderr = Pump(backend.StandardError.BaseStream, Console.OpenStandardError());
+                var stdin = Pump(Console.OpenStandardInput(), backend.StandardInput.BaseStream).ContinueWith(_ => backend.StandardInput.Close());
+                backend.WaitForExit();
                 Task.WaitAll(new[] { stdout, stderr }, TimeSpan.FromSeconds(2));
-                if (!backend.HasExited) backend.Kill();
+                return backend.ExitCode;
             }
-            return 0;
         }
         catch (Exception error)
         {
             Console.Error.WriteLine("AI Dev Claude MCP proxy failed: " + error.Message);
             return 1;
         }
+    }
+
+    // Copy one stream into another as it arrives, flushing each piece: MCP messages are lines a client waits on.
+    private static Task Pump(Stream from, Stream to)
+    {
+        return Task.Run(() =>
+        {
+            var buffer = new byte[64 * 1024];
+            int read;
+            while ((read = from.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                to.Write(buffer, 0, read);
+                to.Flush();
+            }
+        });
     }
 
     private static Process StartDocker()
@@ -72,8 +66,8 @@ internal static class ClaudeMcpProxy
             "--cap-drop", "ALL",
             "--mount", "type=volume,source=" + (Environment.GetEnvironmentVariable("AI_DEV_DATA_VOLUME") ?? "ai-dev-system-data") + ",target=/data"
         };
-        AddBindMount(arguments, "AI_DEV_PROJECT_PATH", "/workspace", false);
-        AddBindMount(arguments, "AI_DEV_MODEL_PATH", "/models/bge-m3", true);
+        AddBindMount(arguments, MountSource("AI_DEV_PROJECT_PATH"), "/workspace", false);
+        AddBindMount(arguments, ModelMountSource(), "/models", true);
         arguments.Add(Environment.GetEnvironmentVariable("AI_DEV_IMAGE") ?? "ai-dev-system:local");
 
         var startInfo = new ProcessStartInfo
@@ -91,64 +85,54 @@ internal static class ClaudeMcpProxy
         return process;
     }
 
-    private static void AddBindMount(List<string> arguments, string environmentName, string target, bool readOnly)
+    private static string MountSource(string environmentName)
     {
         var value = Environment.GetEnvironmentVariable(environmentName);
-        if (string.IsNullOrWhiteSpace(value)) return;
+        if (string.IsNullOrWhiteSpace(value)) return null;
         var fullPath = Path.GetFullPath(value);
         if (fullPath.Contains(",")) throw new InvalidOperationException(environmentName + " cannot contain a comma.");
         if (!Directory.Exists(fullPath)) throw new DirectoryNotFoundException(environmentName + " does not exist: " + fullPath);
-        arguments.Add("--mount");
-        arguments.Add("type=bind,source=" + fullPath + ",target=" + target + (readOnly ? ",readonly" : ""));
+        return fullPath;
     }
 
-    private static Task PumpBackendOutput(Process backend)
+    // As in run-mcp.sh and run-mcp.ps1: the folder holds bge-m3-onnx\, and the
+    // image looks for it under /models. This copy mounted it at /models/bge-m3,
+    // one level too deep, so Claude on Windows never had dense search.
+    // A lone bge-m3\ is the removed Python backend's
+    // weights.
+    private static readonly string[] ModelFileMarkers = { "pytorch_model.bin", "modules.json", "config.json", "onnx" };
+
+    private static string ModelMountSource()
     {
-        return Task.Run(async () =>
+        var fullPath = MountSource("AI_DEV_MODEL_PATH");
+        if (fullPath == null) return null;
+        // In 2.0.0 the variable named the model directory itself. A folder
+        // that holds model files is that old value, and mounted at /models it
+        // would leave both backends looking one level too deep.
+        foreach (var marker in ModelFileMarkers)
         {
-            string line;
-            while ((line = await backend.StandardOutput.ReadLineAsync()) != null)
+            var candidate = Path.Combine(fullPath, marker);
+            if (File.Exists(candidate) || Directory.Exists(candidate))
             {
-                var id = IdPattern.Match(line);
-                if (id.Success && id.Groups[1].Value == Volatile.Read(ref backendInitializeId)) continue;
-                lock (OutputLock)
-                {
-                    Console.Out.WriteLine(line);
-                    Console.Out.Flush();
-                }
+                throw new InvalidOperationException("AI_DEV_MODEL_PATH now names the folder above the models, and " + fullPath
+                    + " holds model files itself (" + marker + "). Point it at the parent folder that contains bge-m3-onnx\\"
+                    + " - for a default install that is %USERPROFILE%\\.ai-dev\\models (docs/INSTALL.md).");
             }
-        });
-    }
-
-    private static Task PumpBackendError(Process backend)
-    {
-        return Task.Run(async () =>
-        {
-            string line;
-            while ((line = await backend.StandardError.ReadLineAsync()) != null)
-            {
-                Console.Error.WriteLine(line);
-            }
-        });
-    }
-
-    private static string Require(Regex pattern, string line, string label)
-    {
-        var match = pattern.Match(line);
-        if (!match.Success) throw new InvalidOperationException("Missing " + label + ".");
-        return match.Groups[1].Value;
-    }
-
-    private static void WriteImmediateInitializeResponse(string id, string protocolVersion)
-    {
-        var response = "{\"jsonrpc\":\"2.0\",\"id\":" + id
-            + ",\"result\":{\"protocolVersion\":\"" + protocolVersion
-            + "\",\"capabilities\":{\"tools\":{\"listChanged\":false},\"resources\":{\"subscribe\":false,\"listChanged\":false},\"prompts\":{\"listChanged\":false},\"logging\":{}},\"serverInfo\":{\"name\":\"ai-dev-system\",\"version\":\"2.0.0\"}}}";
-        lock (OutputLock)
-        {
-            Console.Out.WriteLine(response);
-            Console.Out.Flush();
         }
+        if (!Directory.Exists(Path.Combine(fullPath, "bge-m3-onnx")))
+        {
+            Console.Error.WriteLine(Directory.Exists(Path.Combine(fullPath, "bge-m3"))
+                ? "AI_DEV_MODEL_PATH=" + fullPath + " holds bge-m3\\, the weights of the Python backend 3.0 removed, and no bge-m3-onnx\\; dense search will report that it is not set up. Put the ONNX model there: npm run model -- install --dir " + Path.Combine(fullPath, "bge-m3-onnx") + " (docs/INSTALL.md)."
+                : "AI_DEV_MODEL_PATH=" + fullPath + " holds no bge-m3-onnx\\; dense search will report that it is not set up until a model is put there.");
+        }
+        return fullPath;
+    }
+
+    private static void AddBindMount(List<string> arguments, string source, string target, bool readOnly)
+    {
+        if (source == null) return;
+        arguments.Add("--mount");
+        arguments.Add("type=bind,source=" + source + ",target=" + target + (readOnly ? ",readonly" : ""));
     }
 
     private static string Quote(string argument)

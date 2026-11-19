@@ -10,6 +10,8 @@
  */
 import { dashboardSourceFingerprint } from "./system-dashboard.mjs";
 import { LAUNCH_MISSING_FILE, LAUNCH_UNKNOWN } from "./frontend-qa-launch.mjs";
+import { UI_UX_PYTHON_TOOLS } from "./python-failure.mjs";
+import { frontendQaHint, hint } from "./install-layout.mjs";
 
 /**
  * The `mcp-stdio.mjs` line budget. `scripts/static-quality.mjs` enforces it and
@@ -24,9 +26,6 @@ import { LAUNCH_MISSING_FILE, LAUNCH_UNKNOWN } from "./frontend-qa-launch.mjs";
  * what is left.
  */
 export const SYSTEM_LINE_CEILING = 5_076;
-
-/** Coverage thresholds enforced by `npm run check`, reported for visibility. */
-export const COVERAGE_THRESHOLDS = "85% lines / 60% branches / 85% functions";
 
 /** Vault notes a healthy system is expected to carry. */
 export const REQUIRED_SYSTEM_NOTES = Object.freeze([
@@ -97,6 +96,52 @@ export function overallHealthStatus(checks) {
 }
 
 /**
+ * The runtime tree: where it is, and whether a 2.x layout is still in the way.
+ *
+ * @param {{ root: string, ai_dev_home: string, ai_dev_home_names_home: boolean, legacy_root: string, legacy_files: string[], last_migration: object|null }} info
+ * @returns {{ status: string, summary: string, details: object }}
+ */
+export function evaluateRuntimeHome(info) {
+  const details = { ...info };
+  if (info.legacy_files?.length) {
+    const conflicts = info.last_migration?.conflicts?.length ?? 0;
+    const errors = info.last_migration?.errors ?? [];
+    const why = [
+      conflicts ? ` ${conflicts} differ from the copy in ${info.root}: compare the two and keep one.` : "",
+      errors.length ? ` ${errors.length} could not be moved (${errors[0].code || "error"}: ${errors[0].path}): move them by hand.` : "",
+      !conflicts && !errors.length ? " Restart the server to move them." : ""
+    ].join("");
+    return {
+      status: "warn",
+      summary: `${info.legacy_files.length} file(s) are still in ${info.legacy_root}, where 2.x put the runtime tree for AI_DEV_HOME.${why}`,
+      details
+    };
+  }
+  if (info.codex_files?.length) {
+    const last = info.last_migration?.kind === "codex" ? info.last_migration : null;
+    const conflicts = last?.conflicts?.length ?? 0;
+    const errors = last?.errors ?? [];
+    const why = [
+      conflicts ? ` ${conflicts} differ from the copy in ${info.root}: compare the two and keep one.` : "",
+      errors.length ? ` ${errors.length} could not be moved (${errors[0].code || "error"}: ${errors[0].path}): move them by hand.` : "",
+      !conflicts && !errors.length ? " Restart the server to move them." : ""
+    ].join("");
+    return {
+      status: "warn",
+      summary: `${info.codex_files.length} file(s) of AI Dev's are still in ${info.codex_root}, where the Codex-era runtime kept them; only ${info.root} is read now.${why}`,
+      details
+    };
+  }
+  const migrated = info.last_migration
+    ? ` On ${String(info.last_migration.at || "").slice(0, 10)} ${Number(info.last_migration.moved || 0) + Number(info.last_migration.merged || 0)} file(s) were moved ${info.last_migration.to && info.last_migration.to !== info.root ? `to ${info.last_migration.to}` : "here"} from ${info.last_migration.from}${info.last_migration.superseded ? `, and ${info.last_migration.superseded} older cache file(s) there were dropped` : ""}.`
+    : "";
+  const namesHome = info.ai_dev_home_names_home
+    ? " AI_DEV_HOME names the home directory, which keeps its 2.x meaning (<home>/.ai-dev); set it to the runtime folder itself or unset it."
+    : "";
+  return { status: "ok", summary: `Runtime tree: ${info.root}.${migrated}${namesHome}`, details };
+}
+
+/**
  * Serializable shape for an error thrown inside a check.
  *
  * @param {unknown} err
@@ -117,7 +162,10 @@ export function healthErrorDetails(err) {
  */
 export function healthRecommendations(checks) {
   const recommendations = [];
-  if (checks.some((check) => check.name === "dense_smoke" && check.status === "skipped")) {
+  // Only where the model runs: elsewhere the advice turned a healthy install
+  // without the optional model into a failure.
+  const denseRuns = checks.some((check) => check.name === "embedding_backend" && check.status === "ok");
+  if (denseRuns && checks.some((check) => check.name === "dense_smoke" && check.status === "skipped")) {
     recommendations.push("Run system_health_check with include_dense_smoke=true after MCP restarts or embedding changes.");
   }
   for (const check of checks) {
@@ -223,11 +271,18 @@ export function evaluateSearchIndexFile(status) {
  * @param {object} status - `search_index_status` payload.
  */
 export function evaluateSearchIndexFreshness(status) {
+  // Vectors another model made are kept but never compared: the documents
+  // look embedded and the dense half of every search skips them.
+  const other = Number(status.dense_other_model_documents || 0);
+  const otherModel = other
+    ? ` ${other} document(s) have dense vectors of another model, which hybrid search does not compare; `
+      + `run \`${hint("npm run setup -- --model")}\` to embed them with the installed one.`
+    : "";
   return {
-    status: status.stale ? "warn" : "ok",
-    summary: status.stale
+    status: status.stale || other ? "warn" : "ok",
+    summary: (status.stale
       ? `Search index is stale: ${status.added_count} added, ${status.changed_count} changed, ${status.deleted_count} deleted.`
-      : `Search index is current with ${status.current_document_count} document(s).`,
+      : `Search index is current with ${status.current_document_count} document(s).`) + otherModel,
     details: status
   };
 }
@@ -249,9 +304,38 @@ export function evaluateFrontendQaRunner({ runner, manifest, artifactsRoot }) {
 }
 
 /**
- * @param {{ playwright_available?: boolean, chromium_available?: boolean, browser_launch_ok?: boolean, playwright_source?: string, launch_error?: string, launch_failure?: string }} status
+ * Whether the UI UX Pro Max tools can run. They read the vendored dataset
+ * through that project's own Python script — the only tools here that still
+ * need an interpreter — so no Python is a skipped option, not a fault:
+ * everything else runs without it. "Can run" means the interpreter answered
+ * `--version` as Python 3 ({@link import("./python-command.mjs").probePython}),
+ * not that a file of that name exists.
+ *
+ * @param {{ command: string, version?: string, missing?: boolean, failure?: string }} python - What the probe found.
+ * @returns {{ status: string, summary: string, details: object }}
  */
-export function evaluateFrontendQaEnvironment(status) {
+export function evaluateUiUxKnowledge({ command, version, missing, failure }) {
+  if (version) {
+    return {
+      status: "ok",
+      summary: `${UI_UX_PYTHON_TOOLS} run their helper with ${command} (Python ${version}).`,
+      details: { command, version }
+    };
+  }
+  const named = /^(?:[A-Za-z]:)?[\\/]/.test(command) ? `"${command}" is not there` : `"${command}" is not on PATH`;
+  const why = missing || !failure ? named : `"${command}" did not run as Python 3 (${failure})`;
+  return {
+    status: "skipped",
+    summary: `${UI_UX_PYTHON_TOOLS} need Python 3, and ${why}. They are optional: every other tool runs without Python. Install Python 3, or set AI_DEV_PYTHON.`,
+    details: { optional: true, command, ...(failure ? { failure } : {}) }
+  };
+}
+
+/**
+ * @param {{ playwright_available?: boolean, chromium_available?: boolean, browser_launch_ok?: boolean, playwright_source?: string, launch_error?: string, launch_failure?: string }} status
+ * @param {import("./install-layout.mjs").InstallLayout} [layout] - The install whose advice to give; this one's by default.
+ */
+export function evaluateFrontendQaEnvironment(status, layout) {
   const ready = status.playwright_available && status.chromium_available && status.browser_launch_ok;
   // "not fully ready" is true and useless. The runner knows which of the three
   // pieces is missing and, for the usual case, where it looked for the browser.
@@ -263,8 +347,8 @@ export function evaluateFrontendQaEnvironment(status) {
   const because = String(status.launch_error || "").replace(/\s+/g, " ").trim();
   // A runner that could not start says nothing about Playwright, and reading
   // its three `false`s as "the optional install was skipped" is how a container
-  // with Playwright in it was told to install Playwright (docs/DEFECTS.md,
-  // Д-56). A file the runner imports being absent is a broken install.
+  // with Playwright in it was told to install Playwright. A file the runner
+  // imports being absent is a broken install.
   if (status.launch_failure === LAUNCH_MISSING_FILE) {
     return {
       status: "fail",
@@ -285,7 +369,7 @@ export function evaluateFrontendQaEnvironment(status) {
   if (!ready && !status.playwright_available) {
     return {
       status: "skipped",
-      summary: `Frontend QA is not set up: ${missing || "its browser"} is missing. Run \`npm run setup -- --frontend-qa\` to install it.${because ? ` ${because}` : ""}`,
+      summary: `Frontend QA is not set up: ${missing || "its browser"} is missing; ${frontendQaHint(layout)}.${because ? ` ${because}` : ""}`,
       details: { optional: true, ...status }
     };
   }
@@ -477,7 +561,7 @@ export function evaluateProjectRegistry(projects) {
     // An empty registry is what a correct install looks like before anybody has
     // registered a project — the state every new user is in, and warning about
     // it made `ok` unreachable on a fresh volume and taught the reader that
-    // `degraded` is normal (docs/DEFECTS.md, Д-63). It says what to do instead.
+    // `degraded` is normal. It says what to do instead.
     status: "ok",
     summary: projects.length
       ? `Project registry has ${projects.length} project card(s).`
@@ -557,14 +641,17 @@ export function evaluateHybridSmoke(results) {
 
 /**
  * @param {object[]} results - Hybrid smoke search results run with dense weighting.
+ * @param {{ unavailable?: string }} [options] - Why the model cannot run, when it cannot.
  */
-export function evaluateDenseSmoke(results) {
+export function evaluateDenseSmoke(results, { unavailable = "" } = {}) {
   const hasDense = results.some((item) => Number(item.dense_score) > 0);
   return {
     status: results.length && hasDense ? "ok" : "fail",
     summary: results.length && hasDense
       ? `Dense hybrid search returned ${results.length} result(s) with dense scores.`
-      : "Dense hybrid search did not return dense-scored results.",
+      : unavailable
+        ? `Dense search cannot run here, so the smoke test had nothing to test. ${unavailable}`
+        : "Dense hybrid search did not return dense-scored results.",
     details: {
       results: results.map((item) => ({
         title: item.title,
@@ -627,6 +714,8 @@ export function dashboardSkillSource(source) {
  * @param {object} input.overlaySummary - `summarizeSkillOverlays` result.
  * @param {number} input.searchEvalCases - Number of golden search eval cases.
  * @param {number} input.runtimeLines - Line count of `src/mcp-stdio.mjs`.
+ * @param {Array<{ name: string, status: string, summary?: string }>} [input.checks] - The health
+ *   checks as they ran for this snapshot: the dashboard's Runtime rows.
  * @param {string} [input.generatedAt] - ISO timestamp; defaults to now.
  * @returns {object} Snapshot with `source_fingerprint`.
  */
@@ -642,11 +731,12 @@ export function buildSystemSnapshot({
   overlaySummary,
   searchEvalCases,
   runtimeLines,
+  checks = [],
   generatedAt = new Date().toISOString()
 }) {
   const bySource = countBy(skills, (item) => dashboardSkillSource(item.source));
   const snapshot = {
-    schema_version: 1,
+    schema_version: 2,
     generated_at: generatedAt,
     tools: { total: toolCount },
     skills: {
@@ -698,9 +788,9 @@ export function buildSystemSnapshot({
       server_ready: true,
       modular: runtimeLines <= SYSTEM_LINE_CEILING,
       main_lines: runtimeLines,
-      line_ceiling: SYSTEM_LINE_CEILING,
-      coverage_thresholds: COVERAGE_THRESHOLDS
-    }
+      line_ceiling: SYSTEM_LINE_CEILING
+    },
+    checks: checks.map(({ name, status, summary }) => ({ name: String(name), status: String(status), summary: String(summary ?? "").replace(/\s+/g, " ").trim() }))
   };
   snapshot.source_fingerprint = dashboardSourceFingerprint(snapshot);
   return snapshot;

@@ -1,5 +1,5 @@
 /**
- * Housekeeping for `~/.ai-dev/state` (PLAN.md, stage 3.12).
+ * Housekeeping for `~/.ai-dev/state`.
  *
  * Four things grow without bound and nothing removes them:
  *
@@ -13,7 +13,7 @@
  * - **Task snapshot refs.** `complete_task` deletes a finished task's refs, but
  *   a task that was cancelled, abandoned or reopened elsewhere keeps
  *   `refs/ai-dev/snapshots/<task>/*` for good, and each live ref pins a whole
- *   tree, so `git gc` cannot help (docs/DEFECTS.md, Д-14).
+ *   tree, so `git gc` cannot help.
  *
  * The shape of the module: what to prune is decided by pure functions over
  * records the caller has already read, and doing it is one function with the

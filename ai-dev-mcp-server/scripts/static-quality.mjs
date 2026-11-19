@@ -10,14 +10,17 @@ import { fileURLToPath } from "node:url";
 // step, so the file can be edited but not re-grown.
 import { SYSTEM_LINE_CEILING } from "../src/core/system-health.mjs";
 // The size rules themselves live in src/core so they can be tested without
-// breaking a real file on purpose and putting it back
-// (docs/DEFECTS.md, Д-12). This file is the input and output
+// breaking a real file on purpose and putting it back.
+// This file is the input and output
 // around them.
 import {
   MODULE_LINE_CEILING,
   MODULE_LINE_EXCEPTIONS,
   evaluateLineBudget
 } from "../src/core/line-budget.mjs";
+// The forbidden calls are found by what the code does, not by one spelling of
+// it: the rules and their tests live in src/core.
+import { forbiddenCalls } from "../src/core/forbidden-calls.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const node = process.execPath;
@@ -27,14 +30,14 @@ function countLines(source) {
   return source.split(/\r?\n/).length;
 }
 
-async function sourceFiles(directory) {
+async function sourceFiles(directory, extensions = [".mjs"]) {
   const files = [];
   async function walk(current) {
     const entries = await fs.readdir(current, { withFileTypes: true });
     for (const entry of entries) {
       if (entry.isDirectory()) {
         if (!skipDirectories.has(entry.name)) await walk(path.join(current, entry.name));
-      } else if (entry.isFile() && entry.name.endsWith(".mjs")) {
+      } else if (entry.isFile() && extensions.some((extension) => entry.name.endsWith(extension))) {
         files.push(path.join(current, entry.name));
       }
     }
@@ -43,12 +46,44 @@ async function sourceFiles(directory) {
   return files.sort();
 }
 
+// `hooks/` is copied into other people's repositories and runs there: the
+// syntax check and the forbidden calls hold for it as well; the line ceiling
+// does not, as each hook is one file by design.
 const files = [
+  ...await sourceFiles(path.join(root, "bin")),
   ...await sourceFiles(path.join(root, "src")),
-  ...await sourceFiles(path.join(root, "scripts"))
+  ...await sourceFiles(path.join(root, "scripts")),
+  ...await sourceFiles(path.join(root, "hooks"))
 ];
+
+// The desktop app (`desktop/`, beside this package in the repository) is held
+// to the same rules: the syntax check, the forbidden calls and the line
+// ceiling. Its tests call eval and new Function inside
+// the page on purpose — to show the page's policy refuses them — so those two
+// are looked for in its code only; a shell and exec in its tests too.
+// A copy of this package without the app (the npm package, the
+// image) has nothing to check.
+const desktopRoot = path.join(root, "..", "desktop");
+const DESKTOP_EXTENSIONS = [".mjs", ".js", ".cjs"];
+const desktopFiles = await fs.stat(path.join(desktopRoot, "package.json")).then(() => true, () => false)
+  ? [
+    ...await sourceFiles(path.join(desktopRoot, "src"), DESKTOP_EXTENSIONS),
+    ...await sourceFiles(path.join(desktopRoot, "scripts"), DESKTOP_EXTENSIONS),
+    ...await sourceFiles(path.join(desktopRoot, "test"), DESKTOP_EXTENSIONS)
+  ]
+  : [];
 const findings = [];
 const modules = [];
+for (const file of desktopFiles) {
+  const relative = path.relative(path.dirname(root), file).replaceAll("\\", "/");
+  const syntax = spawnSync(node, ["--check", file], { cwd: desktopRoot, encoding: "utf8", windowsHide: true });
+  if (syntax.status !== 0) findings.push(`${relative}: syntax check failed: ${(syntax.stderr || syntax.stdout).trim()}`);
+  const inTests = relative.startsWith("desktop/test/");
+  const source = await fs.readFile(file, "utf8");
+  // A `.cjs` file is a script, with HTML-like comments a module does not have.
+  for (const finding of forbiddenCalls(source, { allowEval: inTests, script: file.endsWith(".cjs") })) findings.push(`${relative}:${finding.line}: ${finding.message}`);
+  if (!inTests) modules.push({ path: relative, lines: countLines(source) });
+}
 for (const file of files) {
   const relative = path.relative(root, file).replaceAll("\\", "/");
   const syntax = spawnSync(node, ["--check", file], {
@@ -60,19 +95,19 @@ for (const file of files) {
     findings.push(`${relative}: syntax check failed: ${(syntax.stderr || syntax.stdout).trim()}`);
   }
   const source = await fs.readFile(file, "utf8");
-  if (relative !== "scripts/static-quality.mjs") {
-    if (/\beval\s*\(/.test(source)) findings.push(`${relative}: eval() is forbidden.`);
-    if (/\bnew\s+Function\s*\(/.test(source)) findings.push(`${relative}: new Function() is forbidden.`);
-    if (/\bshell\s*:\s*true\b/.test(source)) findings.push(`${relative}: shell:true is forbidden.`);
-  }
-  if (
-    /from\s+["']node:child_process["']/.test(source) &&
-    /import\s*\{[^}]*\bexec\b[^}]*\}/s.test(source)
-  ) {
-    findings.push(`${relative}: child_process.exec is forbidden; use argv-based execution.`);
-  }
-  if (relative.startsWith("src/core/") || relative.startsWith("src/extensions/")) {
+  for (const finding of forbiddenCalls(source)) findings.push(`${relative}:${finding.line}: ${finding.message}`);
+  // `src/galaxy/` is browser code, but code all the same: the ceiling holds there
+  // too, and in the CLI (`bin/`, `src/cli/`).
+  if (["bin/", "src/cli/", "src/core/", "src/extensions/", "src/galaxy/"].some((prefix) => relative.startsWith(prefix))) {
     modules.push({ path: relative, lines: countLines(source) });
+  }
+}
+
+// The hook launcher is a shell script, parsed by the shell that runs it.
+if (process.platform !== "win32") {
+  for (const name of (await fs.readdir(path.join(root, "hooks"))).filter((entry) => entry.endsWith(".sh")).sort()) {
+    const parsed = spawnSync("/bin/sh", ["-n", path.join(root, "hooks", name)], { cwd: root, encoding: "utf8", windowsHide: true });
+    if (parsed.status !== 0) findings.push(`hooks/${name}: sh -n failed: ${(parsed.stderr || parsed.stdout).trim()}`);
   }
 }
 
@@ -117,7 +152,9 @@ if (findings.length) {
 } else {
   console.log(JSON.stringify({
     status: "passed",
-    checked_files: files.length,
+    checked_files: files.length + desktopFiles.length,
+    checked_server_files: files.length,
+    checked_desktop_files: desktopFiles.length,
     tools: tools.length,
     prompts: PROMPTS.length,
     runtime_lines: runtimeLines,
