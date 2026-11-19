@@ -7,7 +7,6 @@
  * no longer: a command the menu runs has the terminal as it was, so Ctrl-C
  * reaches the command. Piped input (a test, a script) never comes here.
  */
-import readline from "node:readline";
 
 /**
  * Whether a list is drawn this way: a terminal on both sides that can be put
@@ -96,6 +95,66 @@ export function resolveTyped(word, items, back) {
   return found ? { kind: "choice", id: found.id } : null;
 }
 
+/** The escape sequences a terminal sends for the keys a list reads: CSI and SS3 forms, Windows' too. */
+const SEQUENCES = Object.freeze({ A: "up", B: "down", C: "right", D: "left", H: "home", F: "end", "1~": "home", "4~": "end", "7~": "home", "8~": "end" });
+
+/**
+ * The keys in what a terminal sent. Read here rather than through readline's
+ * keypress events: those hold a lone Esc back until the next key comes or a
+ * timer fires, and in a Windows console the key after an Esc was lost — q and
+ * Ctrl-C did nothing once a list had been left with Esc (Д-607). A terminal
+ * sends a sequence in one piece, so an Esc that ends a piece is the key.
+ *
+ * @param {string} chunk
+ * @returns {Array<{ name: string, text?: string }>} `name`: up, down, left,
+ *   right, home, end, return, escape, backspace, interrupt (Ctrl-C), end-of-input
+ *   (Ctrl-D), or char with its `text`
+ */
+export function keysOf(chunk) {
+  const keys = [];
+  for (let at = 0; at < chunk.length;) {
+    const char = chunk[at];
+    if (char === "\x1b") {
+      const sequence = /^\x1b(?:\[|O)(\d*;?\d*)?([A-DFH~])/.exec(chunk.slice(at));
+      if (sequence) {
+        const code = sequence[2] === "~" ? `${(sequence[1] ?? "").split(";")[0]}~` : sequence[2];
+        keys.push({ name: SEQUENCES[code] ?? "unknown" });
+        at += sequence[0].length;
+        continue;
+      }
+      // Another sequence (a function key, a mouse report): skipped whole.
+      const other = /^\x1b\[[\d;?]*[\x40-\x7e]/.exec(chunk.slice(at));
+      if (other) {
+        keys.push({ name: "unknown" });
+        at += other[0].length;
+        continue;
+      }
+      keys.push({ name: "escape" });
+      at += 1;
+      continue;
+    }
+    if (char === "\r" || char === "\n") {
+      keys.push({ name: "return" });
+      // Enter as \r\n is one key.
+      at += char === "\r" && chunk[at + 1] === "\n" ? 2 : 1;
+      continue;
+    }
+    if (char === "\x03") keys.push({ name: "interrupt" });
+    else if (char === "\x04") keys.push({ name: "end-of-input" });
+    else if (char === "\x7f" || char === "\b") keys.push({ name: "backspace" });
+    else if (char >= " ") keys.push({ name: "char", text: char });
+    at += 1;
+  }
+  return keys;
+}
+
+/**
+ * Keys a terminal sent after the one that ended a list, in the same piece —
+ * an Esc and the q after it, as a Windows console delivers them — kept for
+ * the next list instead of lost.
+ */
+const leftOver = new WeakMap();
+
 /**
  * One list at a terminal, until a choice is made.
  *
@@ -117,8 +176,10 @@ export function selectFromList({ input, output, title, items, back, styles, star
       output.write(`${drawn ? `${rewind}\r\x1b[0J` : ""}${lines.join("\n")}`);
       drawn = lines.length;
     };
+    let done = false;
     const finish = (result, shown) => {
-      input.off("keypress", onKey);
+      done = true;
+      input.off("data", onData);
       input.setRawMode(false);
       input.pause();
       typed = shown;
@@ -127,9 +188,10 @@ export function selectFromList({ input, output, title, items, back, styles, star
       output.write("\n");
       resolve(result);
     };
-    const onKey = (text, key = {}) => {
-      if (key.ctrl && key.name === "c") return finish({ kind: "interrupt" }, typed);
-      if (key.ctrl && key.name === "d") return typed ? undefined : finish({ kind: "end" }, "");
+    const onKey = ({ name: keyName, text }) => {
+      const key = { name: keyName };
+      if (keyName === "interrupt") return finish({ kind: "interrupt" }, typed);
+      if (keyName === "end-of-input") return typed ? undefined : finish({ kind: "end" }, "");
       if (key.name === "up" || key.name === "down") {
         selected = (selected + (key.name === "up" ? items.length - 1 : 1)) % items.length;
         typed = "";
@@ -140,7 +202,7 @@ export function selectFromList({ input, output, title, items, back, styles, star
         selected = key.name === "home" ? 0 : items.length - 1;
         return draw();
       }
-      if (key.name === "return" || key.name === "enter") {
+      if (key.name === "return") {
         if (!typed.trim()) return finish({ kind: "choice", id: items[selected].id }, keyOf(items[selected], selected));
         const result = resolveTyped(typed, items, back);
         if (result) return finish(result, typed.trim());
@@ -153,7 +215,7 @@ export function selectFromList({ input, output, title, items, back, styles, star
         typed = typed.slice(0, -1);
         return draw();
       }
-      if (typeof text !== "string" || text.length !== 1 || text < " " || key.ctrl || key.meta) return undefined;
+      if (keyName !== "char") return undefined;
       typed += text;
       note = "";
       // A key typed moves the mark to its line: Enter then takes what is seen.
@@ -161,10 +223,24 @@ export function selectFromList({ input, output, title, items, back, styles, star
       if (at >= 0) selected = at;
       return draw();
     };
-    readline.emitKeypressEvents(input);
+    const feed = (keys) => {
+      for (let index = 0; index < keys.length; index += 1) {
+        if (done) {
+          leftOver.set(input, keys.slice(index));
+          return;
+        }
+        onKey(keys[index]);
+      }
+    };
+    const onData = (chunk) => feed(keysOf(String(chunk)));
     input.setRawMode(true);
-    input.resume();
-    input.on("keypress", onKey);
+    input.setEncoding?.("utf8");
     draw();
+    const waiting = leftOver.get(input) ?? [];
+    leftOver.delete(input);
+    feed(waiting);
+    if (done) return;
+    input.on("data", onData);
+    input.resume();
   });
 }

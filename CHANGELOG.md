@@ -338,8 +338,10 @@ has it with what each one says.
   without an extension — closing the window hid it and Quit was in the tray alone. Ctrl+Q in the
   window quits, from a one-item menu Alt shows.
 - **The terminal menu ends on Windows when it is left.** After a list was left with Esc, q or
-  Ctrl-C ended the menu but not the process: a console read started in raw mode stayed pending.
-  The menu gives the terminal back as it ends. Found by the manual acceptance on Windows 11.
+  Ctrl-C did not end it. The keys are read from what the terminal sends, not through readline's
+  keypress events, which held a lone Esc back and lost the key that came with it; keys that arrive
+  with the one that ends a list go to the next list; the menu gives the terminal back as it ends.
+  Found by the manual acceptance on Windows 11.
 - **The app's runtime ships no TypeScript declarations or source maps**: 2,746 files and 11 MB no
   Node process reads, and among the deepest paths in it — under a long profile folder on Windows
   one passed 260 characters and the uninstaller left it behind.

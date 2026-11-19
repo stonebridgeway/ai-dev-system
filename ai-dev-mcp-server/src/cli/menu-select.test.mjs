@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 import { headingLines, releaseTerminal, runMenu } from "./menu.mjs";
-import { canSelect, renderList, resolveTyped, selectFromList, stylesFor } from "./menu-select.mjs";
+import { canSelect, keysOf, renderList, resolveTyped, selectFromList, stylesFor } from "./menu-select.mjs";
 
 const ITEMS = [
   { id: "status", label: "Status", hint: "model, index, clients" },
@@ -179,4 +179,44 @@ test("the terminal is given back when the menu ends: raw mode off, paused, not h
   assert.deepEqual(piped, ["pause", "unref"]);
   releaseTerminal(undefined);
   releaseTerminal({ isTTY: true, isRaw: true, setRawMode: () => { throw new Error("gone"); } });
+});
+
+test("keys are read from what the terminal sent: an Esc ending a piece is Esc at once, and the key after it is kept (Д-607)", () => {
+  const names = (chunk) => keysOf(chunk).map((key) => key.text ?? key.name);
+  assert.deepEqual(names("\x1b"), ["escape"]);
+  assert.deepEqual(names("q\r"), ["q", "return"]);
+  assert.deepEqual(names("\x1b[A\x1b[B\x1bOA\x1bOB"), ["up", "down", "up", "down"], "CSI and SS3 arrows");
+  assert.deepEqual(names("\x1b[D\x1b[C\x1b[H\x1b[F\x1b[1~\x1b[4~"), ["left", "right", "home", "end", "home", "end"]);
+  assert.deepEqual(names("\x1b[1;5A"), ["up"], "an arrow with a modifier is the arrow");
+  assert.deepEqual(names("\x03"), ["interrupt"]);
+  assert.deepEqual(names("\x04"), ["end-of-input"]);
+  assert.deepEqual(names("\r\n"), ["return"], "Enter as CR LF is one key");
+  assert.deepEqual(names("\x7f\b"), ["backspace", "backspace"]);
+  assert.deepEqual(names("\x1b[15~x"), ["unknown", "x"], "a function key is skipped whole");
+  // Esc, then q and Enter in the same piece, as a fast hand or a console that batches keys sends them.
+  assert.deepEqual(names("\x1bq\r"), ["escape", "q", "return"]);
+  assert.deepEqual(names("Дa"), ["Д", "a"]);
+});
+
+test("after Esc leaves one list, q leaves the next at once: no key is held back", async () => {
+  const t = terminal();
+  const first = selectFromList({ input: t.input, output: t.output, title: "Settings", items: ITEMS, back: "Back", styles: PLAIN });
+  await t.type("\x1b");
+  assert.deepEqual(await first, { kind: "back" });
+  const second = selectFromList({ input: t.input, output: t.output, title: "Menu", items: ITEMS, back: null, styles: PLAIN });
+  await t.type("q", "\r");
+  assert.deepEqual(await second, { kind: "quit" });
+  const third = selectFromList({ input: t.input, output: t.output, title: "Menu", items: ITEMS, back: null, styles: PLAIN });
+  await t.type("\x1b", "\x03");
+  assert.deepEqual(await third, { kind: "interrupt" }, "Esc in the main list does nothing; Ctrl-C after it still ends");
+});
+
+test("keys sent after the one that ends a list, in the same piece, go to the next list", async () => {
+  const t = terminal();
+  const settings = selectFromList({ input: t.input, output: t.output, title: "Settings", items: ITEMS, back: "Back", styles: PLAIN });
+  await t.type("\x1bq\r");
+  assert.deepEqual(await settings, { kind: "back" });
+  const main = selectFromList({ input: t.input, output: t.output, title: "Menu", items: ITEMS, back: null, styles: PLAIN });
+  assert.deepEqual(await main, { kind: "quit" }, "the q and Enter that came with the Esc");
+  assert.equal(t.input.raw.at(-1), false, "and the terminal is given back");
 });
